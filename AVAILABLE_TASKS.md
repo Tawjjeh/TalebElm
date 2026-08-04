@@ -96,15 +96,6 @@ core rules only. No database code, no web code, no methods with real behavior.
     `CreatedAt` (a DateTimeOffset). Give them default values. Do not add any methods.
   - **Hint:** `public class BaseEntity { public Guid Id { get; set; } = Guid.NewGuid(); public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow; }`
 
-- **Task 2: Create User Entity**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `entity`
-  - **Location:** `TalebElm.Domain/Entities/`
-  - **Instructions:** Create a public class named `User`. It should inherit from
-    `BaseEntity`. Add empty properties for `Name`, `Email`, and `JoinedAt`.
-    Do not add any methods.
-  - **Hint:** `public class User : BaseEntity { public string Name { get; set; } public string Email { get; set; } }`
-
 - **Task 3: Create Track Entity**
   - **Difficulty:** Very Easy
   - **Labels:** `good first issue`, `layer:domain`, `entity`
