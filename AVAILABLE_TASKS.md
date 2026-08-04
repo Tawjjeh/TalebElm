@@ -186,18 +186,6 @@ core rules only. No database code, no web code, no methods with real behavior.
     `string message` and passes it to the base class. Do not add any methods.
   - **Hint:** `public class ValidationException : DomainException { public ValidationException(string message) : base(message) { } }`
 
-- **Task 12: Create IRepository Interface**
-  - **Difficulty:** Medium
-  - **Labels:** `layer:domain`, `interface`, `setup`
-  - **Location:** `TalebElm.Domain/Interfaces/`
-  - **Instructions:** Create a public interface named `IRepository<T>`. It uses a
-    type parameter `T`. This is harder than the other tasks because of the
-    `<T>` part: it means "this interface works with any class". Add method
-    signatures only: `GetByIdAsync` (takes a Guid and returns a Task of T or
-    null), `GetAllAsync` (returns a Task of a list of T), and `AddAsync` (takes
-    a T and returns a Task). No bodies, no logic.
-  - **Hint:** `public interface IRepository<T> where T : BaseEntity { Task<T?> GetByIdAsync(Guid id); Task<IReadOnlyList<T>> GetAllAsync(); Task AddAsync(T entity); }`
-
 - **Task 13: Create IUserRepository Interface**
   - **Difficulty:** Easy
   - **Labels:** `good first issue`, `layer:domain`, `interface`
