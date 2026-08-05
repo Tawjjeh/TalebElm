@@ -87,14 +87,7 @@ no rush, and there are no silly questions.
 Focus on core entities, enums, and basic interfaces. The Domain layer holds the
 core rules only. No database code, no web code, no methods with real behavior.
 
-- **Task 1: Create BaseEntity Class**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `entity`
-  - **Location:** `TalebElm.Domain/Entities/`
-  - **Instructions:** Create a public class named `BaseEntity`. It will be the
-    parent class for all other entities. Add two properties: `Id` (a Guid) and
-    `CreatedAt` (a DateTimeOffset). Give them default values. Do not add any methods.
-  - **Hint:** `public class BaseEntity { public Guid Id { get; set; } = Guid.NewGuid(); public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow; }`
+
 
 - **Task 2: Create User Entity**
   - **Difficulty:** Very Easy
