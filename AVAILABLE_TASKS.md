@@ -105,14 +105,6 @@ core rules only. No database code, no web code, no methods with real behavior.
     Do not add any methods.
   - **Hint:** `public class User : BaseEntity { public string Name { get; set; } public string Email { get; set; } }`
 
-- **Task 3: Create Track Entity**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `entity`
-  - **Location:** `TalebElm.Domain/Entities/`
-  - **Instructions:** Create a public class named `Track`. It should inherit from
-    `BaseEntity`. Add empty properties for `Name`, `Description`, and `Status`.
-    Do not add any methods.
-  - **Hint:** `public class Track : BaseEntity { public string Name { get; set; } public string Description { get; set; } }`
 
 - **Task 4: Create Module Entity**
   - **Difficulty:** Very Easy
