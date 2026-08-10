@@ -383,14 +383,6 @@ several other files. Empty bodies or NotImplementedException are fine.
     `Configure(EntityTypeBuilder<Lesson> builder)` and leave the body empty. No logic.
   - **Hint:** `public class LessonConfiguration : IEntityTypeConfiguration<Lesson> { public void Configure(EntityTypeBuilder<Lesson> builder) { } }`
 
-- **Task 31: Create UserRepository Class**
-  - **Difficulty:** Medium
-  - **Labels:** `layer:infrastructure`, `database`, `interface`
-  - **Location:** `TalebElm.Infrastructure/Repositories/`
-  - **Instructions:** Create a public class named `UserRepository`. It should
-    implement `IUserRepository`. For each interface method, write the signature
-    and throw `NotImplementedException`. Do not write any logic.
-  - **Hint:** `public class UserRepository : IUserRepository { public Task<User?> GetByIdAsync(Guid id) => throw new NotImplementedException(); public Task<IReadOnlyList<User>> GetAllAsync() => throw new NotImplementedException(); public Task AddAsync(User entity) => throw new NotImplementedException(); }`
 
 - **Task 32: Create TrackRepository Class**
   - **Difficulty:** Medium
