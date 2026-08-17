@@ -575,6 +575,257 @@ checks that our code works. These are gentle tasks, great for beginners. No logi
 
 ---
 
+## Phase 6: Domain Layer — Exams & Progress (Tasks 51-54)
+
+Focus on the two new MVP entities and their repository interfaces. They power
+the "progression lock" feature: users must pass a module's exam to unlock the
+next module (see `docs/DATABASE_ERD.md`). Same rules as Phase 1: empty
+structures only, no business logic.
+
+- **Task 51: Create Exam Entity**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:domain`, `entity`, `feature:exams`
+  - **Location:** `TalebElm.Domain/Entities/`
+  - **Instructions:** Create a public class named `Exam`. It should inherit from
+    `BaseEntity`. Add empty properties for `Title`, `PassThreshold` (an int),
+    and `ModuleId` (a Guid). Do not add any methods.
+  - **Hint:** `public class Exam : BaseEntity { public string Title { get; set; } public int PassThreshold { get; set; } public Guid ModuleId { get; set; } }`
+
+- **Task 52: Create UserProgress Entity**
+  - **Difficulty:** Easy
+  - **Labels:** `good first issue`, `layer:domain`, `entity`, `feature:exams`
+  - **Location:** `TalebElm.Domain/Entities/`
+  - **Instructions:** Create a public class named `UserProgress`. It should
+    inherit from `BaseEntity`. Add empty properties for `UserId` (a Guid),
+    `ModuleId` (a Guid), `IsUnlocked` (a bool), `PassedExam` (a bool), and
+    `Score` (an int). Do not add any methods.
+  - **Hint:** `public class UserProgress : BaseEntity { public Guid UserId { get; set; } public Guid ModuleId { get; set; } public bool IsUnlocked { get; set; } public bool PassedExam { get; set; } public int Score { get; set; } }`
+
+- **Task 53: Create IExamRepository Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `good first issue`, `layer:domain`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Domain/Interfaces/`
+  - **Instructions:** Create a public interface named `IExamRepository`. It
+    should inherit from `IRepository<Exam>`. Do not add any members yet. An
+    empty interface is fine.
+  - **Hint:** `public interface IExamRepository : IRepository<Exam> { }`
+
+- **Task 54: Create IUserProgressRepository Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `good first issue`, `layer:domain`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Domain/Interfaces/`
+  - **Instructions:** Create a public interface named `IUserProgressRepository`.
+    It should inherit from `IRepository<UserProgress>`. Do not add any members
+    yet. An empty interface is fine.
+  - **Hint:** `public interface IUserProgressRepository : IRepository<UserProgress> { }`
+
+---
+
+## Phase 7: Application Layer — Exams & Progress (Tasks 55-61)
+
+Focus on the new DTO records and service interfaces for exams and user
+progress. Same rules as Phase 2: empty DTO records and empty interfaces, no
+logic.
+
+- **Task 55: Create CreateExamRequest Record**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:application`, `dto`, `feature:exams`
+  - **Location:** `TalebElm.Application/DTOs/`
+  - **Instructions:** Create a public record named `CreateExamRequest`. Add
+    three fields: `ModuleId` (a Guid), `Title`, and `PassThreshold` (an int).
+    Records do not have methods.
+  - **Hint:** `public record CreateExamRequest(Guid ModuleId, string Title, int PassThreshold);`
+
+- **Task 56: Create ExamResponse Record**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:application`, `dto`, `feature:exams`
+  - **Location:** `TalebElm.Application/DTOs/`
+  - **Instructions:** Create a public record named `ExamResponse`. Add four
+    fields: `Id` (a Guid), `Title`, `PassThreshold` (an int), and `ModuleId`
+    (a Guid). Records do not have methods.
+  - **Hint:** `public record ExamResponse(Guid Id, string Title, int PassThreshold, Guid ModuleId);`
+
+- **Task 57: Create SubmitExamRequest Record**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:application`, `dto`, `feature:exams`
+  - **Location:** `TalebElm.Application/DTOs/`
+  - **Instructions:** Create a public record named `SubmitExamRequest`. Add two
+    fields: `ExamId` (a Guid) and `Score` (an int). Records do not have methods.
+  - **Hint:** `public record SubmitExamRequest(Guid ExamId, int Score);`
+
+- **Task 58: Create ExamResultResponse Record**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:application`, `dto`, `feature:exams`
+  - **Location:** `TalebElm.Application/DTOs/`
+  - **Instructions:** Create a public record named `ExamResultResponse`. Add
+    three fields: `ExamId` (a Guid), `Passed` (a bool), and `Score` (an int).
+    Records do not have methods.
+  - **Hint:** `public record ExamResultResponse(Guid ExamId, bool Passed, int Score);`
+
+- **Task 59: Create ProgressResponse Record**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:application`, `dto`, `feature:exams`
+  - **Location:** `TalebElm.Application/DTOs/`
+  - **Instructions:** Create a public record named `ProgressResponse`. Add four
+    fields: `ModuleId` (a Guid), `IsUnlocked` (a bool), `PassedExam` (a bool),
+    and `Score` (an int). Records do not have methods.
+  - **Hint:** `public record ProgressResponse(Guid ModuleId, bool IsUnlocked, bool PassedExam, int Score);`
+
+- **Task 60: Create IExamService Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `layer:application`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Application/Services/`
+  - **Instructions:** Create a public interface named `IExamService`. Add method
+    signatures only: `CreateAsync` (takes a CreateExamRequest and returns a
+    Task of ExamResponse), `GetByIdAsync` (takes a Guid and returns a Task of
+    ExamResponse or null), and `SubmitAsync` (takes a SubmitExamRequest and
+    returns a Task of ExamResultResponse). No bodies, no logic.
+  - **Hint:** `public interface IExamService { Task<ExamResponse> CreateAsync(CreateExamRequest request); Task<ExamResponse?> GetByIdAsync(Guid id); Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request); }`
+
+- **Task 61: Create IUserProgressService Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `layer:application`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Application/Services/`
+  - **Instructions:** Create a public interface named `IUserProgressService`.
+    Add one method signature only: `GetMyProgressAsync` (returns a Task of a
+    list of ProgressResponse). This will later return the caller's unlocked
+    modules. No bodies, no logic.
+  - **Hint:** `public interface IUserProgressService { Task<IReadOnlyList<ProgressResponse>> GetMyProgressAsync(); }`
+
+---
+
+## Phase 8: Infrastructure Layer — Exams & Progress (Tasks 62-67)
+
+Focus on the new EntityTypeConfigurations, repositories, and service
+implementations. Same rules as Phase 3: empty bodies or NotImplementedException
+are fine. Read the related files first.
+
+- **Task 62: Create ExamConfiguration Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `database`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Persistence/`
+  - **Instructions:** Create a public class named `ExamConfiguration`. It should
+    implement `IEntityTypeConfiguration<Exam>`. Add a method signature
+    `Configure(EntityTypeBuilder<Exam> builder)` and leave the body empty. No
+    logic. Do this after the AppDbContext exists, and read that file first.
+  - **Hint:** `public class ExamConfiguration : IEntityTypeConfiguration<Exam> { public void Configure(EntityTypeBuilder<Exam> builder) { } }`
+
+- **Task 63: Create UserProgressConfiguration Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `database`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Persistence/`
+  - **Instructions:** Create a public class named `UserProgressConfiguration`.
+    It should implement `IEntityTypeConfiguration<UserProgress>`. Add a method
+    signature `Configure(EntityTypeBuilder<UserProgress> builder)` and leave the
+    body empty. No logic.
+  - **Hint:** `public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress> { public void Configure(EntityTypeBuilder<UserProgress> builder) { } }`
+
+- **Task 64: Create ExamRepository Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `database`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Repositories/`
+  - **Instructions:** Create a public class named `ExamRepository`. It should
+    implement `IExamRepository`. For each interface method, write the signature
+    and throw `NotImplementedException`. Do not write any logic.
+  - **Hint:** `public class ExamRepository : IExamRepository { public Task<Exam?> GetByIdAsync(Guid id) => throw new NotImplementedException(); public Task<IReadOnlyList<Exam>> GetAllAsync() => throw new NotImplementedException(); public Task AddAsync(Exam entity) => throw new NotImplementedException(); }`
+
+- **Task 65: Create UserProgressRepository Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `database`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Repositories/`
+  - **Instructions:** Create a public class named `UserProgressRepository`. It
+    should implement `IUserProgressRepository`. For each interface method, write
+    the signature and throw `NotImplementedException`. Do not write any logic.
+  - **Hint:** `public class UserProgressRepository : IUserProgressRepository { public Task<UserProgress?> GetByIdAsync(Guid id) => throw new NotImplementedException(); public Task<IReadOnlyList<UserProgress>> GetAllAsync() => throw new NotImplementedException(); public Task AddAsync(UserProgress entity) => throw new NotImplementedException(); }`
+
+- **Task 66: Create ExamService Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Services/`
+  - **Instructions:** Create a public class named `ExamService`. It should
+    implement `IExamService`. For each interface method, write the signature
+    and throw `NotImplementedException`. No logic.
+  - **Hint:** `public class ExamService : IExamService { public Task<ExamResponse> CreateAsync(CreateExamRequest request) => throw new NotImplementedException(); public Task<ExamResponse?> GetByIdAsync(Guid id) => throw new NotImplementedException(); public Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request) => throw new NotImplementedException(); }`
+
+- **Task 67: Create UserProgressService Class**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:infrastructure`, `interface`, `feature:exams`
+  - **Location:** `TalebElm.Infrastructure/Services/`
+  - **Instructions:** Create a public class named `UserProgressService`. It
+    should implement `IUserProgressService`. For the interface method, write the
+    signature and throw `NotImplementedException`. No logic.
+  - **Hint:** `public class UserProgressService : IUserProgressService { public Task<IReadOnlyList<ProgressResponse>> GetMyProgressAsync() => throw new NotImplementedException(); }`
+
+---
+
+## Phase 9: API Layer — Exams & Progress (Tasks 68-69)
+
+Focus on the two new controllers for exams and user progress. Same rules as
+Phase 4: empty Controllers and Action method signatures. No real logic.
+
+- **Task 68: Create ExamsController Class**
+  - **Difficulty:** Easy
+  - **Labels:** `layer:api`, `controller`, `feature:exams`
+  - **Location:** `TalebElm.Api/Controllers/`
+  - **Instructions:** Create a public class named `ExamsController`. It should
+    inherit from `ControllerBase`. Add the `[ApiController]` attribute and the
+    route `[Route("api/[controller]")]`. Add a `Get` action that takes an id,
+    a `Post` action, and a `Submit` action that takes an id. They all return
+    `NotImplemented()`. No logic.
+  - **Hint:** `[ApiController] [Route("api/[controller]")] public class ExamsController : ControllerBase { [HttpGet("{id}")] public IActionResult Get(Guid id) => NotImplemented(); [HttpPost] public IActionResult Post() => NotImplemented(); [HttpPost("{id}/submit")] public IActionResult Submit(Guid id) => NotImplemented(); }`
+
+- **Task 69: Create ProgressController Class**
+  - **Difficulty:** Easy
+  - **Labels:** `layer:api`, `controller`, `feature:exams`
+  - **Location:** `TalebElm.Api/Controllers/`
+  - **Instructions:** Create a public class named `ProgressController`. It
+    should inherit from `ControllerBase`. Add the `[ApiController]` attribute
+    and the route `[Route("api/[controller]")]`. Add a `GetMyProgress` action
+    and a `GetByTrack` action that takes a track id. Both return
+    `NotImplemented()`. No logic.
+  - **Hint:** `[ApiController] [Route("api/[controller]")] public class ProgressController : ControllerBase { [HttpGet("me")] public IActionResult GetMyProgress() => NotImplemented(); [HttpGet("me/tracks/{trackId}")] public IActionResult GetByTrack(Guid trackId) => NotImplemented(); }`
+
+---
+
+## Phase 10: Tests Layer — Exams & Progress (Tasks 70-73)
+
+Focus on empty xUnit test classes for the new entities and DTOs. Same rules as
+Phase 5: gentle tasks, empty [Fact] methods, no logic.
+
+- **Task 70: Create ExamEntityTests Class**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:tests`, `testing`
+  - **Location:** `TalebElm.Tests/UnitTests/`
+  - **Instructions:** Create a public class named `ExamEntityTests`. Add one
+    empty test method marked with the `[Fact]` attribute. No logic.
+  - **Hint:** `public class ExamEntityTests { [Fact] public void Exam_ShouldHaveEmptyConstructor() { } }`
+
+- **Task 71: Create UserProgressEntityTests Class**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:tests`, `testing`
+  - **Location:** `TalebElm.Tests/UnitTests/`
+  - **Instructions:** Create a public class named `UserProgressEntityTests`. Add
+    one empty test method marked with the `[Fact]` attribute. No logic.
+  - **Hint:** `public class UserProgressEntityTests { [Fact] public void UserProgress_ShouldHaveEmptyConstructor() { } }`
+
+- **Task 72: Create ExamDtoTests Class**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:tests`, `testing`
+  - **Location:** `TalebElm.Tests/UnitTests/`
+  - **Instructions:** Create a public class named `ExamDtoTests`. Add one empty
+    test method marked with the `[Fact]` attribute. No logic.
+  - **Hint:** `public class ExamDtoTests { [Fact] public void CreateExamRequest_ShouldStoreValues() { } }`
+
+- **Task 73: Create ProgressDtoTests Class**
+  - **Difficulty:** Very Easy
+  - **Labels:** `good first issue`, `layer:tests`, `testing`
+  - **Location:** `TalebElm.Tests/UnitTests/`
+  - **Instructions:** Create a public class named `ProgressDtoTests`. Add one
+    empty test method marked with the `[Fact]` attribute. No logic.
+  - **Hint:** `public class ProgressDtoTests { [Fact] public void ProgressResponse_ShouldStoreValues() { } }`
+
+---
+
 ## After you finish your task
 
 1. Build the project to check for errors:
