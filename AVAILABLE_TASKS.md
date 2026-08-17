@@ -116,14 +116,7 @@ core rules only. No database code, no web code, no methods with real behavior.
     `TrackId` (a Guid). Do not add any methods.
   - **Hint:** `public class Module : BaseEntity { public string Title { get; set; } public int Order { get; set; } }`
 
-- **Task 5: Create Lesson Entity**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `entity`
-  - **Location:** `TalebElm.Domain/Entities/`
-  - **Instructions:** Create a public class named `Lesson`. It should inherit from
-    `BaseEntity`. Add empty properties for `Title`, `Content`, `Order`, and
-    `ModuleId` (a Guid). Do not add any methods.
-  - **Hint:** `public class Lesson : BaseEntity { public string Title { get; set; } public int Order { get; set; } }`
+
 
 
 
