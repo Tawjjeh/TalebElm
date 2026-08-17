@@ -143,14 +143,7 @@ core rules only. No database code, no web code, no methods with real behavior.
     Enums do not have methods.
   - **Hint:** `public enum LessonType { Text = 0, Video = 1, Exercise = 2 }`
 
-- **Task 8: Create UserRole Enum**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `enum`
-  - **Location:** `TalebElm.Domain/Enums/`
-  - **Instructions:** Create a public enum named `UserRole`. Add three named
-    options: `Student`, `Instructor`, and `Admin`. Give each a number.
-    Enums do not have methods.
-  - **Hint:** `public enum UserRole { Student = 0, Instructor = 1, Admin = 2 }`
+
 
 - **Task 9: Create DomainException Class**
   - **Difficulty:** Very Easy
