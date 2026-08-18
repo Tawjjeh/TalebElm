@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AVAILABLE_TASKS.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/TalebElm.Api/TalebElm.Api.csproj" />
     <Project Path="src/TalebElm.Application/TalebElm.Application.csproj" />
