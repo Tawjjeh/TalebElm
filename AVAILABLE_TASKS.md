@@ -123,7 +123,6 @@ core rules only. No database code, no web code, no methods with real behavior.
 
 
 
-
 - **Task 12: Create IRepository Interface**
   - **Difficulty:** Medium
   - **Labels:** `layer:domain`, `interface`, `setup`
