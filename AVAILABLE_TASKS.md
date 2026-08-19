@@ -161,14 +161,6 @@ core rules only. No database code, no web code, no methods with real behavior.
 Focus on Interfaces and empty DTO Records. The Application layer describes what
 the app can do. Here we create empty interfaces and empty DTO records. No logic.
 
-- **Task 16: Create IApplicationDbContext Interface**
-  - **Difficulty:** Easy
-  - **Labels:** `layer:application`, `interface`, `database`
-  - **Location:** `TalebElm.Application/Interfaces/`
-  - **Instructions:** Create a public interface named `IApplicationDbContext`.
-    It will be a contract for the real database context. Add a
-    `SaveChangesAsync` method signature that returns a Task of int. No bodies.
-  - **Hint:** `public interface IApplicationDbContext { Task<int> SaveChangesAsync(CancellationToken cancellationToken = default); }`
 
 - **Task 17: Create CreateUserRequest Record**
   - **Difficulty:** Very Easy
