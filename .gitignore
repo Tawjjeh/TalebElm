@@ -45,7 +45,13 @@ coverage/
 *.trx
 *.coverage
 
+# ---------- AI Generated Sync Files ----------
+AI_SYNC.md
+
 # ---------- Operating system files ----------
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Level 3 Curriculum Planning (Local Only)
+Level3_Curriculum/
