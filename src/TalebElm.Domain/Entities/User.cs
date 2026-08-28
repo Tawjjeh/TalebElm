@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TalebElm.Domain.Entities;
+﻿namespace TalebElm.Domain.Entities;
 
 public class User : BaseEntity
 {

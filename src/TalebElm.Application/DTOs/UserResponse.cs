@@ -1,7 +1,7 @@
 ﻿namespace TalebElm.Application.DTOs
 {
     public record UserResponse(
-        Guid id,
+        Guid Id,
         string Name,
         string Email);
 }
