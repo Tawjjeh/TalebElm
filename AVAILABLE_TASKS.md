@@ -89,15 +89,6 @@ core rules only. No database code, no web code, no methods with real behavior.
 
 
 
-- **Task 2: Create User Entity**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:domain`, `entity`
-  - **Location:** `TalebElm.Domain/Entities/`
-  - **Instructions:** Create a public class named `User`. It should inherit from
-    `BaseEntity`. Add empty properties for `Name`, `Email`, and `JoinedAt`.
-    Do not add any methods.
-  - **Hint:** `public class User : BaseEntity { public string Name { get; set; } public string Email { get; set; } }`
-
 
 
 
@@ -110,19 +101,6 @@ core rules only. No database code, no web code, no methods with real behavior.
     Enums do not have methods.
   - **Hint:** `public enum LessonType { Text = 0, Video = 1, Exercise = 2 }`
 
-
-
-- **Task 12: Create IRepository Interface**
-  - **Difficulty:** Medium
-  - **Labels:** `layer:domain`, `interface`, `setup`
-  - **Location:** `TalebElm.Domain/Interfaces/`
-  - **Instructions:** Create a public interface named `IRepository<T>`. It uses a
-    type parameter `T`. This is harder than the other tasks because of the
-    `<T>` part: it means "this interface works with any class". Add method
-    signatures only: `GetByIdAsync` (takes a Guid and returns a Task of T or
-    null), `GetAllAsync` (returns a Task of a list of T), and `AddAsync` (takes
-    a T and returns a Task). No bodies, no logic.
-  - **Hint:** `public interface IRepository<T> where T : BaseEntity { Task<T?> GetByIdAsync(Guid id); Task<IReadOnlyList<T>> GetAllAsync(); Task AddAsync(T entity); }`
 
 - **Task 13: Create IUserRepository Interface**
   - **Difficulty:** Easy
@@ -163,14 +141,6 @@ the app can do. Here we create empty interfaces and empty DTO records. No logic.
   - **Instructions:** Create a public record named `UpdateTrackRequest`. Add
     three fields: `Id` (a Guid), `Name`, and `Description`. Records do not have methods.
   - **Hint:** `public record UpdateTrackRequest(Guid Id, string Name, string Description);`
-
-- **Task 20: Create UserResponse Record**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:application`, `dto`
-  - **Location:** `TalebElm.Application/DTOs/`
-  - **Instructions:** Create a public record named `UserResponse`. Add three
-    fields: `Id` (a Guid), `Name`, and `Email`. Records do not have methods.
-  - **Hint:** `public record UserResponse(Guid Id, string Name, string Email);`
 
 - **Task 21: Create TrackResponse Record**
   - **Difficulty:** Very Easy
