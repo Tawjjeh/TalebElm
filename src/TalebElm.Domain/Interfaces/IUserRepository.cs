@@ -15,4 +15,4 @@ namespace TalebElm.Domain.Interfaces
         Task DeleteAsync(Guid id);
 
     }
-
+}
