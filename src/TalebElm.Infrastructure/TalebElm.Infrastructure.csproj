@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TalebElm.Application\TalebElm.Application.csproj" />
+    <ProjectReference Include="..\TalebElm.Domain\TalebElm.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
