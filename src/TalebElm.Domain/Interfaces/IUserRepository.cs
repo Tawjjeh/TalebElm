@@ -11,6 +11,7 @@ namespace TalebElm.Domain.Interfaces
         Task<IReadOnlyList<User>> GetAllAsync();
         Task AddAsync(User entity);
         Task UpdateAsync(User entity);
-        Task DeleteAsync(User entity);
+        Task DeleteAsync(Guid id);
+
     }
 }

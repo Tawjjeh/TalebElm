@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TalebElm.Domain.Entities;
+using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Infrastructure.Repositories
 {
