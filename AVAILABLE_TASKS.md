@@ -117,14 +117,6 @@ the app can do. Here we create empty interfaces and empty DTO records. No logic.
     fields: `Name` and `Email`. Records do not have methods.
   - **Hint:** `public record CreateUserRequest(string Name, string Email);`
 
-- **Task 18: Create CreateTrackRequest Record**
-  - **Difficulty:** Very Easy
-  - **Labels:** `good first issue`, `layer:application`, `dto`
-  - **Location:** `TalebElm.Application/DTOs/`
-  - **Instructions:** Create a public record named `CreateTrackRequest`. Add two
-    fields: `Name` and `Description`. Records do not have methods.
-  - **Hint:** `public record CreateTrackRequest(string Name, string Description);`
-
 - **Task 19: Create UpdateTrackRequest Record**
   - **Difficulty:** Very Easy
   - **Labels:** `good first issue`, `layer:application`, `dto`
