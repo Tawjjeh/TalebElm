@@ -1,4 +1,5 @@
 ﻿
+using FluentValidation;
 
 namespace TalebElm.Application.Validators;
 
