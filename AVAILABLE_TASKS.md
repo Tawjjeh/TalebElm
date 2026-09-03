@@ -93,6 +93,41 @@ core rules only. No database code, no web code, no methods with real behavior.
 
 
 
+<<<<<<< HEAD
+
+- **Task 12: Create IRepository Interface**
+  - **Difficulty:** Medium
+  - **Labels:** `layer:domain`, `interface`, `setup`
+  - **Location:** `TalebElm.Domain/Interfaces/`
+  - **Instructions:** Create a public interface named `IRepository<T>`. It uses a
+    type parameter `T`. This is harder than the other tasks because of the
+    `<T>` part: it means "this interface works with any class". Add method
+    signatures only: `GetByIdAsync` (takes a Guid and returns a Task of T or
+    null), `GetAllAsync` (returns a Task of a list of T), and `AddAsync` (takes
+    a T and returns a Task). No bodies, no logic.
+  - **Hint:** `public interface IRepository<T> where T : BaseEntity { Task<T?> GetByIdAsync(Guid id); Task<IReadOnlyList<T>> GetAllAsync(); Task AddAsync(T entity); }`
+
+- **Task 13: Create IUserRepository Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `good first issue`, `layer:domain`, `interface`
+  - **Location:** `TalebElm.Domain/Interfaces/`
+  - **Instructions:** Create a public interface named `IUserRepository`. It should
+    inherit from `IRepository<User>`. Do not add any members yet. An empty
+    interface is fine.
+  - **Hint:** `public interface IUserRepository : IRepository<User> { }`
+
+- **Task 14: Create ITrackRepository Interface**
+  - **Difficulty:** Easy
+  - **Labels:** `good first issue`, `layer:domain`, `interface`
+  - **Location:** `TalebElm.Domain/Interfaces/`
+  - **Instructions:** Create a public interface named `ITrackRepository`. It
+    should inherit from `IRepository<Track>`. Do not add any members yet. An
+    empty interface is fine.
+  - **Hint:** `public interface ITrackRepository : IRepository<Track> { }`
+
+---
+=======
+>>>>>>> 5c6b99ebb1db6d9729c8bbe1cf902451b4c539a4
 
 ## Phase 2: Application Layer (Tasks 16-25)
 
