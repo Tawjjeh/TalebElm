@@ -7,7 +7,10 @@ namespace TalebElm.Api.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        [HttpGet] public IActionResult Get() => throw new NotImplementedException();
-        [HttpPost] public IActionResult Post() => throw new NotImplementedException();
+        [HttpGet] 
+        public IActionResult Get() => throw new NotImplementedException();
+        
+        [HttpPost] 
+        public IActionResult Post() => throw new NotImplementedException();
     }
 }
