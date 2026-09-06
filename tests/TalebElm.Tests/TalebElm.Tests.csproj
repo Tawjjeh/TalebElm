@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\src\TalebElm.Domain\TalebElm.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="UnitTests\" />
+  </ItemGroup>
+
 </Project>
