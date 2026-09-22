@@ -1,8 +1,8 @@
 ﻿namespace TalebElm.Tests.UnitTests
 {
-    public class UserDtoTests 
-    { 
+    public class UserDtoTests
+    {
         [Fact]
-        public void CreateUserRequest_ShouldStoreValues() { } 
+        public void CreateUserRequest_ShouldStoreValues() { }
     }
 }
