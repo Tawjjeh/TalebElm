@@ -1,4 +1,4 @@
-# TalebElm (Seeker of Knowledge)
+# TalebElm
 
 TalebElm is an open-source educational platform made by the **Twajjeh** organization.
 Its goal is to teach people how to become software engineers from zero.
