@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TalebElm.Application\TalebElm.Application.csproj" />
     <ProjectReference Include="..\TalebElm.Domain\TalebElm.Domain.csproj" />
   </ItemGroup>
