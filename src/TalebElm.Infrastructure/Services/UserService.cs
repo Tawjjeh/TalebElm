@@ -11,5 +11,5 @@ public class UserService : IUserService
     public Task<UserResponse> CreateAsync(CreateUserRequest request)
         => throw new NotImplementedException();
 
-   
+
 }
