@@ -1,17 +1,25 @@
 ﻿using TalebElm.Domain.Interfaces;
+using TalebElm.Infrastructure.Persistence;
 
 namespace TalebElm.Infrastructure.Repositories;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(
+    AppDbContext context,
+    IUserRepository userRepository,
+    ITrackRepository trackRepository,
+    IModuleRepository moduleRepository)
+    : IUnitOfWork
 {
-    public IUserRepository Users => throw new NotImplementedException();
+    private readonly AppDbContext _context = context;
+    
+    public IUserRepository Users { get; } = userRepository;
 
-    public ITrackRepository Tracks => throw new NotImplementedException();
+    public ITrackRepository Tracks { get; } = trackRepository;
 
-    public IModuleRepository Modules => throw new NotImplementedException();
+    public IModuleRepository Modules { get; } = moduleRepository;
 
-    public Task<int> SaveChangesAsync()
+    public async Task<int> SaveChangesAsync()
     {
-        throw new NotImplementedException();
+       return await _context.SaveChangesAsync();
     }
 }
