@@ -6,6 +6,6 @@ namespace TalebElm.Tests.UnitTests
     {
         [Fact]
         public void User_ShouldHaveEmptyConstructor() { }
-        
+
     }
 }

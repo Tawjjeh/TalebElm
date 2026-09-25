@@ -4,9 +4,9 @@ using System.Text;
 
 namespace TalebElm.Tests.UnitTests
 {
-    public class ExamEntityTests
+    public class ModuleEntityTests
     {
         [Fact]
-        public void Exam_ShouldHaveEmptyConstructor() { }
+        public void Module_ShouldHaveEmptyConstructor(){ }
     }
 }
