@@ -9,6 +9,7 @@ public class UnitOfWork : IUnitOfWork
     public ITrackRepository Tracks => throw new NotImplementedException();
 
     public IModuleRepository Modules => throw new NotImplementedException();
+    public IExamRepository Exams => throw new NotImplementedException();
 
     public Task<int> SaveChangesAsync()
     {

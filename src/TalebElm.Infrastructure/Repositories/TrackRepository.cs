@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Text;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
+using TalebElm.Infrastructure.Persistence;
 
 namespace TalebElm.Infrastructure.Repositories
 {
-    public class TrackRepository : ITrackRepository
+    public class TrackRepository(AppDbContext context) : ITrackRepository
     {
-        public Task AddAsync(Track entity)
+        public async Task AddAsync(Track entity)
         {
-            throw new NotImplementedException();
+            await context.Set<Track>().AddAsync(entity);
         }
 
         public Task<IReadOnlyList<Track>> GetAllAsync()
