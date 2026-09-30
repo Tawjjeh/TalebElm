@@ -7,5 +7,6 @@ namespace TalebElm.Domain.Interfaces
         Task<T?> GetByIdAsync(Guid id);
         Task<IReadOnlyList<T>> GetAllAsync();
         Task AddAsync(T entity);
+
     }
 }
