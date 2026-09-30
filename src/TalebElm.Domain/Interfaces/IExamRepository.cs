@@ -2,6 +2,9 @@
 
 namespace TalebElm.Domain.Interfaces
 {
-    public interface IExamRepository : IRepository<Exam> { }
+    public interface IExamRepository : IRepository<Exam> 
+    {
+        Task<Exam?> GetByModuleIdAsync(Guid moduleId);
+    }
 
 }
