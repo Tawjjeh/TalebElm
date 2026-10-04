@@ -29,16 +29,34 @@ public class ModuleRepositoryTests : SqliteTestBase
     public async Task GetByTrackIdAsync_MultipleModules_ReturnsOrderedByOrder()
     {
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
-        DbContext.Tracks.Add(track);
+        var otherTrack = new Track { Id = Guid.NewGuid(), Name = "Frontend", Description = "Frontend track" };
+        DbContext.Tracks.AddRange(track, otherTrack);
         DbContext.Modules.AddRange(
             new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Third", Order = 3 },
             new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "First", Order = 1 },
-            new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Second", Order = 2 });
+            new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Second", Order = 2 },
+            new Module { Id = Guid.NewGuid(), TrackId = otherTrack.Id, Title = "Other track module", Order = 1 });
         await SaveChangesAsync();
 
         var result = await _repository.GetByTrackIdAsync(track.Id);
 
+        Assert.Equal(3, result.Count);
         Assert.Equal([1, 2, 3], result.Select(m => m.Order));
+        Assert.All(result, module => Assert.Equal(track.Id, module.TrackId));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenModuleExists_ReturnsModule()
+    {
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1 };
+        DbContext.Modules.Add(module);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetByIdAsync(module.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal(module.Id, result.Id);
     }
 
     [Fact]
