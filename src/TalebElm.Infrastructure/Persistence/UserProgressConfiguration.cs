@@ -8,5 +8,7 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
 {
     public void Configure(EntityTypeBuilder<UserProgress> builder)
     {
+        builder.HasKey(x => x.Id);
+        builder.HasIndex(x => new { x.UserId, x.ModuleId }).IsUnique();
     }
 }
