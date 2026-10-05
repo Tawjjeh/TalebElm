@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Tests.Infrastructure;
 
@@ -14,7 +14,6 @@ public class UserProgressUniqueIndexTests : SqliteTestBase
         DbContext.UserProgresses.AddRange(
             new UserProgress { UserId = userId, ModuleId = moduleId },
             new UserProgress { UserId = userId, ModuleId = moduleId });
->>>>>>> 1588238 (test: cover merged repository behavior with SQLite)
 
         await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
     }
@@ -26,7 +25,6 @@ public class UserProgressUniqueIndexTests : SqliteTestBase
         DbContext.UserProgresses.AddRange(
             new UserProgress { UserId = Guid.NewGuid(), ModuleId = moduleId },
             new UserProgress { UserId = Guid.NewGuid(), ModuleId = moduleId });
->>>>>>> 1588238 (test: cover merged repository behavior with SQLite)
 
         await SaveChangesAsync();
 
