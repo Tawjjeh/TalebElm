@@ -1,17 +1,14 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Text;
 using TalebElm.Domain.Entities;
 using TalebElm.Infrastructure.Persistence;
 
 namespace TalebElm.Tests.IntegrationTests
 {
-    public class UserProgressUniqueIndexTests:IDisposable
+    public class UserProgressUniqueIndexTests : IDisposable
     {
-         readonly AppDbContext _context ;
-         readonly SqliteConnection _sqliteConnection;
+        readonly AppDbContext _context;
+        readonly SqliteConnection _sqliteConnection;
         public UserProgressUniqueIndexTests()
         {
             _sqliteConnection = new SqliteConnection("Filename=:memory:");
@@ -37,22 +34,22 @@ namespace TalebElm.Tests.IntegrationTests
         {
             var userid = new Guid();
             var moduleId = new Guid();
-            using (var context = _context) 
-            
+            using (var context = _context)
+
             {
-             
-                var user = new UserProgress { UserId =userid, ModuleId = moduleId };
+
+                var user = new UserProgress { UserId = userid, ModuleId = moduleId };
                 await _context.AddAsync(user);
                 var user1 = new UserProgress { UserId = userid, ModuleId = moduleId };
                 await _context.AddAsync(user1);
-               var extest= await Assert.ThrowsAsync<DbUpdateException>(() => _context.SaveChangesAsync());
-              
+                var extest = await Assert.ThrowsAsync<DbUpdateException>(() => _context.SaveChangesAsync());
+
             }
         }
         [Fact]
         public async Task TwoUsersCanProgressForTheSameModule()
         {
-     
+
             var moduleId = new Guid();
             using (var context = _context)
 
@@ -64,8 +61,8 @@ namespace TalebElm.Tests.IntegrationTests
                 await _context.AddAsync(user1);
                 await _context.SaveChangesAsync();
                 var countusers = await _context.UserProgresses.CountAsync();
-                Assert.Equal(2 , countusers);
-              
+                Assert.Equal(2, countusers);
+
             }
         }
 
