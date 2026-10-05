@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using TalebElm.Domain.Entities;
+﻿using TalebElm.Domain.Entities;
 
-namespace TalebElm.Domain.Interfaces
+namespace TalebElm.Domain.Interfaces;
+
+public interface ILessonRepository : IRepository<Lesson>
 {
-    public interface ILessonRepository : IRepository<Lesson>
-    {
-    }
 }
