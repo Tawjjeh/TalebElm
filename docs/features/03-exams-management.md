@@ -54,7 +54,7 @@ public interface IExamService
 }
 ```
 
-**Implementation status:** No `ExamService` class exists in `Infrastructure/Services/`. The interface is defined but has no implementation.
+**Implementation status:** `ExamService` exists in `Infrastructure/Services/`. `GetByIdAsync` is implemented; `CreateAsync` and `SubmitAsync` still throw `NotImplementedException`.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 

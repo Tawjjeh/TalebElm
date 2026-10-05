@@ -71,23 +71,21 @@ public interface ILessonRepository : IRepository<Lesson> { }
 
 ### Service Interface
 
-No `ITrackService`, `IModuleService`, or `ILessonService` exists in the current source tree. These are planned:
+`ITrackService` exists in `Application/Services/`:
 
 ```csharp
-// Planned
 public interface ITrackService
 {
     Task<IReadOnlyList<TrackResponse>> GetAllAsync();
-    Task<TrackResponse> GetByIdAsync(Guid id);
     Task<TrackResponse> CreateAsync(CreateTrackRequest request);
 }
 ```
 
-**Implementation status:** `TrackRepository` exists but throws `NotImplementedException` from all methods. No track service implementation exists.
+**Implementation status:** `TrackService` implements `GetAllAsync` and `CreateAsync`. `TrackRepository.AddAsync` is implemented, but its inherited `GetByIdAsync` and `GetAllAsync` methods still throw `NotImplementedException`. No `IModuleService` or `ILessonService` exists in the current source tree.
 
 ### Validators
 
-- `CreateTrackRequestValidator` exists but is entirely commented out.
+- `CreateTrackRequestValidator` validates that `Name` and `Description` are not empty.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 
