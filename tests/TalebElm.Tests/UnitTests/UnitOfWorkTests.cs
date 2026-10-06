@@ -1,25 +1,15 @@
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
-using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Repositories;
+using TalebElm.Tests.Infrastructure;
 
 namespace TalebElm.Tests.UnitTests;
 
-public class UnitOfWorkTests
+public class UnitOfWorkTests : SqliteTestBase
 {
     [Fact]
     public async Task SaveChangesAsync_PersistsTrackAndModule_InOneCommit()
     {
-        // In-memory SQLite lives only as long as the connection stays open
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
         var track = new Track
         {
             Id = Guid.NewGuid(),
@@ -37,32 +27,18 @@ public class UnitOfWorkTests
             TrackId = track.Id
         };
 
-        await using (var context = new AppDbContext(options))
-        {
-            await context.Database.EnsureCreatedAsync();
+        var unitOfWork = new UnitOfWork(DbContext);
 
-            var uow = new UnitOfWork(context);
+        await unitOfWork.Tracks.AddAsync(track);
+        await unitOfWork.Modules.AddAsync(module);
 
-            // Both adds go through the same shared context
-            await uow.Tracks.AddAsync(track);
-            await uow.Modules.AddAsync(module);
+        await using var secondContext = CreateContext();
+        Assert.Null(await secondContext.Tracks.FindAsync(track.Id));
+        Assert.Null(await secondContext.Modules.FindAsync(module.Id));
 
-            // AddAsync must not persist anything on its own
-            await using (var check = new AppDbContext(options))
-            {
-                Assert.Empty(check.Set<Track>());
-                Assert.Empty(check.Set<Module>());
-            }
+        await unitOfWork.SaveChangesAsync();
 
-            // A single commit for both repositories
-            await uow.SaveChangesAsync();
-        }
-
-        // A fresh context proves the data really reached the database
-        await using (var verify = new AppDbContext(options))
-        {
-            Assert.NotNull(await verify.Set<Track>().FindAsync(track.Id));
-            Assert.NotNull(await verify.Set<Module>().FindAsync(module.Id));
-        }
+        Assert.NotNull(await secondContext.Tracks.FindAsync(track.Id));
+        Assert.NotNull(await secondContext.Modules.FindAsync(module.Id));
     }
 }
