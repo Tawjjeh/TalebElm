@@ -13,7 +13,7 @@ Thank you for wanting to contribute to TalebElm! We are happy you are here.
 Please make sure you have read the guide:
 
 - [ ] I have read the CONTRIBUTING.md file.
-- [ ] I understand the task is about creating an empty structure only (no business logic).
+- [ ] I understand the task requirements and the project architecture.
 
 ## The task you are claiming
 
