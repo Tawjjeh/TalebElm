@@ -192,4 +192,5 @@ how to contribute in very simple words, and we will help you at every step.
 - **Source code**: `src/` folder
 - **Tests**: `tests/` folder
 - **Architecture guide**: `ARCHITECTURE.md`
+- **Product and technical docs**: `docs/FEATURE_INDEX.md` (start here)
 - **Contributing guide**: `CONTRIBUTING.md`

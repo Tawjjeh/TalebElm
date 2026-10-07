@@ -1,84 +1,78 @@
-# TalebElm — MVP REST API Endpoints
+# TalebElm API: Current Routes and MVP Target
 
-> **Read this first:** this page lists the HTTP endpoints (web addresses) that
-> the TalebElm API will answer for its **Minimum Viable Product (MVP)**.
->
-> Every endpoint has three parts:
-> - **Method** — the HTTP verb (`GET` reads, `POST` creates, `PUT` updates, `DELETE` removes).
-> - **Route** — the web address. `{id}` means "put a real id here", for
->   example `/api/tracks/3f2a...`.
-> - **Purpose** — what it does in plain English.
+This page separates routes currently declared in `TalebElm.Api` from the routes needed to complete the student learning journey. A controller class is not proof that its use case is implemented.
 
----
+## 1. Routes Declared in the Current Code
 
-## 1. Authentication & Users
-
-| Method | Route | Purpose |
+| HTTP | Route | Current behavior |
 |---|---|---|
-| `POST` | `/api/auth/register` | Create a new user account (student or instructor). Send name + email + password. |
-| `POST` | `/api/auth/login` | Log in and get a token. Send email + password; the API returns a token the app uses on later requests. |
-| `GET` | `/api/users` | List all users. Useful for admins and instructors. |
-| `GET` | `/api/users/{id}` | Get one user by its id. |
-| `GET` | `/api/users/me` | Get the currently logged-in user's own profile. |
+| GET | `/api/health` | Returns `200 OK` with `healthy`. |
+| POST | `/api/auth/login` | Declared, no request/response DTO, throws `System.NotImplementedException`. |
+| GET | `/api/users` | Declared, action has no parameters and throws `System.NotImplementedException`. |
+| POST | `/api/users` | Declared, action has no request parameter and throws `System.NotImplementedException`. |
+| GET | `/api/tracks` | Declared, no service is wired to the controller; throws `System.NotImplementedException`. |
+| POST | `/api/tracks` | Declared, action has no request parameter; throws `System.NotImplementedException`. |
+| GET | `/api/modules` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
+| GET | `/api/lessons` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
+| GET | `/api/progress/me` | Returns `501 Not Implemented`. |
+| GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-> The `AuthController` (Tasks 36–42) starts as empty actions; the login logic
-> is added after the MVP structure is complete.
+There is no `ExamsController`, registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam route in the current API project. Authentication and authorization are not configured in `Program.cs`.
 
----
+## 2. Target MVP Student Journey
 
-## 2. Tracks & Content Management
+### Identity and Track selection
 
-| Method | Route | Purpose |
-|---|---|---|
-| `GET` | `/api/tracks` | List all published tracks (the home page). |
-| `GET` | `/api/tracks/{id}` | Get one track by its id, including its modules in order. |
-| `POST` | `/api/tracks` | Create a new track (instructors/admins). Send name, description, status. |
-| `PUT` | `/api/tracks/{id}` | Update a track's name, description, or status. |
-| `DELETE` | `/api/tracks/{id}` | Remove a track (admins only). |
-| `GET` | `/api/tracks/{id}/modules` | List the modules of one track, ordered by their `Order` number. |
-| `POST` | `/api/modules` | Add a module to a track. Send title, summary, order, track id. |
-| `PUT` | `/api/modules/{id}` | Update a module's title, summary, or order. |
-| `GET` | `/api/modules/{id}` | Get one module by its id. |
-| `GET` | `/api/modules/{id}/lessons` | List the lessons of one module, ordered by their `Order` number. |
-| `POST` | `/api/lessons` | Add a lesson to a module. Send title, content, order, module id. |
-| `GET` | `/api/lessons/{id}` | Get one lesson by its id (its full content). |
+| HTTP | Route | Request | Response | Target status |
+|---|---|---|---|---|
+| POST | `/api/auth/register` | Registration request with name, email, password | User/profile response and auth result | 201, 400, 409 |
+| POST | `/api/auth/login` | Login request | Token response | 200, 400, 401 |
+| GET | `/api/tracks` | None | Published Track summaries | 200 |
+| GET | `/api/tracks/{trackId}` | None | Track detail with ordered Modules | 200, 404 |
+| POST | `/api/tracks/{trackId}/enrollment` | None; learner comes from auth | Enrollment response | 201, 401, 404, 409 |
 
-> The `TracksController`, `ModulesController`, and `LessonsController` already
-> exist as empty tasks (Tasks 36–39). The create/update/delete actions are
-> added once the structure phase is merged.
+`User` currently has no password, role, or enrollment relationship. The registration/auth contract must be decided before these routes are implemented. `TrackEnrollment` is proposed separately from `UserProgress`.
 
----
+### Lessons and learning sources
 
-## 3. Assessments & Exams
+| HTTP | Route | Request | Response | Target status |
+|---|---|---|---|---|
+| GET | `/api/modules/{moduleId}/lessons` | None | Ordered Lesson summaries | 200, 404 |
+| GET | `/api/lessons/{lessonId}` | None | Lesson detail and ordered source links | 200, 404 |
 
-| Method | Route | Purpose |
-|---|---|---|
-| `GET` | `/api/exams/{id}` | Get the questions of one module's exam. |
-| `POST` | `/api/exams/{id}/submit` | Submit the user's answers. The API checks the score against the exam's pass threshold and returns the result (passed / failed + score). |
-| `GET` | `/api/progress/me` | Get the logged-in user's progress: which modules are unlocked, which exams are passed. |
-| `GET` | `/api/progress/me/tracks/{id}` | Get the user's progress inside one specific track. |
+`Lesson` currently stores `Content`, `Order`, and `ModuleId`. Books, official documentation, videos, and other source links need a proposed `LessonResource` contract; there is no resource entity or service today.
 
-> **Progression lock reminder:** the `submit` endpoint is where the lock
-> happens. When the user passes an exam, the API auto-unlocks the next module
-> by updating the user's `UserProgress` (`IsUnlocked = true`). See
-> `docs/DATABASE_ERD.md` for how the tables store this.
+### Exams and progression
 
----
+| HTTP | Route | Request | Response | Target status |
+|---|---|---|---|---|
+| GET | `/api/exams/{examId}` | None | Exam with learner-safe question/option DTOs | 200, 404 |
+| POST | `/api/exams/{examId}/submit` | Selected question/option IDs; learner from auth | Exam result and pass state | 200, 400, 401, 404 |
+| GET | `/api/progress/me` | None | Progress summaries for authenticated learner | 200, 401 |
+| GET | `/api/progress/me/tracks/{trackId}` | None | Ordered progress for one Track | 200, 401, 404 |
 
-## Naming & style rules
+The current `SubmitExamRequest` accepts a client-supplied score. Do not use that value for trusted grading. The target request must submit answers so the server can compare them with a server-side answer key, calculate the score, record `UserProgress`, and unlock only the next Module on a pass.
 
-- Routes use **kebab-case** (lowercase, dash-separated words).
-- Ids are **GUIDs**, e.g. `3f2a5c8e-...`.
-- Data moves in and out as **JSON**.
-- A response usually includes an `id` so the client can call detail routes.
+### Who may call (proposed)
 
-## Response status codes
+No roles exist in code yet. The MVP needs two: **Learner** (default after registration) and **Admin** (content author).
 
-| Code | Meaning |
+| Access | Routes |
 |---|---|
-| `200 OK` | The request worked and returned data. |
-| `201 Created` | A new resource (track, module, lesson...) was created. |
-| `400 Bad Request` | The input was missing or invalid. |
-| `401 Unauthorized` | No token, or the token is wrong. |
-| `403 Forbidden` | The user is logged in but not allowed to do this. |
-| `404 Not Found` | The id does not match anything. |
+| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login` |
+| Learner (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*` |
+| Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, and Exams, and `GET /api/users` |
+
+Learner-facing reads should also return a Track's Modules and Lessons only to an enrolled learner once the unlock rule is implemented: a locked Module's Lessons and Exam must not be served.
+
+## 3. Validation and Response Rules
+
+- Use GUID route identifiers and JSON DTOs.
+- Return 400 for invalid input, 401 for missing/invalid authentication, 403 for forbidden actions, 404 for unknown resources, and 409 for duplicate enrollment or exam-per-module conflicts.
+- Keep controllers thin: bind HTTP input, call an Application service interface, and translate the result to HTTP. Do not put repository or progression logic in controllers.
+- Map `NotFoundException` to 404 and `ValidationException` to 400 after exception middleware is implemented. The current middleware is empty and is not registered.
+- Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
+
+## 4. Out of Scope for the Core Learning Flow
+
+Center administration, room management, room booking, attendance, and payments are not part of the current Track → Module → Lesson → Exam → Progress flow. Their API paths should be defined only after the product decides how Centers and Rooms relate to learners and Tracks.

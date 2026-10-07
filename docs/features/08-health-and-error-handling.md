@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Expose a lightweight health endpoint so callers can confirm the API is running. Provide a global exception-handling middleware that catches domain exceptions and maps them to consistent HTTP error responses.
+Expose a lightweight health endpoint so callers can confirm the API process responds. A global exception middleware is planned, but exception-to-HTTP mapping is not active yet.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
@@ -43,9 +43,16 @@ DomainException (base)
 |---|---|---|---|---|
 | `GET` | `/api/health` | — | `"healthy"` (string) | `200 OK` |
 
+### Health check scope
+
+- The current `/api/health` endpoint checks only that the API process can receive a request and return a response.
+- It does not currently verify database connectivity, cache availability, message brokers, SMTP providers, object storage, or any third-party identity/auth service.
+- That narrow scope matches the current codebase, which has no dependency-specific health probes registered.
+- If TalebElm adds infrastructure readiness checks later, start with the primary database and any configured auth/token provider, then expose richer dependency status separately from this lightweight liveness endpoint.
+
 ### Exception Handling Middleware
 
-`ExceptionHandlingMiddleware` wraps the entire request pipeline and maps exceptions to HTTP responses:
+The intended `ExceptionHandlingMiddleware` mapping is:
 
 | Exception Type | HTTP Status | Response Body |
 |---|---|---|
@@ -55,7 +62,7 @@ DomainException (base)
 | `NotImplementedException` (Domain) | `501` | `{ "error": "<message>" }` |
 | Unhandled `Exception` | `500` | `{ "error": "An unexpected error occurred." }` |
 
-**Current status:** `ExceptionHandlingMiddleware` exists with an empty `InvokeAsync` body and is not registered in `Program.cs`.
+**Current status:** `ExceptionHandlingMiddleware.InvokeAsync` is empty and `Program.cs` does not register it. The table above is a target contract, not current runtime behavior.
 
 ### Registration (planned)
 

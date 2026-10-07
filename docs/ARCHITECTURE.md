@@ -39,6 +39,20 @@ Inner layers never reference outer layers. The dependency arrow always points in
 Api → Infrastructure → Application → Domain
 ```
 
+## Current Implementation Status
+
+The layers and contracts are present, but the full learning journey is not wired end to end.
+
+| Area | Current state |
+|---|---|
+| Domain | User, Track, Module, Lesson, Exam, and UserProgress entities exist. Enrollment, LessonResource, ExamQuestion, Center, and Room do not. |
+| Application | DTOs and service interfaces for User, Track, Exam, and progress exist. |
+| Infrastructure | SQLite registration, repositories for Track/Module/Exam, UnitOfWork, and parts of Track/Exam services exist. Several methods remain placeholders. |
+| API | Controllers are mostly placeholders. There is no ExamsController, enrollment endpoint, or authentication setup. `Program.cs` does not register the feature services. |
+| Tests | SQLite-backed repository and service tests exist, but the full register → enroll → study → exam → unlock journey is not tested or implemented. |
+
+See [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the target learner flow and [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for feature status.
+
 ---
 
 ## 2. Service Pattern Conventions
@@ -54,10 +68,10 @@ We use the **Interface + Service Class** pattern. No CQRS, no MediatR.
 
 ### Rules
 
-1. Service interfaces live in `Application/Services/` and expose only DTOs — never entities.
-2. Service implementations live in `Infrastructure/Services/` and depend on repository interfaces from Domain.
-3. Each service method accepts a request DTO (or primitive) and returns a response DTO.
-4. Controllers call service interfaces only. Controllers never access repositories directly.
+1. Service interfaces live in `Application/Services/` and expose DTOs or explicit identifiers — never persistence types.
+2. Service implementations live in `Infrastructure/Services/` and depend on Application contracts plus Domain repository contracts, normally through `IUnitOfWork`.
+3. Service methods accept request DTOs or explicit values such as IDs and return response DTOs. Do not pass `HttpContext` into Application.
+4. Controllers call service interfaces only. Controllers must not access repositories or `AppDbContext` directly.
 
 ### Interface shape
 
@@ -70,13 +84,15 @@ public interface IExamService
 }
 ```
 
-### Registration
+### Registration (Target)
 
 Service implementations are registered in `Program.cs` via DI:
 
 ```csharp
 builder.Services.AddScoped<IExamService, ExamService>();
 ```
+
+**Current status:** `Program.cs` currently calls `AddControllers()` only. It does not register Application services, repositories, or `IUnitOfWork`, and the existing feature controllers do not yet delegate to service interfaces. Treat the snippet above as the required wiring pattern, not as current behavior.
 
 ---
 
@@ -113,9 +129,12 @@ public interface IUnitOfWork
     IUserRepository Users { get; }
     ITrackRepository Tracks { get; }
     IModuleRepository Modules { get; }
+    IExamRepository Exams { get; }
     Task<int> SaveChangesAsync();
 }
 ```
+
+Repositories should share one scoped `AppDbContext`. Repository `AddAsync` methods add entities to that context; `UnitOfWork.SaveChangesAsync()` is the commit point. Add a repository property only when its repository contract and implementation are ready.
 
 ---
 
@@ -133,8 +152,8 @@ System.Exception
 
 ### HTTP mapping strategy
 
-`ExceptionHandlingMiddleware` (in `Api/Middlewares/`) catches domain exceptions
-and maps them to standard HTTP responses:
+The target `ExceptionHandlingMiddleware` (in `Api/Middlewares/`) should catch domain exceptions
+and map them to standard HTTP responses:
 
 | Exception | HTTP Status | When to throw |
 |---|---|---|
@@ -149,6 +168,8 @@ and maps them to standard HTTP responses:
 var track = await _unitOfWork.Tracks.GetByIdAsync(id)
     ?? throw new NotFoundException($"Track {id} not found.");
 ```
+
+**Current status:** the middleware has an empty `InvokeAsync` method and is not registered in `Program.cs`. Exception mappings in this section are the intended contract, not active runtime behavior. Use the custom `TalebElm.Domain.Exceptions.NotImplementedException` only when a deliberate placeholder response is needed; do not confuse it with `System.NotImplementedException`.
 
 ---
 
@@ -198,6 +219,8 @@ The codebase splits ownership across two conceptual teams:
 - The API/Application team consumes those contracts via service interfaces.
 - DTOs are **shared** — both teams agree on request/response shapes.
 - Neither team modifies the other's entities or controllers without discussion.
+- Keep planned fields and relationships labeled as proposed until the Domain contract is merged.
+- API endpoint docs must distinguish implemented routes from planned routes; a controller class alone does not mean the use case works.
 
 ---
 
