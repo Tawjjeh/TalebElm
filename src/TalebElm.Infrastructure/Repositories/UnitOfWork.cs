@@ -3,21 +3,32 @@ using TalebElm.Infrastructure.Persistence;
 
 namespace TalebElm.Infrastructure.Repositories;
 
-public class UnitOfWork(AppDbContext context) : IUnitOfWork
+public class UnitOfWork : IUnitOfWork
 {
-    private IUserProgressRepository? _userProgressRepository;
+    private readonly AppDbContext _context;
+    
+    public IUserRepository Users { get; } 
 
-    public IUserRepository Users => throw new NotImplementedException();
+    public ITrackRepository Tracks { get; } 
 
-    public ITrackRepository Tracks => throw new NotImplementedException();
+    public IModuleRepository Modules { get; }
 
-    public IModuleRepository Modules => throw new NotImplementedException();
-    public IExamRepository Exams => throw new NotImplementedException();
+    public IUserProgressRepository UserProgresses { get; }
 
-    public IUserProgressRepository UserProgresses => _userProgressRepository ??= new UserProgressRepository(context);
+    public IExamRepository Exams { get; }
 
-    public Task<int> SaveChangesAsync()
+    public UnitOfWork(AppDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
+        Users = new UserRepository(_context);
+        Tracks = new TrackRepository(_context);
+        Modules = new ModuleRepository(_context);
+        Exams = new ExamRepository(_context);
+        UserProgresses = new UserProgressRepository(_context);
+    }
+
+    public async Task<int> SaveChangesAsync()
+    {
+        return await _context.SaveChangesAsync();
     }
 }

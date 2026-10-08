@@ -1,36 +1,26 @@
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
-using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Repositories;
+using TalebElm.Tests.Infrastructure;
 
 namespace TalebElm.Tests.UnitTests;
 
-public class ModuleRepositoryTests
+public class ModuleRepositoryTests : SqliteTestBase
 {
-    private static AppDbContext CreateContext()
+    private readonly ModuleRepository _repository;
+
+    public ModuleRepositoryTests()
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        var context = new AppDbContext(options);
-        context.Database.EnsureCreated();
-        return context;
+        _repository = new ModuleRepository(DbContext);
     }
 
     [Fact]
     public async Task GetByTrackIdAsync_EmptyTrack_ReturnsEmptyList()
     {
-        await using var context = CreateContext();
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
-        context.Tracks.Add(track);
-        await context.SaveChangesAsync();
+        DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
 
-        var result = await new ModuleRepository(context).GetByTrackIdAsync(track.Id);
+        var result = await _repository.GetByTrackIdAsync(track.Id);
 
         Assert.Empty(result);
     }
@@ -38,27 +28,73 @@ public class ModuleRepositoryTests
     [Fact]
     public async Task GetByTrackIdAsync_MultipleModules_ReturnsOrderedByOrder()
     {
-        await using var context = CreateContext();
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
-        context.Tracks.Add(track);
-        context.Modules.AddRange(
+        var otherTrack = new Track { Id = Guid.NewGuid(), Name = "Frontend", Description = "Frontend track" };
+        DbContext.Tracks.AddRange(track, otherTrack);
+        DbContext.Modules.AddRange(
             new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Third", Order = 3 },
             new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "First", Order = 1 },
-            new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Second", Order = 2 });
-        await context.SaveChangesAsync();
+            new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Second", Order = 2 },
+            new Module { Id = Guid.NewGuid(), TrackId = otherTrack.Id, Title = "Other track module", Order = 1 });
+        await SaveChangesAsync();
 
-        var result = await new ModuleRepository(context).GetByTrackIdAsync(track.Id);
+        var result = await _repository.GetByTrackIdAsync(track.Id);
 
+        Assert.Equal(3, result.Count);
         Assert.Equal([1, 2, 3], result.Select(m => m.Order));
+        Assert.All(result, module => Assert.Equal(track.Id, module.TrackId));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenModuleExists_ReturnsModule()
+    {
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1 };
+        DbContext.Modules.Add(module);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetByIdAsync(module.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal(module.Id, result.Id);
     }
 
     [Fact]
     public async Task GetByIdAsync_MissingId_ReturnsNull()
     {
-        await using var context = CreateContext();
-
-        var result = await new ModuleRepository(context).GetByIdAsync(Guid.NewGuid());
+        var result = await _repository.GetByIdAsync(Guid.NewGuid());
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsAllModules()
+    {
+        var modules = new[]
+        {
+            new Module { Id = Guid.NewGuid(), Title = "First", Order = 1 },
+            new Module { Id = Guid.NewGuid(), Title = "Second", Order = 2 }
+        };
+        DbContext.Modules.AddRange(modules);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetAllAsync();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(modules.Select(module => module.Id).Order(), result.Select(module => module.Id).Order());
+    }
+
+    [Fact]
+    public async Task AddAsync_DoesNotPersistUntilUnitOfWorkSaves()
+    {
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics" };
+        await _repository.AddAsync(module);
+
+        await using var secondContext = CreateContext();
+        Assert.Null(await secondContext.Modules.FindAsync(module.Id));
+
+        await SaveChangesAsync();
+        Assert.NotNull(await secondContext.Modules.FindAsync(module.Id));
     }
 }
