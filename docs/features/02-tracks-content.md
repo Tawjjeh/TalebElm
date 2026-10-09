@@ -12,19 +12,19 @@ Let a learner choose a software-learning Track, then study its Modules and Lesso
 |---|---|---|---|---|
 | Track | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Track | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Track | Name | `string` | No | Initialized `default!`; no max length |
-| Track | Description | `string` | No | Initialized `default!`; no max length |
-| Track | Status | `TrackStatus` | No | Enum: `Draft=0`, `Published=1`, `Archived=2` |
+| Track | Name | `string` | No | Initialized `default!`; planned max length **150** |
+| Track | Description | `string` | No | Initialized `default!`; planned max length **1000** |
+| Track | Status | `TrackStatus` | No | Enum: `Draft=0`, `Published=1`, `Archived=2`; new tracks must default to `Draft` |
 | Module | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Module | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Module | Title | `string` | No | Initialized `string.Empty` |
-| Module | Summary | `string` | No | Initialized `string.Empty` |
+| Module | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
+| Module | Summary | `string` | No | Initialized `string.Empty`; planned max length **500** |
 | Module | Order | `int` | No | Position within Track; no uniqueness rule |
 | Module | TrackId | `Guid` | No | FK → `Track.Id` |
 | Lesson | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Lesson | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Lesson | Title | `string` | No | Initialized `string.Empty` |
-| Lesson | Content | `string` | No | Initialized `string.Empty` |
+| Lesson | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
+| Lesson | Content | `string` | No | Initialized `string.Empty`; free text (no max length) |
 | Lesson | LessonType | `LessonType` | Planned | Existing enum should become an entity field for content rendering and validation |
 | Lesson | Order | `int` | No | Position within Module; no uniqueness rule |
 | Lesson | ModuleId | `Guid` | No | FK → `Module.Id` |
@@ -87,14 +87,28 @@ public interface ITrackService
 
 **Implementation status:** `TrackService.GetAllAsync` and `CreateAsync` are implemented. `TrackRepository.AddAsync` and `ModuleRepository` methods are implemented, but TrackRepository reads are placeholders. No `IModuleService` or `ILessonService` exists.
 
+### Field length and default status rules (planned)
+
+- Enforce the max lengths in the entity table through `TrackConfiguration`,
+  `ModuleConfiguration`, and a new `LessonConfiguration` so oversized input is
+  rejected at the database boundary as well as in Application validators.
+- `TrackService.CreateAsync` already creates every new Track with
+  `Status = TrackStatus.Draft`; keep this default so a Track is never published
+  accidentally. Publishing is a separate explicit operation.
+
 ### Update and delete behavior (planned)
 
 - Reject deleting a Track while it still has Modules. Return `409 Conflict` until an explicit archive/cascade-delete policy is approved.
 - Reject deleting a Track that has learner enrollment/progress data. Preserve learner history instead of cascading deletes.
 - Reject deleting a Module while it still has Lessons, an assigned Exam, or learner progress rows. Return `409 Conflict`.
 - Updating a Module must preserve unique ordering within its Track; changing `Order` may require shifting sibling Modules.
+- Deleting a Module must re-sequence the remaining sibling Modules so their
+  `Order` values stay contiguous (`1, 2, 3, ...`) and free of gaps, otherwise
+  learner progress rows keyed to old orders become confusing.
 - Deleting a Lesson is allowed only after confirming no downstream content linkage depends on it; re-sequence remaining Lessons in the Module after deletion.
 - Updating a Lesson can change title/content/type/order, but it must remain scoped to one Module unless a separate move operation is designed.
+- When a Module or Lesson `Order` changes, shift siblings within the same parent
+  in the same `UnitOfWork` transaction so no two siblings share an `Order`.
 
 ### Validators
 

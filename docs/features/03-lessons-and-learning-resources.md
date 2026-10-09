@@ -49,10 +49,22 @@ Keep `LessonType` separate from `LessonResourceKind`: the former describes lesso
 | GET | `/api/modules/{moduleId}/lessons` | List lessons in `Order` | Planned; no matching controller action |
 | GET | `/api/lessons/{lessonId}` | Return explanation and resources | Planned; current `LessonsController.Get()` has no id parameter and throws `NotImplementedException` |
 
+### Resource validation rules (proposed)
+
+- `Title` is required and has a planned max length of **200**.
+- At least one of `Url` or `Citation` must be provided; both may be provided.
+- When `Url` is present it must be a valid **absolute** URL using the `http` or
+  `https` scheme. Reject relative paths, empty strings, and unsupported schemes
+  with `ValidationException` (HTTP `400`).
+- `Citation` is free text with a planned max length of **500**.
+- `Order` must be a positive integer; ordering is re-sequenced within the Lesson
+  on create/update/delete, mirroring the Module/Lesson ordering rule.
+
 ## Acceptance Criteria for the MVP Implementation
 
 - A Lesson can contain authored text independently of its references.
 - A Lesson can have zero or more resources, returned in `Order`.
 - A resource has a readable title and either a valid URL or a citation.
+- A URL resource is rejected with `400` when its URL is missing, relative, or not `http`/`https`.
 - Deleting a Lesson follows an explicit resource-delete rule.
 - Tests cover no resources, multiple ordered resources, URL resources, and citation-only resources.

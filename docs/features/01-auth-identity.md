@@ -49,6 +49,38 @@ public interface IUserRepository : IRepository<User> { }
 - Add `AuthTokenResponse` with access token, optional refresh token, expiry, and basic user identity metadata.
 - Add `IAuthService` to validate credentials, hash passwords, and issue/revoke tokens.
 
+### Password policy (proposed)
+
+Passwords are never stored or returned in plain text. Registration enforces the
+following complexity rules before hashing (see [OPEN_DECISIONS.md](../OPEN_DECISIONS.md)):
+
+| Rule | Requirement |
+|---|---|
+| Minimum length | 8 characters |
+| Maximum length | 128 characters (protects hashing cost) |
+| Character mix | At least one letter and at least one digit |
+| Buffer | Reject leading/trailing whitespace-only passwords |
+| Storage | Hash with a salted, slow algorithm (e.g. ASP.NET Core `PasswordHasher<T>`); never return the hash |
+
+These values are a starting proposal; confirm them before implementation so the
+validator and the hash parameters stay in sync.
+
+### Role model and authorization policies (proposed)
+
+Two roles exist in the target MVP: `Learner` (default after self-registration)
+and `Admin` (content author). Roles should be stored on the user and surfaced
+as role claims in the issued token. Authorization is enforced with named
+policies, not ad-hoc checks in controllers:
+
+| Policy | Roles allowed | Applies to |
+|---|---|---|
+| `LearnerOnly` | `Learner`, `Admin` | `GET /api/tracks`, `GET /api/tracks/{id}`, enrollment, lesson reads, exams, `/api/progress/me*` |
+| `AdminOnly` | `Admin` | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, and `GET /api/users` |
+
+Critical user-management operations (`PUT /api/users/{id}`,
+`DELETE /api/users/{id}`) must be `AdminOnly`. A learner may read and update
+only their own profile; any attempt to modify another user must return `403`.
+
 ### Service Interface
 
 ```csharp
@@ -80,12 +112,14 @@ public interface IUserService
 - Token handling is planned, not implemented. The MVP needs a single place to hash passwords, validate credentials, issue access tokens, and define token lifetime/refresh behavior.
 - `GET /api/users/{id}` is a separate read contract from list/create and should throw `NotFoundException` when the user does not exist.
 - Critical user-management operations such as `PUT /api/users/{id}` and `DELETE /api/users/{id}` must be role-protected. A learner should not update or delete arbitrary users.
+- Enforcement uses the `LearnerOnly` and `AdminOnly` policies defined above. Attribute-level `[Authorize(Policy = "...")]` is preferred over manual role checks so the rule lives in one place.
 - The current codebase has no roles model yet, so role names and authorization policies are still open design work.
 
 ### Input Validation
 
 - No validation rules defined for user creation or login.
 - Email format, uniqueness, and password handling are not implemented.
+- Passwords must satisfy the password policy above; the raw password must never be logged or returned.
 - The `POST /api/users` action currently accepts no request parameter, even though `CreateUserRequest` exists.
 - Decide password hashing, token issuance, and the default learner role before implementing registration. Keep credentials out of response DTOs.
 

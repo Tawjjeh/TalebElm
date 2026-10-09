@@ -57,6 +57,18 @@ Proposed rules: each question has at least two options and exactly one correct o
 - `Exam.HasPassed(score)` stays `score >= PassThreshold`.
 - Retakes are allowed. Only the latest result is stored in `UserProgress`; a later failed retake must not clear `PassedExam`. Attempt history is not part of the MVP.
 
+### Retake policy (proposed)
+
+- **Attempt limit:** unlimited attempts in the MVP.
+- **Cooldown:** none in the MVP; a learner may resubmit immediately.
+- **Kept result:** the latest score overwrites `UserProgress.Score`, but
+  `PassedExam` is sticky and is never reset by a later failure.
+- **When to revisit:** if abuse or load becomes a problem, add a cooldown and/or
+  a maximum-attempt rule here and in
+  [OPEN_DECISIONS.md](../OPEN_DECISIONS.md) before implementing.
+  A cooldown would require storing the last attempt time, which the current
+  `UserProgress` entity does not have.
+
 ## 3. Application Contracts (Shared / Joint Ownership)
 
 ### DTOs
