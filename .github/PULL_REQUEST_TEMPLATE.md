@@ -28,9 +28,9 @@ Please describe briefly what this pull request adds or changes.
 Please check the boxes that apply by putting an x between the brackets.
 
 - [ ] The code builds without errors. I ran `dotnet build TalebElm.slnx`.
-- [ ] No business logic was added. This change only creates empty structures
-      (classes, interfaces, records, or enums) as requested in the task.
 - [ ] I followed the standard naming and folder conventions used in the project.
+- [ ] I have added or updated tests to cover my changes.
+- [ ] My changes follow the Clean Architecture principles described in `ARCHITECTURE.md`.
 
 ## Notes for the reviewer (optional)
 

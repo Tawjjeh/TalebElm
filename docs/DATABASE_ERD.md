@@ -1,130 +1,60 @@
-# TalebElm Database — Entity Relationship Diagram (ERD)
+# TalebElm Data Model: Current and Proposed
 
-> **Read this first:** this page uses **Mermaid.js** diagrams. On GitHub (and
-> most Markdown viewers) the diagram below renders automatically as a picture.
-> Below the diagram we explain, in plain English, how the tables connect and
-> how the **"progression lock"** feature works.
+This document distinguishes Domain entities that exist in code from the relational rules the MVP still needs. `AppDbContext` exposes the current entities and applies configuration classes, but most relationship configurations are empty.
 
----
+## 1. Current Domain Entities
 
-## 1. The Entity Relationship Diagram (ERD)
+| Entity | Properties | Current constraints/status |
+|---|---|---|
+| User | `Id: Guid`, `CreatedAt: DateTimeOffset`, `Name: string`, `Email: string`, `JoinedAt: DateTime` | No password, role, or enrollment property. No email uniqueness constraint. |
+| Track | `Id`, `CreatedAt`, `Name`, `Description`, `Status: TrackStatus` | `TrackStatus`: Draft=0, Published=1, Archived=2. |
+| Module | `Id`, `CreatedAt`, `Title`, `Summary`, `Order: int`, `TrackId: Guid` | Intended parent Track is identified by `TrackId`. |
+| Lesson | `Id`, `CreatedAt`, `Title`, `Content`, `Order: int`, `ModuleId: Guid` | No `LessonType` property; `LessonType` enum exists separately. No source/resource collection. |
+| Exam | `Id`, `CreatedAt`, `Title`, `PassThreshold: int`, `ModuleId: Guid` | `HasPassed(score)` returns `score >= PassThreshold`. No question model. |
+| UserProgress | `Id`, `CreatedAt`, `UserId: Guid`, `ModuleId: Guid`, `IsUnlocked: bool`, `PassedExam: bool`, `Score: int` | Unique index exists on `(UserId, ModuleId)`. No explicit FK mapping/navigation properties. |
 
-```mermaid
-erDiagram
-    User {
-        guid Id PK "unique row id"
-        string Name "full name"
-        string Email "login email"
-        datetime JoinedAt "when they joined"
-        string Role "Student / Instructor / Admin"
-    }
-    Track {
-        guid Id PK "unique row id"
-        string Name "track name"
-        string Description "what the track teaches"
-        string Status "Draft / Published / Archived"
-    }
-    Module {
-        guid Id PK "unique row id"
-        string Title "module title"
-        string Summary "short summary"
-        int Order "position inside the track (1, 2, 3...)"
-        guid TrackId FK "which track it belongs to"
-    }
-    Lesson {
-        guid Id PK "unique row id"
-        string Title "lesson title"
-        string Content "lesson text"
-        int Order "position inside the module"
-        string LessonType "Text / Video / Exercise"
-        guid ModuleId FK "which module it belongs to"
-    }
-    Exam {
-        guid Id PK "unique row id"
-        string Title "exam title"
-        int PassThreshold "minimum score to pass (e.g. 70)"
-        guid ModuleId FK "which module it tests"
-    }
-    UserProgress {
-        guid Id PK "unique row id"
-        guid UserId FK "which user"
-        guid ModuleId FK "which module"
-        boolean IsUnlocked "is the module open for this user?"
-        boolean PassedExam "did the user pass this module's exam?"
-        int Score "the exam score"
-    }
+`Id` and `CreatedAt` are inherited from `BaseEntity`.
 
-    Track ||--o{ Module : "has"
-    Module ||--o{ Lesson : "contains"
-    Module ||--o| Exam : "is tested by"
-    User ||--o{ UserProgress : "has progress for"
-    Module ||--o{ UserProgress : "is unlocked to"
-```
+## 2. Relationships
 
-### What the symbols mean
+### Intended learning relationships
 
-| Symbol | Meaning |
-|---|---|
-| `||--o{` | **One-to-many** (one row on the left has many rows on the right) |
-| `||--o|` | **One-to-one** (one row on the left has exactly one related row) |
-| `PK` | Primary Key — the unique id of each row |
-| `FK` | Foreign Key — the id that points to a row in another table |
+- Track 1 → many Modules, ordered by `Module.Order`.
+- Module 1 → many Lessons, ordered by `Lesson.Order`.
+- Module 0/1 → Exam (product target: at most one exam per Module).
+- User 1 → many UserProgress rows.
+- Module 1 → many UserProgress rows.
 
----
+### Current EF Core mapping status
 
-## 2. How the tables connect
+- `UserProgressConfiguration` maps the primary key and unique `(UserId, ModuleId)` index.
+- `TrackConfiguration`, `ModuleConfiguration`, and `ExamConfiguration` currently have empty `Configure` methods.
+- The intended relationships above are not all enforced by explicit EF foreign keys in current configuration.
+- Navigation properties are not declared on the current entities.
 
-Think of the app as a **library with a lock on every room**.
+## 3. Proposed MVP Entities Not Yet in Code
 
-- **Track** is the big shelf. A track holds many **Modules** (chapters). One
-  track → many modules.
-- **Module** is one chapter. A module holds many **Lessons** (pages). One
-  module → many lessons. Every lesson knows its module because it stores the
-  module's id (`ModuleId`).
-- **Module** also has one **Exam**. You must pass this exam before you are
-  allowed to move on to the next chapter.
-- **User** is the reader. The library keeps a card for every reader.
-- **UserProgress** is the reader's library card for each chapter. One row per
-  user per module. It remembers:
-  - `IsUnlocked` — was this chapter opened for the user (yes/no)?
-  - `PassedExam` — did the user pass this chapter's exam (yes/no)?
-  - `Score` — the exam score, as a number.
+### TrackEnrollment
 
-### How the "progression lock" works
+Keep Track enrollment distinct from per-Module progress. Proposed fields: `Id`, `UserId`, `TrackId`, `EnrolledAt`; add unique `(UserId, TrackId)`. Enrollment creates the initial UserProgress row for the first ordered Module.
 
-The most important rule: **you cannot open chapter 3 until you pass the exam
-at the end of chapter 2.**
+### LessonResource
 
-Here is exactly what happens, step by step:
+Allow one Lesson to cite multiple learning sources. Proposed fields: `Id`, `LessonId`, `Title`, `Kind`, `Url?`, `Citation?`, and `Order`. Require at least one of Url or Citation. Resource kinds can include Book, Documentation, Video, Article, Repository, and Other.
 
-1. A user opens a track. The app looks at the modules in order of their `Order`
-   number (1, 2, 3...).
-2. Module 1 has `UserProgress.IsUnlocked = true` for everyone, so everyone can
-   start at the beginning.
-3. The user reads the lessons of Module 1, then takes Module 1's **Exam**.
-4. The app checks the user's `Score` against the exam's `PassThreshold`
-   (for example, `Score >= 70`).
-   - If the score is **too low** → `PassedExam = false`. The user can retry.
-   - If the score is **high enough** → `PassedExam = true`.
-5. When `PassedExam = true`, the app creates/updates a `UserProgress` row for
-   the **next** module with `IsUnlocked = true`.
-6. Module 2 is now open. Module 3 stays locked until Module 2's exam is passed.
+### ExamQuestion and ExamOption
 
-Why it works: the lock is stored **per user, per module** in `UserProgress`,
-not inside the module itself. Two users can be in the middle of the same track
-while being at different points — one is on Module 1, the other on Module 4.
-The rules never depend on a shared "global" position, so nobody can hop ahead
-and nobody can be blocked by someone else's progress.
+For the first exam format, use ordered multiple-choice questions. `ExamQuestion` belongs to Exam and stores Prompt, Order, and Points. `ExamOption` belongs to a question and stores learner-visible Text plus server-only `IsCorrect`. Never return `IsCorrect` in a learner response.
 
----
+### Center and Room
 
-## 3. Notes for the MVP
+These are optional operational features, not part of the self-paced learning flow. No fields or relationships are finalized. If approved later, decide whether a Center owns Tracks, Rooms, or both before adding FKs.
 
-- **Exam** and **UserProgress** are planned for the MVP but are not yet in
-  `AVAILABLE_TASKS.md`. The current task list covers `User`, `Track`, `Module`,
-  and `Lesson` (Tasks 2–5). Exam and UserProgress should be added to the task
-  list in the Domain phase (`entity`, `layer:domain`) before the database
-  phase (Tasks 26–30) is started.
-- Roles and statuses use enums already planned in the task list: `UserRole`
-  (`Student`, `Instructor`, `Admin`), `TrackStatus` (`Draft`, `Published`,
-  `Archived`), and `LessonType` (`Text`, `Video`, `Exercise`).
+## 4. Target Progression Transaction
+
+1. Create a TrackEnrollment for the authenticated User and selected Track.
+2. Create UserProgress for the lowest-Order Module with `IsUnlocked = true`.
+3. Compute the score on the server from the selected answers (the MVP does not store attempt history).
+4. Update the current Module's progress with the latest score; set `PassedExam = true` on a pass and never reset it on a later failed retake.
+5. On pass, unlock only the next Module in the same Track; on failure, leave later Modules locked.
+6. Commit the result and progress changes in one UnitOfWork operation.
