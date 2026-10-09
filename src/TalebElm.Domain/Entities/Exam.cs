@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace TalebElm.Domain.Entities;
 
-namespace TalebElm.Domain.Entities
+public class Exam : BaseEntity
 {
-    public class Exam : BaseEntity
-    {
-        public string Title { get; set; } = string.Empty;
-        public int PassThreshold { get; set; }
-        public Guid ModuleId { get; set; }
-        public bool HasPassed(int score) => score >= PassThreshold;
-    }
+    public string Title { get; set; } = string.Empty;
+    public int PassThreshold { get; set; }
+    public Guid ModuleId { get; set; }
+    public bool HasPassed(int score) => score >= PassThreshold;
 }
+

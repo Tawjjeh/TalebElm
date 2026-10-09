@@ -33,6 +33,9 @@ artifacts/
 *.ldf
 *.bak
 *.sqlite
+*.db
+*.db-shm
+*.db-wal
 
 # ---------- Secrets (never push these) ----------
 .env
