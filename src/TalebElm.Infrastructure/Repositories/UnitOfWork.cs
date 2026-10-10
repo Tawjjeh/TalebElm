@@ -5,13 +5,15 @@ namespace TalebElm.Infrastructure.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly AppDbContext _context ;
+    private readonly AppDbContext _context;
     
     public IUserRepository Users { get; } 
 
     public ITrackRepository Tracks { get; } 
 
     public IModuleRepository Modules { get; }
+
+    public IUserProgressRepository UserProgresses { get; }
 
     public IExamRepository Exams { get; }
 
@@ -22,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
         Tracks = new TrackRepository(_context);
         Modules = new ModuleRepository(_context);
         Exams = new ExamRepository(_context);
+        UserProgresses = new UserProgressRepository(_context);
     }
 
     public async Task<int> SaveChangesAsync()
