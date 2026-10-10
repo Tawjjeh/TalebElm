@@ -37,8 +37,8 @@ There is no `ExamsController`, registration endpoint, enrollment endpoint, neste
 
 | HTTP | Route | Request | Response | Target status |
 |---|---|---|---|---|
-| GET | `/api/modules/{moduleId}/lessons` | None | Ordered Lesson summaries | 200, 404 |
-| GET | `/api/lessons/{lessonId}` | None | Lesson detail and ordered source links | 200, 404 |
+| GET | `/api/modules/{moduleId}/lessons` | None | Ordered Lesson summaries | 200, 403, 404 |
+| GET | `/api/lessons/{lessonId}` | None | Lesson detail and ordered source links | 200, 403, 404 |
 
 `Lesson` currently stores `Content`, `Order`, and `ModuleId`. Books, official documentation, videos, and other source links need a proposed `LessonResource` contract; there is no resource entity or service today.
 
@@ -46,8 +46,8 @@ There is no `ExamsController`, registration endpoint, enrollment endpoint, neste
 
 | HTTP | Route | Request | Response | Target status |
 |---|---|---|---|---|
-| GET | `/api/exams/{examId}` | None | Exam with learner-safe question/option DTOs | 200, 404 |
-| POST | `/api/exams/{examId}/submit` | Selected question/option IDs; learner from auth | Exam result and pass state | 200, 400, 401, 404 |
+| GET | `/api/exams/{examId}` | None | Exam with learner-safe question/option DTOs | 200, 403, 404 |
+| POST | `/api/exams/{examId}/submit` | Selected question/option IDs; learner from auth | Exam result and pass state | 200, 400, 401, 403, 404 |
 | GET | `/api/progress/me` | None | Progress summaries for authenticated learner | 200, 401 |
 | GET | `/api/progress/me/tracks/{trackId}` | None | Ordered progress for one Track | 200, 401, 404 |
 
@@ -63,14 +63,14 @@ No roles exist in code yet. The MVP needs two: **Learner** (default after regist
 | Learner (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*` |
 | Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, and Exams, and `GET /api/users` |
 
-Learner-facing reads should also return a Track's Modules and Lessons only to an enrolled learner once the unlock rule is implemented: a locked Module's Lessons and Exam must not be served.
+Learner-facing reads should also return a Track's Modules and Lessons only to an enrolled learner once the unlock rule is implemented: a locked Module's Lessons and Exam must not be served. When an authenticated learner requests a Lesson or Exam (including exam submission) that belongs to a Module the learner has not unlocked, the API must return `403 Forbidden` — not `404` — because the resource exists but the learner is not allowed to access it yet.
 
 ## 3. Validation and Response Rules
 
 - Use GUID route identifiers and JSON DTOs.
 - Return 400 for invalid input, 401 for missing/invalid authentication, 403 for forbidden actions, 404 for unknown resources, and 409 for duplicate enrollment or exam-per-module conflicts.
 - Keep controllers thin: bind HTTP input, call an Application service interface, and translate the result to HTTP. Do not put repository or progression logic in controllers.
-- Map `NotFoundException` to 404 and `ValidationException` to 400 after exception middleware is implemented. The current middleware is empty and is not registered.
+- Map `NotFoundException` to 404 and `ValidationException` to 400 after exception middleware is implemented, with a field-keyed `errors` object so clients can show per-field messages (see [08](features/08-health-and-error-handling.md)). The current middleware is empty and is not registered.
 - Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
 
 ## 4. Out of Scope for the Core Learning Flow

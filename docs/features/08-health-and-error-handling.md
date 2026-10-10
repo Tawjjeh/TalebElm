@@ -57,12 +57,30 @@ The intended `ExceptionHandlingMiddleware` mapping is:
 | Exception Type | HTTP Status | Response Body |
 |---|---|---|
 | `NotFoundException` | `404` | `{ "error": "<message>" }` |
-| `ValidationException` | `400` | `{ "error": "<message>" }` |
+| `ValidationException` | `400` | `{ "error": "Validation failed.", "errors": { "<field>": ["<message>", ...] } }` |
 | `DomainException` | `400` | `{ "error": "<message>" }` |
 | `NotImplementedException` (Domain) | `501` | `{ "error": "<message>" }` |
 | Unhandled `Exception` | `500` | `{ "error": "An unexpected error occurred." }` |
 
 **Current status:** `ExceptionHandlingMiddleware.InvokeAsync` is empty and `Program.cs` does not register it. The table above is a target contract, not current runtime behavior.
+
+### Validation error payload (target contract)
+
+Validation failures must return field-specific errors so clients can attach each message to its input field:
+
+```json
+{
+  "error": "Validation failed.",
+  "errors": {
+    "name": ["'Name' must not be empty."],
+    "capacity": ["'Capacity' must be greater than '0'."]
+  }
+}
+```
+
+- Keys in `errors` are the failing property names in camelCase; each value is an array of messages, because one field can fail more than one rule.
+- The top-level `error` string stays present for logging and generic display; failures that are not tied to a specific field are reported there only.
+- Services currently throw FluentValidation's `ValidationException` (for example `TrackService.CreateAsync`), whose `ValidationFailure` items already carry `PropertyName` and `ErrorMessage`. The middleware must map those into the `errors` object above. `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `error` only, until it is extended to carry per-field errors.
 
 ### Registration (planned)
 
