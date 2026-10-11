@@ -25,17 +25,17 @@ We start with .NET, but the project is built so we can add more tracks later
 
 ## What is this project right now?
 
-Right now, this repository is a **skeleton** (an empty starting point).
-It contains an empty **Clean Architecture** solution ready for development.
+Right now, this repository is a **working foundation**. It contains a **Clean Architecture** solution with core entities, services, and tests already in place.
 
 This means:
 
-- There is no real website yet.
-- There is no business logic yet.
-- There is only a structure of empty projects.
+- The project structure is fully established.
+- Core entities (Users, Tracks, Modules, Lessons, Exams) are defined.
+- Basic services and repositories are implemented.
+- A suite of unit and integration tests is available.
+- Most API endpoints are currently placeholders (returning `NotImplementedException`) as we build out the MVP features.
 
-This is intentional. It gives us a solid foundation to build on.
-Beginners can look at the structure and understand where everything will live.
+This is intentional. It gives us a solid foundation to build on while allowing contributors to focus on specific feature implementations.
 
 ---
 
@@ -43,13 +43,13 @@ Beginners can look at the structure and understand where everything will live.
 
 The solution has **five projects**. Here they are:
 
-| Project name | Folder | What it will hold |
+| Project name | Folder | What it holds |
 | --- | --- | --- |
-| TalebElm.Domain | `src/TalebElm.Domain` | The core rules of the platform |
-| TalebElm.Application | `src/TalebElm.Application` | The work the platform does |
-| TalebElm.Infrastructure | `src/TalebElm.Infrastructure` | Databases and outside services |
-| TalebElm.Api | `src/TalebElm.Api` | The web API that people call |
-| TalebElm.Tests | `tests/TalebElm.Tests` | Tests that check the code works |
+| TalebElm.Domain | `src/TalebElm.Domain` | Core business rules, entities, and repository interfaces |
+| TalebElm.Application | `src/TalebElm.Application` | Use cases, DTOs, and service interfaces |
+| TalebElm.Infrastructure | `src/TalebElm.Infrastructure` | Database (EF Core), repositories, and service implementations |
+| TalebElm.Api | `src/TalebElm.Api` | Web API controllers and middleware |
+| TalebElm.Tests | `tests/TalebElm.Tests` | Unit and integration tests |
 
 Do not worry if these words sound confusing. Read the file called
 `ARCHITECTURE.md`. It explains each project in simple words.
@@ -158,8 +158,13 @@ The program will start and print a web address (URL). It looks like this:
 http://localhost:5000
 ```
 
-Open that address in your web browser. You should see a page or a JSON response.
-This means your API is running.
+To verify it is running, you can visit the health check endpoint in your browser:
+
+```
+http://localhost:5000/api/health
+```
+
+You should see a message that says `"healthy"`.
 
 To stop the API, go back to the terminal and press `Ctrl + C`.
 
@@ -192,4 +197,5 @@ how to contribute in very simple words, and we will help you at every step.
 - **Source code**: `src/` folder
 - **Tests**: `tests/` folder
 - **Architecture guide**: `ARCHITECTURE.md`
+- **Product and technical docs**: `docs/FEATURE_INDEX.md` (start here)
 - **Contributing guide**: `CONTRIBUTING.md`

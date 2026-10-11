@@ -1,7 +1,7 @@
 # TalebElm — GitHub Labels Catalog
 
-> **Read this first:** every task in `AVAILABLE_TASKS.md` lists suggested
-> labels. When you open the issue for your task, apply exactly these labels so
+> **Read this first:** tasks are tracked as GitHub issues in this repository.
+> When you open the issue for your task, apply exactly these labels so
 > the team can sort and find the work. Colors below are GitHub hex codes
 > (used without the `#`). Keep the label names exactly as written here so they
 > stay consistent across the whole repository.

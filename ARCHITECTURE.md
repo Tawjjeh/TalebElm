@@ -135,14 +135,8 @@ do the actual database work itself. It only asks for help.
 
 ### What files belong here
 
-- **Commands**: actions that change something, like "create a track".
-- **Queries**: actions that read something, like "get a list of tracks".
-- **Handlers**: the code that runs when a command or query happens.
-- **DTOs**: short for "Data Transfer Object". These are simple boxes for
-  sending data between the web API and the Application. They are usually not
-  the same as Domain entities.
-- **Interfaces** like "I need a database to save tracks". The Application
-  defines the request. Someone else (Infrastructure) does the real work.
+- **Service Interfaces**: the actions the app can do, like "I need a way to create a track".
+- **DTOs**: short for "Data Transfer Object". These are simple boxes for sending data between the web API and the Application. They are usually not the same as Domain entities.
 
 ### What NOT to put here
 
@@ -150,9 +144,7 @@ do the actual database work itself. It only asks for help.
 - Do **not** put actual web controllers.
 - Do **not** put how to connect to other services.
 
-The Application should not care whether we use SQL Server, a plain file, or
-a cloud database. It just says "I need to save a track" and another layer
-decides how.
+The Application should not care whether we use SQL Server, a plain file, or a cloud database. It just says "I need to save a track" and another layer decides how.
 
 ---
 
@@ -162,15 +154,14 @@ Full project folder: `src/TalebElm.Infrastructure`
 
 ### What it is for
 
-Infrastructure is the layer that actually **does the real work** that the inner
-layers asked for. This is where "the how" lives.
+Infrastructure is the layer that actually **does the real work** that the inner layers asked for. This is where "the how" lives.
 
-The most common example is the **database**. Infrastructure uses a tool called
-**Entity Framework Core** to talk to real databases.
+The most common example is the **database**. Infrastructure uses a tool called **Entity Framework Core** to talk to real databases.
 
 ### What files belong here
 
-- The database context (the file that Google talks to the database).
+- **Service Implementations**: the real code that does the work defined in the Application layer.
+- The database context (the file that talks to the database).
 - The models that represent how the data is stored in the database.
 - Settings that say how to connect to the database.
 - Code that emails, files, or any outside tool like talking to APIs.
