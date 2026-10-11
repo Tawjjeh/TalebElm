@@ -20,8 +20,16 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldIsolateUsers()
     {
-        var trackId = Guid.NewGuid();
-        var module = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 1, Title = "Module 1" };
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
+
+        DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
+        var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "Module 1" };
         await DbContext.Modules.AddAsync(module);
 
         var userA = Guid.NewGuid();
@@ -31,7 +39,7 @@ public class UserProgressRepositoryTests : SqliteTestBase
         await _repository.AddAsync(new UserProgress { UserId = userB, ModuleId = module.Id, Score = 50 });
         await DbContext.SaveChangesAsync();
 
-        var result = await _repository.GetByUserAndTrackAsync(userA, trackId);
+        var result = await _repository.GetByUserAndTrackAsync(userA, track.Id);
 
         Assert.Single(result);
         Assert.Equal(userA, result[0].UserId);
@@ -41,12 +49,20 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldOrderByModuleOrderAscending()
     {
-        var trackId = Guid.NewGuid();
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
+        DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
+
         var userId = Guid.NewGuid();
 
-        var m1 = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 1, Title = "M1" };
-        var m2 = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 2, Title = "M2" };
-        var m3 = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 3, Title = "M3" };
+        var m1 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "M1" };
+        var m2 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 2, Title = "M2" };
+        var m3 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 3, Title = "M3" };
         await DbContext.Modules.AddRangeAsync(m1, m2, m3);
 
         await _repository.AddAsync(new UserProgress { UserId = userId, ModuleId = m3.Id });
@@ -54,7 +70,7 @@ public class UserProgressRepositoryTests : SqliteTestBase
         await _repository.AddAsync(new UserProgress { UserId = userId, ModuleId = m2.Id });
         await DbContext.SaveChangesAsync();
 
-        var result = await _repository.GetByUserAndTrackAsync(userId, trackId);
+        var result = await _repository.GetByUserAndTrackAsync(userId, track.Id);
 
         Assert.Equal(3, result.Count);
         Assert.Equal(m1.Id, result[0].ModuleId);
