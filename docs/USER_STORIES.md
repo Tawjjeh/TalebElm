@@ -67,4 +67,4 @@ As an admin, I want to attach one exam to a Module.
 
 ## Out of Scope
 
-Centers, Rooms, scheduling, attendance, payments, certificates, and exam attempt history. See [06-center-management.md](features/06-center-management.md) and [07-room-management.md](features/07-room-management.md) for the optional features.
+Scheduling, attendance, payments, certificates, and exam attempt history.

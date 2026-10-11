@@ -36,7 +36,7 @@ TalebElm helps a learner study software development through an ordered Track. Th
 | Enrollment | No Enrollment entity or enrollment service | One enrollment per learner and Track; initialize the first Module's progress |
 | Exams | Exam title and threshold; service supports loading an Exam | Questions, answer submission, server-side scoring, and result recording |
 | Progression | UserProgress entity and read/service contracts | Per-learner unlock rules and progress queries |
-| API | Several placeholder controllers; no ExamsController | Endpoints wired to Application service interfaces |
+| API | Placeholder controllers including Exams; Program.cs has no DI/auth/middleware | Endpoints wired to Application service interfaces |
 
 ## Suggested Delivery Order
 
@@ -49,4 +49,4 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 ## Explicitly Out of This Learning-Flow MVP
 
-Center scheduling, room booking, attendance, payments, and instructor operations are separate product features. Keep them out of Track enrollment and `UserProgress` until product requirements define how they connect.
+Scheduling, attendance, payments, and instructor operations are separate product features. Keep them out of Track enrollment and `UserProgress` until product requirements define how they connect.

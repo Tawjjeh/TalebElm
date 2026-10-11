@@ -30,7 +30,7 @@ The current EF configuration enforces a unique index on `(UserId, ModuleId)`. It
 | TrackEnrollment | TrackId | Guid | No | Required FK to Track |
 | TrackEnrollment | EnrolledAt | DateTimeOffset | No | Set by the server in UTC |
 
-Add a unique index on `(UserId, TrackId)`. Center membership, payment, attendance, and room booking are separate features and are not fields on TrackEnrollment.
+Add a unique index on `(UserId, TrackId)`. Payment and attendance are separate features and are not fields on TrackEnrollment.
 
 ### Relationships & Rules
 

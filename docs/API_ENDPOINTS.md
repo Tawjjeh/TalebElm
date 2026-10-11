@@ -14,10 +14,13 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/tracks` | Declared, action has no request parameter; throws `System.NotImplementedException`. |
 | GET | `/api/modules` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
 | GET | `/api/lessons` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
+| GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams/{id}/submit` | Declared as a placeholder; throws domain `NotImplementedException`. |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-There is no `ExamsController`, registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam route in the current API project. Authentication and authorization are not configured in `Program.cs`.
+There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
 
 ## 2. Target MVP Student Journey
 
@@ -75,4 +78,4 @@ Learner-facing reads should also return a Track's Modules and Lessons only to an
 
 ## 4. Out of Scope for the Core Learning Flow
 
-Center administration, room management, room booking, attendance, and payments are not part of the current Track → Module → Lesson → Exam → Progress flow. Their API paths should be defined only after the product decides how Centers and Rooms relate to learners and Tracks.
+Scheduling, attendance, and payments are not part of the current Track → Module → Lesson → Exam → Progress flow.

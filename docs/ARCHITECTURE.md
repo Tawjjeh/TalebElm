@@ -45,10 +45,10 @@ The layers and contracts are present, but the full learning journey is not wired
 
 | Area | Current state |
 |---|---|
-| Domain | User, Track, Module, Lesson, Exam, and UserProgress entities exist. Enrollment, LessonResource, ExamQuestion, Center, and Room do not. |
+| Domain | User, Track, Module, Lesson, Exam, and UserProgress entities exist. Enrollment, LessonResource, and ExamQuestion do not. |
 | Application | DTOs and service interfaces for User, Track, Exam, and progress exist. |
 | Infrastructure | SQLite registration, repositories for Track/Module/Exam, UnitOfWork, and parts of Track/Exam services exist. Several methods remain placeholders. |
-| API | Controllers are mostly placeholders. There is no ExamsController, enrollment endpoint, or authentication setup. `Program.cs` does not register the feature services. |
+| API | Controllers are mostly placeholders, including a placeholder ExamsController. There is no enrollment endpoint or authentication setup. `Program.cs` does not register the feature services. |
 | Tests | SQLite-backed repository and service tests exist, but the full register → enroll → study → exam → unlock journey is not tested or implemented. |
 
 See [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the target learner flow and [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for feature status.

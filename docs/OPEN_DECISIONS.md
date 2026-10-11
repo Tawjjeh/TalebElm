@@ -17,9 +17,7 @@ Items to settle before the related code is written. "Proposed" is what the docs 
 | 11 | Delete rules | Block deleting a Track/Module/Lesson that has dependent data, or define cascade explicitly | [DATABASE_ERD](DATABASE_ERD.md) |
 | 12 | Unique `Order` | Enforce unique `(TrackId, Order)` for Modules and `(ModuleId, Order)` for Lessons | [02](features/02-tracks-content.md) |
 | 13 | `LessonType` | Decide whether to store it on `Lesson` or drop the enum | [02](features/02-tracks-content.md), [03](features/03-lessons-and-learning-resources.md) |
-| 14 | Centers and Rooms | Not part of the MVP; decide whether they are needed at all | [06](features/06-center-management.md), [07](features/07-room-management.md) |
-| 15 | Password policy | Min 8 chars, at least one letter and one digit; hashed with a salted slow algorithm; never stored or returned raw | [01](features/01-auth-identity.md) |
-| 16 | Field max lengths | Track.Name 150, Track.Description 1000, Module.Title 150, Module.Summary 500, Lesson.Title 150, LessonResource.Title 200, Room.Name 150 | [02](features/02-tracks-content.md), [03](features/03-lessons-and-learning-resources.md), [07](features/07-room-management.md) |
-| 17 | Lesson resource URL | Must be absolute `http`/`https` when present; reject relative paths and unsupported schemes with `400` | [03](features/03-lessons-and-learning-resources.md) |
-| 18 | Authorization policies | Named `LearnerOnly` and `AdminOnly` policies; critical user management is `AdminOnly` | [01](features/01-auth-identity.md) |
-| 19 | Room write authorization | `AdminOnly` for room create (and future room writes); a center-scoped `CenterAdmin` policy only if Center Management is approved | [01](features/01-auth-identity.md), [06](features/06-center-management.md), [07](features/07-room-management.md) |
+| 14 | Password policy | Min 8 chars, at least one letter and one digit; hashed with a salted slow algorithm; never stored or returned raw | [01](features/01-auth-identity.md) |
+| 15 | Field max lengths | Track.Name 150, Track.Description 1000, Module.Title 150, Module.Summary 500, Lesson.Title 150, LessonResource.Title 200 | [02](features/02-tracks-content.md), [03](features/03-lessons-and-learning-resources.md) |
+| 16 | Lesson resource URL | Must be absolute `http`/`https` when present; reject relative paths and unsupported schemes with `400` | [03](features/03-lessons-and-learning-resources.md) |
+| 17 | Authorization policies | Named `LearnerOnly` and `AdminOnly` policies; critical user management is `AdminOnly` | [01](features/01-auth-identity.md) |

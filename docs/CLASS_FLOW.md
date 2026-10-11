@@ -40,7 +40,7 @@ HTTP request
 - Track list/create behavior exists in `TrackService`, but `TracksController` actions still throw `NotImplementedException`.
 - `ExamService.GetByIdAsync` loads an Exam through `IUnitOfWork` and throws `NotFoundException` when missing. Create and Submit are placeholders.
 - `UserService` methods and `UserProgressService.GetMyProgressAsync` are placeholders.
-- User, Module, Lesson, and Progress controllers are placeholders; Progress currently returns 501.
+- User, Module, Lesson, Exams, and Progress controllers are placeholders; Exams actions throw `NotImplementedException` and Progress currently returns 501.
 - `Program.cs` does not yet register feature services, authentication, or exception middleware.
 
 ## 4. Target Exam Submission Path

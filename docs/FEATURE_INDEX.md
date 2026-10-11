@@ -7,10 +7,8 @@ This index separates current code from planned product behavior. A feature docum
 | [01-auth-identity.md](features/01-auth-identity.md) | User profiles and authentication | User fields and service contracts exist; authentication and user API behavior are placeholders |
 | [02-tracks-content.md](features/02-tracks-content.md) | Tracks, Modules, and Lessons | Core entities and Track list/create service exist; Module/Lesson delivery APIs are placeholders |
 | [03-lessons-and-learning-resources.md](features/03-lessons-and-learning-resources.md) | Lesson content and source links | Lesson text exists; resource metadata is proposed and not implemented |
-| [04-exams-management.md](features/04-exams-management.md) | Exams, questions, and results | Exam model/service contract exist; question model, trusted grading, create/submit behavior, and controller are missing |
+| [04-exams-management.md](features/04-exams-management.md) | Exams, questions, and results | Exam model/service contract and a placeholder ExamsController exist; question model, trusted grading, and create/submit behavior are missing |
 | [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md) | Track enrollment and per-module progress | UserProgress exists; TrackEnrollment and the unlock workflow are not implemented |
-| [06-center-management.md](features/06-center-management.md) | Learning center administration | Planned; no code contract exists |
-| [07-room-management.md](features/07-room-management.md) | Center rooms (records only; booking is out of scope) | Planned; no code contract exists |
 | [08-health-and-error-handling.md](features/08-health-and-error-handling.md) | Health endpoint and exception mapping | Health route exists; middleware is an empty, unregistered placeholder |
 
 ## Other Documents

@@ -46,10 +46,6 @@ Allow one Lesson to cite multiple learning sources. Proposed fields: `Id`, `Less
 
 For the first exam format, use ordered multiple-choice questions. `ExamQuestion` belongs to Exam and stores Prompt, Order, and Points. `ExamOption` belongs to a question and stores learner-visible Text plus server-only `IsCorrect`. Never return `IsCorrect` in a learner response.
 
-### Center and Room
-
-These are optional operational features, not part of the self-paced learning flow. No fields or relationships are finalized. If approved later, decide whether a Center owns Tracks, Rooms, or both before adding FKs.
-
 ## 4. Target Progression Transaction
 
 1. Create a TrackEnrollment for the authenticated User and selected Track.

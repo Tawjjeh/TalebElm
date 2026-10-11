@@ -37,7 +37,7 @@ TalebElm/
 - EF Core uses SQLite for local development; AppDbContext exposes the current entity sets.
 - TrackService list/create and ExamService get-by-id have implementations.
 - Track, Module, and Exam repositories have some implemented methods. Track read methods and UserRepository methods remain placeholders.
-- Controllers exist for Auth, Users, Tracks, Modules, Lessons, Progress, and Health. Most feature actions remain placeholders; there is no ExamsController.
+- Controllers exist for Auth, Users, Tracks, Modules, Lessons, Exams, Progress, and Health. Most feature actions remain placeholders (Exams actions throw `NotImplementedException`; Progress returns 501).
 - SQLite-backed repository tests exist for selected implementations; they do not yet cover the whole student journey.
 
 ## Planned Product Concepts Not Yet in the Model
@@ -45,8 +45,6 @@ TalebElm/
 - `TrackEnrollment`: records that a learner selected a Track. Do not use `UserProgress` as an enrollment record.
 - `LessonResource`: stores links/citations for books, official documentation, videos, and other lesson sources.
 - `ExamQuestion` and `ExamOption`: store questions and server-side answer keys; correct answers must not be returned to learners.
-- Center and Room: optional operational features with no approved domain contract yet.
-
 ## Architecture Boundaries
 
 - Domain contains business entities, rules, exceptions, and repository interfaces; it must not reference EF Core or ASP.NET Core.

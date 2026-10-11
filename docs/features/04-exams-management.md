@@ -112,7 +112,7 @@ The current Submit DTO accepts a client-supplied score and cannot provide truste
 | `GET` | `/api/exams/{id}` | — | `ExamResponse` | `200 OK`, `404 Not Found` |
 | `POST` | `/api/exams/{id}/submit` | `SubmitExamRequest` | `ExamResultResponse` | `200 OK`, `400 Bad Request`, `404 Not Found` |
 
-> No `ExamsController` exists in the current source tree. These endpoints are planned.
+> An `ExamsController` placeholder exists (`GET /api/exams/{id}`, `POST /api/exams`, `POST /api/exams/{id}/submit` all throw `NotImplementedException`). These endpoints are planned and not yet wired to services.
 
 The target submit request contains selected question/option IDs, not a score. The API takes the learner ID from the authenticated identity and passes it explicitly to Application; it must not come from request JSON. Calculate the score from server-side `IsCorrect` values, store the current Module result, and unlock only the next Module after a pass.
 
