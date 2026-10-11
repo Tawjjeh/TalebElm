@@ -48,7 +48,9 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByIdAsync_WhenModuleExists_ReturnsModule()
     {
-        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1 };
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        DbContext.Tracks.Add(track);
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1, TrackId = track.Id };
         DbContext.Modules.Add(module);
         await SaveChangesAsync();
         ClearTracker();
@@ -70,10 +72,12 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetAllAsync_ReturnsAllModules()
     {
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        DbContext.Tracks.Add(track);
         var modules = new[]
         {
-            new Module { Id = Guid.NewGuid(), Title = "First", Order = 1 },
-            new Module { Id = Guid.NewGuid(), Title = "Second", Order = 2 }
+            new Module { Id = Guid.NewGuid(), Title = "First", Order = 1, TrackId = track.Id },
+            new Module { Id = Guid.NewGuid(), Title = "Second", Order = 2, TrackId = track.Id }
         };
         DbContext.Modules.AddRange(modules);
         await SaveChangesAsync();
@@ -88,7 +92,10 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task AddAsync_DoesNotPersistUntilUnitOfWorkSaves()
     {
-        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics" };
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1, TrackId = track.Id };
         await _repository.AddAsync(module);
 
         await using var secondContext = CreateContext();

@@ -10,5 +10,15 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
     {
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => new { x.UserId, x.ModuleId }).IsUnique();
+
+        builder.HasOne(x => x.User)
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Module)
+            .WithMany()
+            .HasForeignKey(x => x.ModuleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
