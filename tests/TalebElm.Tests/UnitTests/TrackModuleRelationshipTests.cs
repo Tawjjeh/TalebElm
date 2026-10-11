@@ -1,20 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Infrastructure.Persistence;
+using TalebElm.Tests.Infrastructure;
 using Xunit;
 
-public class TrackModuleRelationshipTests
+public class TrackModuleRelationshipTests:SqliteTestBase
 {
     [Fact]
     public void Module_ShouldHaveTrackForeignKey_WithRestrictDelete()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        using var context = new AppDbContext(options);
-
-        var moduleType = context.Model.FindEntityType(typeof(Module));
+        var moduleType = DbContext.Model.FindEntityType(typeof(Module));
 
         Assert.NotNull(moduleType);
 
