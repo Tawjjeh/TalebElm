@@ -21,8 +21,8 @@ This is the target MVP flow, not a claim that every step currently works. Authen
 ```text
 HTTP request
   → API Controller
-  → Application service interface
-  → Infrastructure service implementation
+  → Application service interface (Abstraction)
+  → Application service implementation (Concrete, via IUnitOfWork)
   → Domain repository interface / UnitOfWork
   → Infrastructure repository
   → AppDbContext
@@ -30,9 +30,9 @@ HTTP request
 ```
 
 - **API** binds HTTP input and returns HTTP responses. It should not contain business rules or access repositories directly.
-- **Application** defines service contracts and DTOs. It receives explicit user IDs, not `HttpContext` or JWT types.
+- **Application** defines service contracts, implements all business logic / use cases, and owns DTOs. It receives explicit user IDs, not `HttpContext` or JWT types, and accesses persistence only through `IUnitOfWork` (never a DbContext abstraction).
 - **Domain** owns entities, business rules, repository contracts, and domain exceptions.
-- **Infrastructure** implements services/repositories and owns EF Core persistence.
+- **Infrastructure** implements repositories and owns EF Core persistence (`DbContext/`, `Configurations/`, `Repositories/`). It contains no business logic.
 
 ## 3. Current Code Paths
 

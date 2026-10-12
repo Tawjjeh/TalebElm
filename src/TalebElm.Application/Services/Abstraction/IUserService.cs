@@ -1,7 +1,7 @@
 ﻿
 using TalebElm.Application.DTOs;
 
-namespace TalebElm.Application.Services;
+namespace TalebElm.Application.Services.Abstraction;
 
 public interface IUserService
 {

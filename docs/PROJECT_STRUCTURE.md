@@ -14,13 +14,14 @@ TalebElm/
 │   │   └── Interfaces/      Repositories and IUnitOfWork
 │   ├── TalebElm.Application/
 │   │   ├── DTOs/            User, Track, Lesson, Exam, and Progress contracts
-│   │   ├── Services/        IUserService, ITrackService, IExamService, IUserProgressService
-│   │   ├── Interfaces/      IApplicationDbContext
+│   │   ├── Services/Abstraction/  IUserService, ITrackService, IExamService, IUserProgressService
+│   │   ├── Services/Concrete/     User, Track, Exam, UserProgress service implementations (business logic lives here)
 │   │   └── Validators/      CreateTrackRequestValidator
 │   ├── TalebElm.Infrastructure/
-│   │   ├── Persistence/     AppDbContext and entity configurations
-│   │   ├── Repositories/    User, Track, Module, Exam, UserProgress, UnitOfWork
-│   │   └── Services/        User, Track, Exam, UserProgress services
+│   │   ├── Persistence/DbContext/        AppDbContext
+│   │   ├── Persistence/Configurations/   Entity configurations (field lengths, FKs, Restrict, unique indexes)
+│   │   ├── Persistence/Repositories/     User, Track, Module, Exam, UserProgress, UnitOfWork implementations
+│   │   └── DependencyInjection.cs        Persistence + repository DI wiring
 │   └── TalebElm.Api/
 │       ├── Controllers/    Auth, Health, Users, Tracks, Modules, Lessons, Progress
 │       ├── Middlewares/    ExceptionHandlingMiddleware
@@ -48,8 +49,8 @@ TalebElm/
 ## Architecture Boundaries
 
 - Domain contains business entities, rules, exceptions, and repository interfaces; it must not reference EF Core or ASP.NET Core.
-- Application owns DTOs, validators, and `I<Name>Service` contracts.
-- Infrastructure implements services and repository contracts, and owns EF Core.
+- Application owns DTOs, validators, `I<Name>Service` contracts **and their `<Name>Service` implementations**. Business logic lives exclusively here; Application depends only on Domain abstractions (normally `IUnitOfWork`) and never on EF Core or `HttpContext`.
+- Infrastructure implements repository contracts and owns EF Core (`AppDbContext`, configurations) plus DI wiring. It must not contain business logic. There is no `IApplicationDbContext`: `IUnitOfWork.SaveChangesAsync()` is the single commit point, so a DbContext abstraction in Application services is redundant.
 - API controllers call Application service interfaces and translate results to HTTP. Do not access repositories directly from controllers.
 - Tests may reference the layers they verify; production projects must not reference Tests.
 

@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using TalebElm.Application.DTOs;
-using TalebElm.Application.Services;
+using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
 using TalebElm.Domain.Interfaces;
 
-namespace TalebElm.Infrastructure.Services;
+namespace TalebElm.Application.Services.Concrete;
 
 public class TrackService(
     IUnitOfWork unitOfWork,

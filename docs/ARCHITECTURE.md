@@ -14,10 +14,12 @@
 │  Controllers, Middlewares, Program.cs            │
 ├─────────────────────────────────────────────────┤
 │  TalebElm.Infrastructure  (implementation)      │
-│  Persistence, Repositories, Services            │
+│  Persistence (DbContext, Configurations,        │
+│  Repositories), DI wiring                       │
 ├─────────────────────────────────────────────────┤
 │  TalebElm.Application     (use cases)           │
-│  DTOs, Service Interfaces, Validators           │
+│  DTOs, Service Interfaces + Implementations,    │
+│  Validators                                    │
 ├─────────────────────────────────────────────────┤
 │  TalebElm.Domain           (core rules)         │
 │  Entities, Enums, Exceptions, Repo Interfaces   │
@@ -27,8 +29,8 @@
 | Layer | References | Owns |
 |---|---|---|
 | **Domain** | Nothing | Entities, Enums, Exceptions, Repository interfaces (`IRepository<T>`, `IUnitOfWork`) |
-| **Application** | Domain | DTOs (records), Service interfaces (`I<Name>Service`), `IApplicationDbContext`, Validators |
-| **Infrastructure** | Application, Domain | `AppDbContext`, EF Core configurations, Repository implementations, Service implementations |
+| **Application** | Domain | DTOs (records), Service interfaces (`I<Name>Service`) + service implementations (`<Name>Service`), Validators |
+| **Infrastructure** | Application, Domain | `AppDbContext`, EF Core configurations, Repository implementations, DI registration |
 | **Api** | Infrastructure | Controllers, Middlewares, `Program.cs`, `appsettings.json` |
 
 ### Dependency rule
@@ -63,15 +65,16 @@ We use the **Interface + Service Class** pattern. No CQRS, no MediatR.
 
 | Artifact | Location | Convention | Example |
 |---|---|---|---|
-| Service interface | `Application/Services/` | `I<Feature>Service` | `IExamService` |
-| Service implementation | `Infrastructure/Services/` | `<Feature>Service` | `ExamService` |
+| Service interface | `Application/Services/Abstraction/` | `I<Feature>Service` | `IExamService` |
+| Service implementation | `Application/Services/Concrete/` | `<Feature>Service` | `ExamService` |
 
 ### Rules
 
-1. Service interfaces live in `Application/Services/` and expose DTOs or explicit identifiers — never persistence types.
-2. Service implementations live in `Infrastructure/Services/` and depend on Application contracts plus Domain repository contracts, normally through `IUnitOfWork`.
-3. Service methods accept request DTOs or explicit values such as IDs and return response DTOs. Do not pass `HttpContext` into Application.
-4. Controllers call service interfaces only. Controllers must not access repositories or `AppDbContext` directly.
+1. Service interfaces live in `Application/Services/Abstraction/` and expose DTOs or explicit identifiers — never persistence types.
+2. Service implementations (business logic / use cases) live in `Application/Services/Concrete/`. They depend only on Application contracts plus Domain repository contracts, normally through `IUnitOfWork`. They must never reference EF Core (`DbContext`, `EntityTypeBuilder`) or ASP.NET Core (`HttpContext`) types.
+3. Infrastructure owns persistence only: `AppDbContext`, `IEntityTypeConfiguration<T>` classes, repository implementations, and DI wiring. It must never contain business logic or use-case orchestration.
+4. Service methods accept request DTOs or explicit values such as IDs and return response DTOs. Do not pass `HttpContext` into Application.
+5. Controllers call service interfaces only. Controllers must not access repositories or `AppDbContext` directly.
 
 ### Interface shape
 
@@ -136,6 +139,22 @@ public interface IUnitOfWork
 
 Repositories should share one scoped `AppDbContext`. Repository `AddAsync` methods add entities to that context; `UnitOfWork.SaveChangesAsync()` is the commit point. Add a repository property only when its repository contract and implementation are ready.
 
+### Data-access rule: `IUnitOfWork` only (no `IApplicationDbContext`)
+
+Application services must access persistence exclusively through `IUnitOfWork` (Domain contract). A direct `IApplicationDbContext` / `IAppDbContext` dependency in application services is redundant and forbidden:
+
+- `IUnitOfWork` already exposes the required repositories plus the single `SaveChangesAsync()` commit point, keeping multi-repository updates atomic.
+- Depending on a DbContext abstraction leaks EF Core specifics (change tracking, `DbSet<T>`, queryable surface) into the Application layer and defeats the repository boundary.
+- Tests then mock one seam (`IUnitOfWork` + `IRepository<T>`) instead of a DbContext-shaped API.
+
+```csharp
+// Correct: Application service depends on the Domain Unit of Work.
+public class TrackService(IUnitOfWork unitOfWork) : ITrackService { ... }
+
+// Forbidden: do not inject a DbContext abstraction into Application services.
+// public class TrackService(IApplicationDbContext db) : ITrackService { ... }
+```
+
 ---
 
 ## 4. Error Handling & Domain Exceptions
@@ -196,11 +215,21 @@ public record TrackResponse(Guid Id, string Name, string Description, int Status
 
 | Artifact | Location | Convention |
 |---|---|---|
-| DbContext | `Infrastructure/Persistence/AppDbContext.cs` | Single context for all entities |
-| Configuration | `Infrastructure/Persistence/<Entity>Configuration.cs` | One `IEntityTypeConfiguration<T>` per entity |
+| DbContext | `Infrastructure/Persistence/DbContext/AppDbContext.cs` | Single context for all entities |
+| Configuration | `Infrastructure/Persistence/Configurations/<Entity>Configuration.cs` | One `IEntityTypeConfiguration<T>` per entity |
+| Repository implementation | `Infrastructure/Persistence/Repositories/<Entity>Repository.cs` | Implements the Domain repository contract via `AppDbContext` |
 
 Configurations define field constraints, relationships, indexes, and FK behavior.
 `AppDbContext` applies all configurations via `OnModelCreating`.
+
+### Mandatory MVP constraints
+
+- `UNIQUE(UserId, ModuleId)` on `UserProgress` (one progress row per learner + Module).
+- `UNIQUE(TrackId, Order)` on `Module` (no two Modules share an `Order` within one Track).
+- `UNIQUE(ModuleId, Order)` on `Lesson` (no two Lessons share an `Order` within one Module).
+- `UNIQUE(ModuleId)` on `Exam` (at most one Exam per Module).
+- `UNIQUE(UserId, TrackId)` on `TrackEnrollment` (one enrollment per learner + Track, planned entity).
+- All learning-path foreign keys use `DeleteBehavior.Restrict` (see `DATABASE_ERD.md` §5); deletes that would orphan dependent data fail with `409 Conflict` instead of cascading.
 
 ---
 
@@ -210,8 +239,8 @@ The codebase splits ownership across two conceptual teams:
 
 | Boundary | Owns | Key files |
 |---|---|---|
-| **DB / Domain Team** | Entities, Enums, Exceptions, Repository Interfaces, EF Configurations | `Domain/Entities/*`, `Domain/Interfaces/*`, `Infrastructure/Persistence/*` |
-| **API / Application Team** | DTOs, Service Interfaces, Service Implementations, Controllers, Middleware | `Application/DTOs/*`, `Application/Services/*`, `Infrastructure/Services/*`, `Api/Controllers/*` |
+| **DB / Domain Team** | Entities, Enums, Exceptions, Repository Interfaces, EF Configurations | `Domain/Entities/*`, `Domain/Interfaces/*`, `Infrastructure/Persistence/Configurations/*`, `Infrastructure/Persistence/DbContext/*` |
+| **API / Application Team** | DTOs, Service Interfaces + Implementations, Validators, Controllers, Middleware | `Application/DTOs/*`, `Application/Services/Abstraction/*`, `Application/Services/Concrete/*`, `Api/Controllers/*` |
 
 ### Handoff rules
 

@@ -5,7 +5,7 @@ using TalebElm.Application.DTOs;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
 using TalebElm.Domain.Interfaces;
-using TalebElm.Infrastructure.Services;
+using TalebElm.Application.Services.Concrete;
 
 namespace TalebElm.Tests.UnitTests;
 

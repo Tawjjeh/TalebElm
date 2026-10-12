@@ -2,7 +2,7 @@ using Moq;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
-using TalebElm.Infrastructure.Services;
+using TalebElm.Application.Services.Concrete;
 
 namespace TalebElm.Tests.UnitTests;
 
