@@ -135,7 +135,8 @@ do the actual database work itself. It only asks for help.
 
 ### What files belong here
 
-- **Service Interfaces**: the actions the app can do, like "I need a way to create a track".
+- **Service Interfaces** (`Services/Abstraction/`): the actions the app can do, like "I need a way to create a track".
+- **Service Implementations** (`Services/Concrete/`): the real use-case code that carries out those actions using only Domain abstractions (normally `IUnitOfWork`). All business logic lives here.
 - **DTOs**: short for "Data Transfer Object". These are simple boxes for sending data between the web API and the Application. They are usually not the same as Domain entities.
 
 ### What NOT to put here
@@ -160,17 +161,16 @@ The most common example is the **database**. Infrastructure uses a tool called *
 
 ### What files belong here
 
-- **Service Implementations**: the real code that does the work defined in the Application layer.
-- The database context (the file that talks to the database).
-- The models that represent how the data is stored in the database.
+- The database context (the file that talks to the database, at `Persistence/DbContext/`).
+- Entity configurations (at `Persistence/Configurations/`): field lengths, relationships, `Restrict` delete behavior, unique indexes.
+- Repositories (at `Persistence/Repositories/`): real code that saves and loads data, plus the `UnitOfWork` commit point.
 - Settings that say how to connect to the database.
 - Code that emails, files, or any outside tool like talking to APIs.
-- Repositories: real code that saves and loads data.
 
 ### What NOT to put here
 
 - Do **not** put business rules here. Those belong in Domain.
-- Do **not** put use cases here. Those belong in Application.
+- Do **not** put use cases or service implementations here. Those belong in Application (`Services/Concrete/`).
 - Do **not** put controllers here. Those belong in Api.
 
 Infrastructure answers "how" questions. It does not decide "what rules" the
@@ -270,8 +270,8 @@ Imagine someone opens the website and asks: "Show me all the tracks."
 The request flows like this:
 
 1. **Api** receives the web request "get me all tracks".
-2. **Api** passes this request to the **Application**.
-3. **Application** says "I need the list of tracks. I will ask a repository."
+2. **Api** passes this request to the **Application** service interface.
+3. **Application** service implementation says "I need the list of tracks. I will ask `IUnitOfWork`." It never touches EF Core directly.
 4. **Infrastructure** has the real repository that reads the database.
 5. **Infrastructure** gets the data and gives it back.
 6. **Application** returns the data to **Api**.

@@ -17,13 +17,18 @@ TalebElm helps a learner study software development through an ordered Track. Th
 ## Core Rules
 
 - The first Module becomes available when enrollment is created.
-- A passing score is `score >= Exam.PassThreshold`.
+- A passing score is `score >= Exam.PassThreshold` on a `0–100` scale (`PassThreshold` is `1–100`).
+- The score is always computed on the server from server-side answer keys; a client-supplied score is ignored.
+- Each submission overwrites `UserProgress.Score` with the latest score (latest-wins), but `PassedExam`, once `true`, is never cleared by a later failed retake (sticky pass). Retries are unlimited with no cooldown in the MVP, and no per-attempt history is stored.
+- A Module MAY have no Exam; such a Module never sets `PassedExam` and is progressed only by the explicit unlock rule.
 - Passing unlocks only the next Module; it does not unlock the whole Track.
+- Unlocks are forward-only and sticky: an unlocked Module is never auto re-locked. An `Admin` may manually unlock any Module for a learner without touching `Score` / `PassedExam`.
+- Enrollment is explicit: `Published` Tracks are enrollable but never auto-joined. One enrollment per learner + Track (`409` on duplicate); a Track with no Modules cannot be enrolled in.
 - A failed attempt must not unlock another Module.
-- Progress belongs to one learner and one Module. Enforce uniqueness on `(UserId, ModuleId)`.
+- Progress belongs to one learner and one Module. Enforce uniqueness on `(UserId, ModuleId)`, plus `UNIQUE(TrackId, Order)` for Modules, `UNIQUE(ModuleId, Order)` for Lessons, and `UNIQUE(ModuleId)` for Exams (at most one Exam per Module).
 - The final Module has no next Module to unlock.
-- Only `Published` Tracks can be browsed and enrolled in (proposed).
-- A learner may retake a failed Exam. A later attempt never reverts `PassedExam` or re-locks a Module that was already unlocked (proposed).
+- Only `Published` Tracks can be browsed and enrolled in.
+- Deletes never cascade learner data: `Restrict` on all learning-path FKs; blocked deletes return `409` (archive a shipped Track instead of deleting it).
 - The score is calculated by the server from the sum of `Points` of correctly answered questions (proposed; see [OPEN_DECISIONS.md](OPEN_DECISIONS.md)).
 
 ## Current Code vs. MVP Target

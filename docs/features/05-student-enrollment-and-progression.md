@@ -13,11 +13,11 @@ A signed-in learner chooses a Track and enrolls once. Enrollment opens the first
 | UserProgress | CreatedAt | DateTimeOffset | No | Inherited UTC timestamp |
 | UserProgress | UserId | Guid | No | Learner id; unique with ModuleId |
 | UserProgress | ModuleId | Guid | No | Module id; unique with UserId |
-| UserProgress | IsUnlocked | bool | No | Whether the learner may open this Module |
-| UserProgress | PassedExam | bool | No | Whether this learner passed the Module exam |
-| UserProgress | Score | int | No | Latest score; scale/range is not defined in current code |
+| UserProgress | IsUnlocked | bool | No | Whether the learner may open this Module; sticky — never auto re-locked once `true` |
+| UserProgress | PassedExam | bool | No | Whether this learner passed the Module exam; sticky — never reset by a later failed retake |
+| UserProgress | Score | int | No | Latest attempt score on the `0–100` scale (latest-wins) |
 
-The current EF configuration enforces a unique index on `(UserId, ModuleId)`. It does not configure foreign keys or navigation properties.
+The EF configuration enforces a unique index on `(UserId, ModuleId)` (exactly one row per learner + Module), `Restrict` delete behavior on both FKs, and plain-CLR navigation properties (`UserProgress.User`, `UserProgress.Module`).
 
 ### Proposed Entity: TrackEnrollment
 
@@ -35,13 +35,17 @@ Add a unique index on `(UserId, TrackId)`. Payment and attendance are separate f
 ### Relationships & Rules
 
 - One User can enroll in many Tracks; one Track can have many Users.
-- One User has at most one progress row per Module.
-- On enrollment, create progress for the lowest-Order Module and set `IsUnlocked = true`.
+- One User has at most one progress row per Module (`UNIQUE(UserId, ModuleId)`).
+- On enrollment, create progress for the lowest-Order Module and set `IsUnlocked = true`. No other rows are pre-created.
 - On a passing Exam, mark the current Module passed and unlock only the next Module in the same Track.
-- On failure, record the score and keep later Modules locked.
-- A later failed retake never clears `PassedExam` or re-locks a Module that is already unlocked.
+- On failure, record the latest score and keep later Modules locked.
+- A later failed retake never clears `PassedExam` or re-locks a Module that is already unlocked (both flags are sticky).
+- An `Admin` may manually unlock any Module for a learner (creates the row if missing, sets `IsUnlocked = true`, leaves `Score` / `PassedExam` untouched).
 - Reject enrollment in a Track with no Modules without creating partial records.
-- The last Module has no next Module to unlock.
+- Reject duplicate enrollment with `409 Conflict`; there is no un-enroll in the MVP.
+- Modules without an Exam never set `PassedExam`; they progress only via the explicit unlock rule.
+- New Modules added after enrollment start locked; inserting in the middle shifts sibling `Order` values in one transaction. Reordering a `Published` Track after learners start requires product approval.
+- Deletes use `Restrict` (see `DATABASE_ERD.md` §5.4): blocked deletes return `409`; learner history is never cascaded.
 
 ## 3. Application Contracts
 

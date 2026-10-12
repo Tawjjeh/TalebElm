@@ -13,13 +13,12 @@ Attach an exam to a Module and grade the learner's answers against its pass thre
 | Exam | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Exam | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
 | Exam | Title | `string` | No | Initialized `string.Empty`; no max length configured |
-| Exam | PassThreshold | `int` | No | Minimum score to pass; valid range not defined |
-| Exam | ModuleId | `Guid` | No | FK → `Module.Id`; no unique constraint (one exam per module is intended but not enforced) |
+| Exam | PassThreshold | `int` | No | `1–100` in the same `0–100` score scale; validated in Application and at the DB boundary |
+| Exam | ModuleId | `Guid` | No | FK → `Module.Id`; `UNIQUE(ModuleId)` — at most one exam per Module (a Module MAY have no Exam) |
 
 ### Relationships
 
-- `Exam.ModuleId` → `Module.Id`: many-to-one (intended as one-to-one per module).
-- No navigation properties declared.
+- `Exam.ModuleId` → `Module.Id`: one-to-one per Module (at most one Exam per Module), mapped through the `Exam.Module` / `Module.Exam` navigation pair with `DeleteBehavior.Restrict` and `UNIQUE(ModuleId)`.
 
 ### Repository Interface
 
@@ -29,8 +28,8 @@ public interface IExamRepository : IRepository<Exam> { }
 
 ### EF Core Notes
 
-- `ExamConfiguration` exists with an empty `Configure` body.
-- No FK behavior, unique `ModuleId` constraint, or field-length rules configured.
+- `ExamConfiguration` must map `Exam.Module` one-to-one (`HasOne/WithOne` on `ModuleId`) with `DeleteBehavior.Restrict` and a unique index on `ModuleId`.
+- Field rules: `Title` required with planned max length; `PassThreshold` range `1–100`.
 
 ### Questions and answer keys
 
@@ -50,19 +49,21 @@ No question, option, or answer entity exists. For the MVP, use multiple choice:
 
 Proposed rules: each question has at least two options and exactly one correct option. Keep these as Application validation until a database constraint is selected.
 
-### Scoring rule (proposed)
+### Scoring rule (MVP — binding)
 
-- `Score` = sum of `Points` of the questions the learner answered correctly. An unanswered or wrong question earns 0.
-- `PassThreshold` is expressed in the same points and must be between 1 and the exam's total points.
+- `Score` is an integer `0–100`. `PassThreshold` is an integer `1–100` in the same scale.
+- `Score` = sum of `Points` of the questions the learner answered correctly, normalized to the `0–100` scale. An unanswered or wrong question earns 0.
 - `Exam.HasPassed(score)` stays `score >= PassThreshold`.
-- Retakes are allowed. Only the latest result is stored in `UserProgress`; a later failed retake must not clear `PassedExam`. Attempt history is not part of the MVP.
+- Grading is server-side only: the Application service compares submitted option IDs against server-side `IsCorrect` values. A client-supplied score is never trusted.
+- Only the latest aggregate result is stored in `UserProgress`; attempt history is out of MVP scope.
 
-### Retake policy (proposed)
+### Retake policy (MVP — binding)
 
 - **Attempt limit:** unlimited attempts in the MVP.
 - **Cooldown:** none in the MVP; a learner may resubmit immediately.
-- **Kept result:** the latest score overwrites `UserProgress.Score`, but
-  `PassedExam` is sticky and is never reset by a later failure.
+- **Kept result:** the latest score overwrites `UserProgress.Score` (latest-wins), but
+  `PassedExam` is sticky and is never reset by a later failure (sticky-wins).
+- **Pass permanence:** once a learner passes, later failed retakes change `Score` but leave `PassedExam = true` and leave the unlocked next Module unlocked.
 - **When to revisit:** if abuse or load becomes a problem, add a cooldown and/or
   a maximum-attempt rule here and in
   [OPEN_DECISIONS.md](../OPEN_DECISIONS.md) before implementing.

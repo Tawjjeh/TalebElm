@@ -1,10 +1,10 @@
 using TalebElm.Application.DTOs;
-using TalebElm.Application.Services;
+using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 using NotImplementedException = System.NotImplementedException;
 
-namespace TalebElm.Infrastructure.Services;
+namespace TalebElm.Application.Services.Concrete;
 
 public class ExamService(IUnitOfWork unitOfWork) : IExamService
 {

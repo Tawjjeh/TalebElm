@@ -1,8 +1,8 @@
 ﻿
 using TalebElm.Application.DTOs;
-using TalebElm.Application.Services;
+using TalebElm.Application.Services.Abstraction;
 
-namespace TalebElm.Infrastructure.Services;
+namespace TalebElm.Application.Services.Concrete;
 
 public class UserService : IUserService
 {

@@ -9,22 +9,7 @@ Create a learner account and identify the learner on later requests. The User mo
 ### Entities & Fields
 
 | Entity | Field | Type | Nullable | Constraints |
-|---|---|---|---|---|Rows 1–14 all needed changes; none were already correct.
-
-What was built
-Domain: reworked RefreshToken, new OtpRequest/OtpPurpose, Stage, AppLanguage, GradeLevel (D11 ranges), Student aggregate (CreateForAccount, CreateManually for the other developer, UpdateProfile, CompleteOnboarding, Anonymize — D1), UserSettings. All with stable error codes.
-Application: Register (atomic: account + Student profile + default settings in one transaction), Login (distinct errors, lockout, PasswordNotSet for password-less accounts), Refresh (rotation + reuse detection), Logout (idempotent, caller's id from claims), ForgotPassword/VerifyOtp/ResetPassword (60 s OTP, 30 s cooldown, 5 attempts, single-use, HMAC-SHA256 + constant-time compare, 10-min single-use reset token, revokes all sessions, clears lockout, works for any role and password-less accounts), DeleteAccount (students only, anonymizes account+profile, removes settings, revokes sessions — D1/D23), GetCurrentUser; Students (profile GET/PUT with name/phone sync to account, onboarding) and Settings (every role, D17); internal idempotent EnsureProfile that self-heals Student profiles and creates settings for any role; shared PhoneNumbers (+20 normalization), PasswordRules, FullNames helpers.
-Infrastructure: AppUser (Identity user store only, role as column), IdentityService, TokenProvider (JWT with sub/email/name/role/jti; 64-byte base64url refresh tokens stored as SHA-256), OtpService, LoggingEmailSender, validated JwtOptions/OtpOptions (ValidateOnStart), EF configurations (unique filtered index on Students.UserId, unique token-hash index, cascade/restrict FKs per spec) and migration AddIdentityAndStudent (9 tables, no role tables).
-API: all 14 endpoints in section 6.1, central AuthorizationPolicies (Admin/Teacher/Assistant/Student/TeacherStaff), auth rate limiting 10 req/min per IP (configurable via RateLimiting:PermitLimit for tests), JWT bearer (30 s skew, role/name claim types, no inbound mapping), Swagger with Bearer scheme, ProblemDetails mapping via the existing ResultExtensions/ApiResponse mechanism.
-Configuration & environment variables
-Secrets are never committed — Jwt:SigningKey and Otp:HashKey are empty in appsettings.json and were stored via user secrets for development. Environment variables: Jwt__SigningKey, Jwt__Issuer, Jwt__Audience, Jwt__AccessTokenMinutes, Jwt__RefreshTokenDays, Otp__HashKey, Otp__ExpirySeconds, Otp__MaxAttempts, Otp__ResendCooldownSeconds, Otp__ResetTokenLifetimeMinutes, ConnectionStrings__DefaultConnection, RateLimiting__PermitLimit.
-
-Deviations / notes
-Tests: created (projects already existed). 75 unit tests pass; 30 integration tests compile but require Docker (SQL Server Testcontainer) to run — the only unverified behavior, including the "registration rolls back when profile creation fails" scenario.
-IEmailService/GmailEmailService (pre-existing) kept intact; LoggingEmailSender handles OTP mails. A real email provider is a production blocker for the OTP flow.
-AllowedUserNameCharacters was set to the email-safe character set (letters, digits, -._@+) rather than literally empty, because Identity's default validator rejects @ otherwise; empty string would require bypassing validation entirely.
-Rate limiting made configurable (RateLimiting:PermitLimit, default 10) solely so the integration suite can lift it; production default is unchanged.
-Teacher/Assistant/Admin work (profiles, admin seeder, teacher_id claim, CORS, account-created email, audit log) was not touched; the shared contracts it needs are in place (IIdentityService.CreateAsync with optional password, password reset for password-less accounts, transaction capability, UserSettings + EnsureProfile, Student.CreateManually without any endpoint).
+|---|---|---|---|---|
 | User | Id | `Guid` | No | PK, inherited from `BaseEntity`, auto-generated |
 | User | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, initialized to UTC |
 | User | Name | `string` | No | Initialized to `string.Empty` |
