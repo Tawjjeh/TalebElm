@@ -1,7 +1,10 @@
 name: PR Validation
 
-# Enforces backlog traceability (every PR links its issue) and
-# conventional-commit titles so history stays searchable.
+# Smart PR validation:
+# - Every PR title must use conventional-commit format (checked always).
+# - An issue link (Closes/Fixes/Resolves #NNN) is required ONLY for
+#   feat: and fix: PRs. Routine chore:/docs:/refactor:/test:/ci:/build:/
+#   perf:/style: PRs skip the linkage rule so maintenance is never blocked.
 on:
   pull_request:
     types: [opened, edited, synchronize]
@@ -22,16 +25,22 @@ jobs:
             const body = context.payload.pull_request.body || '';
             const errors = [];
 
-            if (!/(closes|fixes|resolves)\s+#\d+/i.test(body)) {
-              errors.push('PR description must contain an issue reference such as "Closes #123", "Fixes #123" or "Resolves #123".');
-            }
+            // Accepted types: feat, fix, chore, refactor, docs, test, ci,
+            // build, perf, style — with optional scope, e.g. "fix(auth): ...".
+            const titleMatch = title.match(/^(feat|fix|chore|refactor|docs|test|ci|build|perf|style)(\(.+\))?:\s+\S/i);
 
-            if (!/^(feat|fix|chore|refactor|docs|test|ci|build|perf|style)(\(.+\))?:\s+\S/i.test(title)) {
-              errors.push('PR title must use conventional-commit format, e.g. "feat: ...", "fix: ...", "chore: ...", "refactor: ...".');
+            if (!titleMatch) {
+              errors.push('PR title must use conventional-commit format: "<type>: <description>", where <type> is one of feat, fix, chore, refactor, docs, test, ci, build, perf, style (optional scope allowed, e.g. "fix(auth): hash passwords").');
+            } else {
+              // Issue linkage is mandatory only for product changes.
+              const type = titleMatch[1].toLowerCase();
+              if ((type === 'feat' || type === 'fix') && !/(closes|fixes|resolves)\s+#\d+/i.test(body)) {
+                errors.push('PRs titled "feat:" or "fix:" must link their issue in the description, e.g. "Closes #123", "Fixes #123" or "Resolves #123".');
+              }
             }
 
             if (errors.length > 0) {
               core.setFailed(errors.join(' '));
             } else {
-              core.info('PR validation passed: issue linked and title format OK.');
+              core.info('PR validation passed.');
             }
