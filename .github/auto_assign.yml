@@ -7,11 +7,8 @@
 # in the action; do not expect strict alternation, expect fair share.
 #
 # TODO(maintainers): replace the placeholders below with the real GitHub
-# handles of the 5 backend maintainers, keeping one handle per line:
-#   reviewers:
-#     - abdulrahmanhossam
-#     - <second-maintainer>
-#     - ...
+# handles of the backend maintainers, keeping one handle per line.
+# (Completed 2026-10-13: official 6-handle roster is active below.)
 
 # Set to true to add reviewers to pull requests
 addReviewers: true
@@ -20,18 +17,19 @@ addReviewers: true
 # author-assignment is handled by GitHub itself)
 addAssignees: false
 
-# Backend maintainers rotation pool (PLACEHOLDERS — fill in real handles).
+# Backend maintainers rotation pool (official team handles).
 # A list of reviewers to be added to pull requests (GitHub user names)
 reviewers:
-  - maintainer1
-  - maintainer2
-  - maintainer3
-  - maintainer4
-  - maintainer5
+  - Asma-Elhadiedy
+  - AhmedShaabanAl-Saidi
+  - alialtir
+  - abdo6894
+  - Aya-Selim
+  - Esraa-Bakkar
 
 # Reviewers per PR. 2 gives every PR double coverage while keeping each
-# maintainer's share at ~2/5 of PRs. Set to 1 for lighter review load,
-# or 0 to request all maintainers (not recommended past 5 people).
+# maintainer's share at ~2/6 of PRs. Set to 1 for lighter review load,
+# or 0 to request all maintainers (not recommended with 6 people).
 numberOfReviewers: 2
 
 # PRs with these words in the title are skipped (e.g. early drafts).
