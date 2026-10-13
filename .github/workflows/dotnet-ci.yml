@@ -1,0 +1,36 @@
+name: .NET Build & Test (Release)
+
+# NOTE on SDK version: this repository targets net10.0 (see all *.csproj
+# and .github/workflows/ci.yml which uses 10.0.x). The .NET 8 SDK cannot
+# build net10.0 projects, so this pipeline intentionally uses 10.0.x.
+# Release configuration (unlike ci.yml's default Debug) validates the exact
+# binaries we would ship.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore TalebElm.slnx
+
+      - name: Build (Release)
+        run: dotnet build TalebElm.slnx --configuration Release --no-restore
+
+      - name: Test (Release)
+        run: dotnet test TalebElm.slnx --configuration Release --no-build --verbosity normal
