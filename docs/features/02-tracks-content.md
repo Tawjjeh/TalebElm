@@ -19,15 +19,15 @@ Let a learner choose a software-learning Track, then study its Modules and Lesso
 | Module | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
 | Module | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
 | Module | Summary | `string` | No | Initialized `string.Empty`; planned max length **500** |
-| Module | Order | `int` | No | Position within Track; no uniqueness rule |
-| Module | TrackId | `Guid` | No | FK → `Track.Id` |
+| Module | Order | `int` | No | Position within Track (`>= 1`); `UNIQUE(TrackId, Order)` — no two Modules share an `Order` in one Track |
+| Module | TrackId | `Guid` | No | FK → `Track.Id` with `DeleteBehavior.Restrict` |
 | Lesson | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Lesson | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
 | Lesson | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
 | Lesson | Content | `string` | No | Initialized `string.Empty`; free text (no max length) |
 | Lesson | LessonType | `LessonType` | Planned | Existing enum should become an entity field for content rendering and validation |
-| Lesson | Order | `int` | No | Position within Module; no uniqueness rule |
-| Lesson | ModuleId | `Guid` | No | FK → `Module.Id` |
+| Lesson | Order | `int` | No | Position within Module (`>= 1`); `UNIQUE(ModuleId, Order)` — no two Lessons share an `Order` in one Module |
+| Lesson | ModuleId | `Guid` | No | FK → `Module.Id` with `DeleteBehavior.Restrict` |
 
 ### Enums
 
@@ -42,9 +42,9 @@ Lessons may cite books, official documentation, videos, or other references. The
 
 ### Relationships
 
-- `Track` → `Module`: one-to-many via `Module.TrackId`.
-- `Module` → `Lesson`: one-to-many via `Lesson.ModuleId`.
-- No navigation properties declared on any entity.
+- `Track` → `Module`: one-to-many via `Module.TrackId` with `DeleteBehavior.Restrict` and navigation pair `Track.Modules` / `Module.Track`.
+- `Module` → `Lesson`: one-to-many via `Lesson.ModuleId` with `DeleteBehavior.Restrict` and navigation pair `Module.Lessons` / `Lesson.Module`.
+- `Module` → `Exam`: one-to-zero-or-one via `Exam.ModuleId` with `DeleteBehavior.Restrict` and `UNIQUE(ModuleId)`.
 
 ### Repository Interfaces
 
@@ -56,10 +56,10 @@ public interface ILessonRepository : IRepository<Lesson> { }
 
 ### EF Core Notes
 
-- `TrackConfiguration` and `ModuleConfiguration` exist, but their `Configure` methods are empty.
-- `LessonConfiguration` file does not exist in the current source tree.
-- `AppDbContext` exposes the sets, but Track-to-Module and Module-to-Lesson relationships and delete rules are not configured.
-- Ordering is applied by `ModuleRepository.GetByTrackIdAsync`; unique Order values are not enforced.
+- `TrackConfiguration`, `ModuleConfiguration`, and `LessonConfiguration` map the relationships above through navigation properties with `DeleteBehavior.Restrict`.
+- Enforce `UNIQUE(TrackId, Order)` (Modules), `UNIQUE(ModuleId, Order)` (Lessons), and `UNIQUE(ModuleId)` (Exams) as unique indexes.
+- `AppDbContext` lives at `Infrastructure/Persistence/DbContext/AppDbContext.cs`; configurations at `Infrastructure/Persistence/Configurations/`; repository implementations at `Infrastructure/Persistence/Repositories/`.
+- Ordering is applied by `ModuleRepository.GetByTrackIdAsync`; duplicate `Order` values are rejected by both Application validators and the unique indexes.
 
 ## 3. Application Contracts (Shared / Joint Ownership)
 

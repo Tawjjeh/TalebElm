@@ -8,8 +8,8 @@ public class ModuleConfiguration : IEntityTypeConfiguration<Module>
 {
     public void Configure(EntityTypeBuilder<Module> builder)
     {
-        builder.HasOne<Track>()
-            .WithMany()
+        builder.HasOne(m => m.Track)
+            .WithMany(t => t.Modules)
             .HasForeignKey(m => m.TrackId)
             .OnDelete(DeleteBehavior.Restrict);
     }

@@ -7,5 +7,6 @@ public class UserProgress : BaseEntity
     public bool IsUnlocked { get; set; }
     public bool PassedExam { get; set; }
     public int Score { get; set; }
-
+    public User User { get; set; } = default!;
+    public Module Module { get; set; } = default!;
 }

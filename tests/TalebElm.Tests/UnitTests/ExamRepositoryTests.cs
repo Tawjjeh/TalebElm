@@ -16,10 +16,17 @@ public class ExamRepositoryTests : SqliteTestBase
     [Fact]
     public async Task AddAsync_DoesNotPersistUntilUnitOfWorkSaves()
     {
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Module 1", Order = 1 };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.Add(module);
+        await SaveChangesAsync();
+        ClearTracker();
+
         var exam = new Exam
         {
             Id = Guid.NewGuid(),
-            ModuleId = Guid.NewGuid(),
+            ModuleId = module.Id,
             Title = "Module 1 Exam",
             PassThreshold = 70
         };
@@ -36,7 +43,11 @@ public class ExamRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByIdAsync_WhenExamExists_ReturnsExam()
     {
-        var exam = new Exam { Id = Guid.NewGuid(), ModuleId = Guid.NewGuid(), Title = "Module 1 Exam", PassThreshold = 70 };
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Module 1", Order = 1 };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.Add(module);
+        var exam = new Exam { Id = Guid.NewGuid(), ModuleId = module.Id, Title = "Module 1 Exam", PassThreshold = 70 };
         DbContext.Exams.Add(exam);
         await SaveChangesAsync();
         ClearTracker();
@@ -58,10 +69,15 @@ public class ExamRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetAllAsync_ReturnsStoredExams()
     {
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var module1 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "First Module", Order = 1 };
+        var module2 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Second Module", Order = 2 };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.AddRange(module1, module2);
         var exams = new[]
         {
-            new Exam { Id = Guid.NewGuid(), ModuleId = Guid.NewGuid(), Title = "First", PassThreshold = 60 },
-            new Exam { Id = Guid.NewGuid(), ModuleId = Guid.NewGuid(), Title = "Second", PassThreshold = 70 }
+            new Exam { Id = Guid.NewGuid(), ModuleId = module1.Id, Title = "First", PassThreshold = 60 },
+            new Exam { Id = Guid.NewGuid(), ModuleId = module2.Id, Title = "Second", PassThreshold = 70 }
         };
         DbContext.Exams.AddRange(exams);
         await SaveChangesAsync();
@@ -75,8 +91,13 @@ public class ExamRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByModuleIdAsync_ReturnsOnlyTheRequestedModuleExam()
     {
-        var requestedModuleId = Guid.NewGuid();
-        var otherModuleId = Guid.NewGuid();
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var requestedModule = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Requested", Order = 1 };
+        var otherModule = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "Other", Order = 2 };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.AddRange(requestedModule, otherModule);
+        var requestedModuleId = requestedModule.Id;
+        var otherModuleId = otherModule.Id;
         var requestedExam = new Exam { Id = Guid.NewGuid(), ModuleId = requestedModuleId, Title = "Requested", PassThreshold = 70 };
         DbContext.Exams.AddRange(
             requestedExam,
