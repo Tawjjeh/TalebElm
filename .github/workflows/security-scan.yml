@@ -1,8 +1,7 @@
 name: Security & Vulnerability Scan
 
-# PRs get a dependency diff review (once the repository enables the
-# dependency graph); the weekly run re-audits the full dependency tree
-# so newly disclosed CVEs are caught even without new PRs.
+# PRs get a dependency diff review; the weekly run re-audits the full
+# dependency tree so newly disclosed CVEs are caught even without new PRs.
 on:
   pull_request:
     branches: ["main"]
@@ -15,19 +14,16 @@ permissions:
 
 jobs:
   # Fails the PR when it introduces dependencies with HIGH or CRITICAL
-  # known vulnerabilities (GitHub Advisory Database).
-  # NOTE (2026-10-13): disabled until the dependency graph is switched on
-  # for this repository (Settings -> Security -> Dependency graph) — without
-  # it the action errors on every run. The nuget-audit job below is the
-  # enforcing gate in the meantime. Re-enable by uncommenting.
-  #dependency-review:
-  #  if: github.event_name == 'pull_request'
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Dependency Review (fail on high/critical)
-  #      uses: actions/dependency-review-action@v4
-  #      with:
-  #        fail-on-severity: high
+  # known vulnerabilities (GitHub Advisory Database). Requires the
+  # repository dependency graph (Settings -> Security) to be enabled.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependency Review (fail on high/critical)
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
   # Full-tree NuGet audit (direct + transitive) on every run, including
   # the weekly schedule where there is no PR diff to review.

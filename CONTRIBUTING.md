@@ -190,12 +190,32 @@ Commit messages should be short and say what you did. A good format is:
 
 ```
 docs: explain how to run the project
-feature: add a new learning lesson
+feat: add a new learning lesson
 fix: correct a wrong spelling
 test: add a test for the Track class
 ```
 
 The first word (like `docs:`) tells people what type of change it is.
+Use one of these accepted types (a robot checks your pull request title
+and will ask you to fix it if the type is wrong):
+
+- `feat:` — a new feature (example: `feat: add login endpoint`)
+- `fix:` — a bug fix (example: `fix: correct exam score`)
+- `chore:` — routine work like updates or cleanups
+- `docs:` — documentation only
+- `refactor:` — code restructuring with no behavior change
+- `test:` — adding or updating tests
+- `ci:`, `build:`, `perf:`, `style:` — pipelines, builds, performance, formatting
+
+You can add an optional scope in brackets: `fix(auth): hash passwords`.
+
+### Pull request titles and linked issues
+
+Give your pull request a title in the same format, for example
+`feat: add login endpoint`. If your pull request is a `feat:` or a `fix:`,
+also write `Closes #123` (with your issue number) in the description so
+the issue closes automatically. Small `chore:` or `docs:` updates do not
+need an issue link.
 
 ### Step 9: Push your branch to GitHub
 
