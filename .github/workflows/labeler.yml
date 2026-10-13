@@ -1,0 +1,19 @@
+name: Pull Request Labeler
+
+# Uses pull_request_target (without a checkout step) so PRs from forks
+# are labeled securely using the base-repo GITHUB_TOKEN.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"

@@ -1,0 +1,41 @@
+# Auto-label rules for actions/labeler (v5 format).
+# Paths cover both the current layout and the post-#264 target layout
+# (Persistence/Configurations|DbContext|Repositories, Application/Services/*).
+# Every label below already exists in the repository.
+
+# EF Core mappings, repositories, DbContext, migrations, SQL scripts.
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/TalebElm.Infrastructure/Persistence/**/*'
+      - 'src/TalebElm.Infrastructure/Repositories/**/*'
+      - 'src/TalebElm.Infrastructure/*Migration*/**/*'
+      - '**/Migrations/**/*'
+      - '**/*.sql'
+
+# Docs, guides, templates, README.
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+      - '.github/ISSUE_TEMPLATE/**/*'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+
+# Application services/DTOs/validators, API controllers/middleware,
+# Domain rules, and Infrastructure service implementations + DI wiring.
+backend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/TalebElm.Application/**/*'
+      - 'src/TalebElm.Api/**/*'
+      - 'src/TalebElm.Domain/**/*'
+      - 'src/TalebElm.Infrastructure/Services/**/*'
+      - 'src/TalebElm.Infrastructure/DependencyInjection.cs'
+
+# xUnit suites (unit + integration) and test projects.
+testing:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**/*'
+      - '**/*Tests*/**/*'
