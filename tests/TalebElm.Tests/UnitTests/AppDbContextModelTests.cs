@@ -39,4 +39,31 @@ public class AppDbContextModelTests
 
         Assert.True(index.IsUnique);
     }
+
+    [Fact]
+    public void UserConfiguration_ShouldBeApplied()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite("Data Source=:memory:")
+            .Options;
+
+        using var context = new AppDbContext(options);
+
+        // Act
+        var entityType = context.Model.FindEntityType(typeof(User));
+
+        // Assert
+        Assert.NotNull(entityType);
+
+        Assert.True(entityType.FindProperty(nameof(User.Name))!.IsNullable == false);
+        Assert.Equal(100, entityType.FindProperty(nameof(User.Name))!.GetMaxLength());
+        Assert.True(entityType.FindProperty(nameof(User.Email))!.IsNullable == false);
+        Assert.True(entityType.FindProperty(nameof(User.PasswordHash))!.IsNullable == false);
+
+        var emailIndex = Assert.Single(
+            entityType.GetIndexes(),
+            x => x.Properties.Select(p => p.Name).SequenceEqual(new[] { nameof(User.Email) }));
+        Assert.True(emailIndex.IsUnique);
+    }
 }
