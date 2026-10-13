@@ -6,4 +6,7 @@ public class Module : BaseEntity
     public string Summary { get; set; } = string.Empty;
     public int Order { get; set; }
     public Guid TrackId { get; set; }
+    public Track Track { get; set; } = default!;
+    public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+    public Exam? Exam { get; set; }
 }

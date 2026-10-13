@@ -20,20 +20,18 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldIsolateUsers()
     {
-        var track = new Track
-        {
-            Id = Guid.NewGuid(),
-            Name = "Backend",
-            Description = "Backend track"
-        };
-
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         DbContext.Tracks.Add(track);
-        await SaveChangesAsync();
         var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "Module 1" };
         await DbContext.Modules.AddAsync(module);
 
-        var userA = Guid.NewGuid();
-        var userB = Guid.NewGuid();
+        var user = new User { Id = Guid.NewGuid(), Name = "User A", Email = "a@test.com", JoinedAt = DateTime.UtcNow };
+        var userBEntity = new User { Id = Guid.NewGuid(), Name = "User B", Email = "b@test.com", JoinedAt = DateTime.UtcNow };
+        await DbContext.Users.AddRangeAsync(user, userBEntity);
+        await DbContext.SaveChangesAsync();
+
+        var userA = user.Id;
+        var userB = userBEntity.Id;
 
         await _repository.AddAsync(new UserProgress { UserId = userA, ModuleId = module.Id, Score = 100 });
         await _repository.AddAsync(new UserProgress { UserId = userB, ModuleId = module.Id, Score = 50 });
@@ -49,16 +47,14 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldOrderByModuleOrderAscending()
     {
-        var track = new Track
-        {
-            Id = Guid.NewGuid(),
-            Name = "Backend",
-            Description = "Backend track"
-        };
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         DbContext.Tracks.Add(track);
-        await SaveChangesAsync();
 
-        var userId = Guid.NewGuid();
+        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", JoinedAt = DateTime.UtcNow };
+        DbContext.Users.Add(user);
+        await DbContext.SaveChangesAsync();
+
+        var userId = user.Id;
 
         var m1 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "M1" };
         var m2 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 2, Title = "M2" };
@@ -81,8 +77,16 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task Update_ShouldPersistChanges_WhenEntityIsTracked()
     {
-        var userId = Guid.NewGuid();
-        var moduleId = Guid.NewGuid();
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "M1", Order = 1 };
+        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", JoinedAt = DateTime.UtcNow };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.Add(module);
+        DbContext.Users.Add(user);
+        await DbContext.SaveChangesAsync();
+
+        var userId = user.Id;
+        var moduleId = module.Id;
         var progress = new UserProgress { UserId = userId, ModuleId = moduleId, Score = 40, PassedExam = false };
 
         await _repository.AddAsync(progress);
