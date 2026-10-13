@@ -1,0 +1,37 @@
+name: PR Validation
+
+# Enforces backlog traceability (every PR links its issue) and
+# conventional-commit titles so history stays searchable.
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check issue link and title format
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title || '';
+            const body = context.payload.pull_request.body || '';
+            const errors = [];
+
+            if (!/(closes|fixes|resolves)\s+#\d+/i.test(body)) {
+              errors.push('PR description must contain an issue reference such as "Closes #123", "Fixes #123" or "Resolves #123".');
+            }
+
+            if (!/^(feat|fix|chore|refactor|docs|test|ci|build|perf|style)(\(.+\))?:\s+\S/i.test(title)) {
+              errors.push('PR title must use conventional-commit format, e.g. "feat: ...", "fix: ...", "chore: ...", "refactor: ...".');
+            }
+
+            if (errors.length > 0) {
+              core.setFailed(errors.join(' '));
+            } else {
+              core.info('PR validation passed: issue linked and title format OK.');
+            }
