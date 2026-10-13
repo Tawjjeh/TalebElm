@@ -1,0 +1,24 @@
+name: Auto Assign Reviewers
+
+# Uses pull_request_target (WITHOUT a checkout step) so the action's
+# GITHUB_TOKEN can request reviewers even on PRs opened from forks —
+# our CONTRIBUTING.md flow is fork-based, and under plain pull_request
+# the token would be read-only and reviewer requests would fail.
+# This is safe: the job runs no untrusted code, only the pinned action.
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Auto-assign reviewers (random rotation)
+        uses: kentaro-m/auto-assign-action@v2.0.2
+        with:
+          configuration-path: '.github/auto_assign.yml'
