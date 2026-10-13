@@ -1,0 +1,40 @@
+# Reviewer rotation for kentaro-m/auto-assign-action (see
+# .github/workflows/auto-assign.yml). Runs on every opened / ready PR.
+#
+# STRATEGY: random sampling with equal probability (the action picks via
+# random sample, so load evens out across PRs) + the PR author is always
+# excluded from their own review pool. There is no stateful round-robin
+# in the action; do not expect strict alternation, expect fair share.
+#
+# TODO(maintainers): replace the placeholders below with the real GitHub
+# handles of the 5 backend maintainers, keeping one handle per line:
+#   reviewers:
+#     - abdulrahmanhossam
+#     - <second-maintainer>
+#     - ...
+
+# Set to true to add reviewers to pull requests
+addReviewers: true
+
+# Set to true to also add the same people as assignees (kept off:
+# author-assignment is handled by GitHub itself)
+addAssignees: false
+
+# Backend maintainers rotation pool (PLACEHOLDERS — fill in real handles).
+# A list of reviewers to be added to pull requests (GitHub user names)
+reviewers:
+  - maintainer1
+  - maintainer2
+  - maintainer3
+  - maintainer4
+  - maintainer5
+
+# Reviewers per PR. 2 gives every PR double coverage while keeping each
+# maintainer's share at ~2/5 of PRs. Set to 1 for lighter review load,
+# or 0 to request all maintainers (not recommended past 5 people).
+numberOfReviewers: 2
+
+# PRs with these words in the title are skipped (e.g. early drafts).
+skipKeywords:
+  - wip
+  - draft
