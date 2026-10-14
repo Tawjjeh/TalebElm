@@ -25,8 +25,8 @@ public class UserProgressRepositoryTests : SqliteTestBase
         var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "Module 1" };
         await DbContext.Modules.AddAsync(module);
 
-        var user = new User { Id = Guid.NewGuid(), Name = "User A", Email = "a@test.com", JoinedAt = DateTime.UtcNow };
-        var userBEntity = new User { Id = Guid.NewGuid(), Name = "User B", Email = "b@test.com", JoinedAt = DateTime.UtcNow };
+        var user = new User { Id = Guid.NewGuid(), Name = "User A", Email = "a@test.com", PasswordHash = "hash-a", JoinedAt = DateTime.UtcNow };
+        var userBEntity = new User { Id = Guid.NewGuid(), Name = "User B", Email = "b@test.com", PasswordHash = "hash-b", JoinedAt = DateTime.UtcNow };
         await DbContext.Users.AddRangeAsync(user, userBEntity);
         await DbContext.SaveChangesAsync();
 
@@ -50,7 +50,7 @@ public class UserProgressRepositoryTests : SqliteTestBase
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         DbContext.Tracks.Add(track);
 
-        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", JoinedAt = DateTime.UtcNow };
+        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", PasswordHash = "hash", JoinedAt = DateTime.UtcNow };
         DbContext.Users.Add(user);
         await DbContext.SaveChangesAsync();
 
@@ -79,7 +79,7 @@ public class UserProgressRepositoryTests : SqliteTestBase
     {
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "M1", Order = 1 };
-        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", JoinedAt = DateTime.UtcNow };
+        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", PasswordHash = "hash", JoinedAt = DateTime.UtcNow };
         DbContext.Tracks.Add(track);
         DbContext.Modules.Add(module);
         DbContext.Users.Add(user);

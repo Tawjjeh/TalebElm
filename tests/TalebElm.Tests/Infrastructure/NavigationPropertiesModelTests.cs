@@ -126,7 +126,7 @@ public class NavigationPropertiesModelTests : SqliteTestBase
     {
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         var otherTrack = new Track { Id = Guid.NewGuid(), Name = "Frontend", Description = "Frontend track" };
-        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", JoinedAt = DateTime.UtcNow };
+        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", PasswordHash = "hash", JoinedAt = DateTime.UtcNow };
         DbContext.Tracks.AddRange(track, otherTrack);
         DbContext.Users.Add(user);
 

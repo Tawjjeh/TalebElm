@@ -56,14 +56,21 @@ public class AppDbContextModelTests
         // Assert
         Assert.NotNull(entityType);
 
-        Assert.True(entityType.FindProperty(nameof(User.Name))!.IsNullable == false);
+        Assert.False(entityType.FindProperty(nameof(User.Name))!.IsNullable);
         Assert.Equal(100, entityType.FindProperty(nameof(User.Name))!.GetMaxLength());
-        Assert.True(entityType.FindProperty(nameof(User.Email))!.IsNullable == false);
-        Assert.True(entityType.FindProperty(nameof(User.PasswordHash))!.IsNullable == false);
+        Assert.False(entityType.FindProperty(nameof(User.Email))!.IsNullable);
+        Assert.Equal(256, entityType.FindProperty(nameof(User.Email))!.GetMaxLength());
+        Assert.False(entityType.FindProperty(nameof(User.PasswordHash))!.IsNullable);
+
+        // Note: the NOCASE email collation is verified behaviorally by
+        // UserUniqueIndexTests.SaveChangesAsync_CaseVariantEmail_ThrowsUniqueViolation.
 
         var emailIndex = Assert.Single(
             entityType.GetIndexes(),
             x => x.Properties.Select(p => p.Name).SequenceEqual(new[] { nameof(User.Email) }));
         Assert.True(emailIndex.IsUnique);
+
+        // Note: the CK_Users_*_NotEmpty check constraints are verified behaviorally by
+        // UserUniqueIndexTests.SaveChangesAsync_EmptyRequiredField_ThrowsDbUpdateException.
     }
 }
