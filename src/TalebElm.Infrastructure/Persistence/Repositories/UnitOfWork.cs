@@ -1,5 +1,6 @@
 ﻿using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
+using TalebElm.Infrastructure.Persistence.Repositories;
 
 namespace TalebElm.Infrastructure.Repositories;
 

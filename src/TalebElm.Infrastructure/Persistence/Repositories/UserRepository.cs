@@ -1,8 +1,7 @@
 ﻿using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
-using TalebElm.Infrastructure.Persistence;
 
-namespace TalebElm.Infrastructure.Repositories;
+namespace TalebElm.Infrastructure.Persistence.Repositories;
 
 public class UserRepository(AppDbContext context) : IUserRepository
 {

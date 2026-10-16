@@ -8,8 +8,8 @@ public class CreateTrackRequestValidator : AbstractValidator<CreateTrackRequest>
 {
     public CreateTrackRequestValidator()
     {
-        RuleFor(CRT => CRT.Name).NotEmpty().WithMessage("Track Name is required"); //CRT->CreateRequestTrack
-        RuleFor(CRT => CRT.Description)
+        RuleFor(t => t.Name).NotEmpty().WithMessage("Track Name is required"); //t => for track
+        RuleFor(t => t.Description)
                 .NotEmpty()
                 .WithMessage("Track Description is required");
     }
