@@ -1,5 +1,5 @@
 using FluentValidation;
-using TalebElm.Application.DTOs; // TODO: عدّل الـ namespace
+using TalebElm.Application.DTOs;
 
 namespace TalebElm.Application.Validators;
 
