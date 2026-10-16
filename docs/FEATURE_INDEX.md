@@ -24,3 +24,5 @@ This index separates current code from planned product behavior. A feature docum
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical conventions for contributors |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Current source layout |
 | [LOCAL_SETUP.md](LOCAL_SETUP.md) | Local database connection string |
+| [business/BUSINESS_RULES.md](business/BUSINESS_RULES.md) | Binding product rules with Implemented/Target status per rule |
+| [business/WORKFLOWS.md](business/WORKFLOWS.md) | Business processes, state transitions, and failure map |
