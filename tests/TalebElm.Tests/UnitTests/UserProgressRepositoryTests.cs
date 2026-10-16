@@ -20,8 +20,15 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldIsolateUsers()
     {
-        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
+
         DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
         var module = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "Module 1" };
         await DbContext.Modules.AddAsync(module);
 
@@ -47,26 +54,39 @@ public class UserProgressRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByUserAndTrackAsync_ShouldOrderByModuleOrderAscending()
     {
-        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
         DbContext.Tracks.Add(track);
+        await SaveChangesAsync();
 
-        var user = new User { Id = Guid.NewGuid(), Name = "Learner", Email = "learner@test.com", PasswordHash = "hash", JoinedAt = DateTime.UtcNow };
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test User",
+            Email = "testuser@test.com",
+            PasswordHash = "test-hash",
+            JoinedAt = DateTime.UtcNow
+        };
+
         DbContext.Users.Add(user);
-        await DbContext.SaveChangesAsync();
+        await SaveChangesAsync();
 
-        var userId = user.Id;
 
         var m1 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 1, Title = "M1" };
         var m2 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 2, Title = "M2" };
         var m3 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 3, Title = "M3" };
         await DbContext.Modules.AddRangeAsync(m1, m2, m3);
 
-        await _repository.AddAsync(new UserProgress { UserId = userId, ModuleId = m3.Id });
-        await _repository.AddAsync(new UserProgress { UserId = userId, ModuleId = m1.Id });
-        await _repository.AddAsync(new UserProgress { UserId = userId, ModuleId = m2.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m3.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m1.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m2.Id });
         await DbContext.SaveChangesAsync();
 
-        var result = await _repository.GetByUserAndTrackAsync(userId, track.Id);
+        var result = await _repository.GetByUserAndTrackAsync(user.Id, track.Id);
 
         Assert.Equal(3, result.Count);
         Assert.Equal(m1.Id, result[0].ModuleId);
@@ -85,21 +105,21 @@ public class UserProgressRepositoryTests : SqliteTestBase
         DbContext.Users.Add(user);
         await DbContext.SaveChangesAsync();
 
-        var userId = user.Id;
+
         var moduleId = module.Id;
-        var progress = new UserProgress { UserId = userId, ModuleId = moduleId, Score = 40, PassedExam = false };
+        var progress = new UserProgress { UserId = user.Id, ModuleId = moduleId, Score = 40, PassedExam = false };
 
         await _repository.AddAsync(progress);
         await DbContext.SaveChangesAsync();
 
-        var tracked = await _repository.GetByUserAndModuleAsync(userId, moduleId);
+        var tracked = await _repository.GetByUserAndModuleAsync(user.Id, moduleId);
         Assert.NotNull(tracked);
 
         tracked.Score = 95;
         tracked.PassedExam = true;
         await DbContext.SaveChangesAsync();
 
-        var updated = await _repository.GetByUserAndModuleAsync(userId, moduleId);
+        var updated = await _repository.GetByUserAndModuleAsync(user.Id, moduleId);
         Assert.NotNull(updated);
         Assert.Equal(95, updated.Score);
         Assert.True(updated.PassedExam);

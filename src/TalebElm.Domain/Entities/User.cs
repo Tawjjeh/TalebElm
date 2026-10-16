@@ -9,4 +9,5 @@ public class User : BaseEntity
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Student;
     public DateTime JoinedAt { get; set; }
+    public ICollection<TrackEnrollment> TrackEnrollments { get; set; } = new List<TrackEnrollment>();
 }
