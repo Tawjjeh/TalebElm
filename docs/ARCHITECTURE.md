@@ -1,7 +1,7 @@
 # Technical Architecture Reference
 
-> This is the concise technical reference for contributors already familiar with
-> Clean Architecture. For the beginner-friendly explanation, see the root
+> This is the normative technical reference for implementation conventions.
+> For the conceptual layer guide and request lifecycle, see the root
 > [`ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ---
