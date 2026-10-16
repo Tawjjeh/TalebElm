@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 
@@ -5,18 +6,19 @@ namespace TalebElm.Infrastructure.Persistence.Repositories;
 
 public class TrackEnrollmentRepository(AppDbContext context) : ITrackEnrollmentRepository
 {
-    public Task AddAsync(TrackEnrollment entity)
+    public async Task AddAsync(TrackEnrollment entity)
     {
-        throw new NotImplementedException();
+        await context.TrackEnrollments.AddAsync(entity);
     }
 
-    public Task<IReadOnlyList<TrackEnrollment>> GetAllAsync()
+    public async Task<IReadOnlyList<TrackEnrollment>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await context.TrackEnrollments.ToListAsync();
     }
 
-    public Task<TrackEnrollment?> GetByIdAsync(Guid id)
+    public async Task<TrackEnrollment?> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await context.TrackEnrollments
+            .FindAsync(id);
     }
 }
