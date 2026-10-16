@@ -1,6 +1,8 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Application.Services.Concrete;
+using TalebElm.Application.Validators;
 
 namespace TalebElm.Application;
 
@@ -11,7 +13,9 @@ public static class DependencyInjection
         // Stateless and thread-safe: a single shared instance is enough.
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
-        // NOTE (#274): service, repository, and validator registrations land here.
+        services.AddValidatorsFromAssemblyContaining<CreateTrackRequestValidator>();
+
+        // NOTE (#274): service and repository registrations land here.
         return services;
     }
 }
