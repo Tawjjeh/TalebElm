@@ -14,7 +14,7 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
 
     public async Task<IReadOnlyList<Module>> GetAllAsync()
     {
-        return await context.Modules.ToListAsync();
+        return await context.Modules.AsNoTracking().ToListAsync();
     }
 
     public async Task AddAsync(Module entity)
@@ -25,6 +25,6 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
     public async Task<IReadOnlyList<Module>> GetByTrackIdAsync(Guid trackId)
     {
         return await context.Modules.Where(m => m.TrackId == trackId)
-            .OrderBy(m => m.Order).ToListAsync();
+            .OrderBy(m => m.Order).AsNoTracking().ToListAsync();
     }
 }

@@ -20,5 +20,10 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
             .WithMany()
             .HasForeignKey(x => x.ModuleId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_UserProgress_Score_Range", "Score >= 0 AND Score <= 100");
+        });
     }
 }
