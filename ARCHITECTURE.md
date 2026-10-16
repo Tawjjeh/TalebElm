@@ -1,310 +1,176 @@
 # TalebElm Architecture Guide
 
-This file explains how the TalebElm project is organized. It is written for
-absolute beginners. We use simple words and lots of examples.
-
-If you are new to .NET, read this file first. It will help you understand
-**where** things go when you write code later.
+This document defines the architectural boundaries, dependency rules, and request lifecycle for the TalebElm backend platform. It is the conceptual companion to the normative technical reference in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
-## What is "Clean Architecture" in one line?
+## 1. Architectural style
 
-Clean Architecture is a way to organize a project into **separate parts**
-(called layers) so that each part does only one job.
+TalebElm implements **Clean Architecture**: the system is decomposed into concentric layers, each with a single, well-defined responsibility. Dependencies point **inward only** — outer layers may depend on inner layers; inner layers never depend on outer layers.
 
-The most important idea is:
+The core invariant:
 
-> Each layer knows only about the layer inside of it.
-> No layer reaches into the wrong place to do another layer's job.
+> Each layer owns exactly one concern, and dependencies always point toward the Domain.
 
-Think of it like a house floor plan. The kitchen has its own room. The bedroom
-does not contain the kitchen sink. If you keep each room for its own purpose,
-the house is easy to build, easy to fix, and easy to understand.
-
-The same is true for software. If code is in the wrong "room", it gets confusing
-and hard to change. Clean Architecture keeps every room clean.
+This separation keeps business rules independent of persistence technology and delivery mechanism, enabling the Domain and Application layers to evolve without being coupled to Entity Framework Core, ASP.NET Core, or any external service.
 
 ---
 
-## A picture of the layers
+## 2. Layer overview
 
-Imagine a set of rings or boxes, one inside the other:
+```text
+                   +---------------------+
+                   |         Api         |   Presentation / HTTP
+                   +---------------------+
+                        |        |
+               +---------------------+
+               |   Infrastructure    |   Persistence and external integrations
+               +---------------------+
+                        |        |
+               +---------------------+
+               |    Application      |   Use cases and orchestration
+               +---------------------+
+                        |        |
+               +---------------------+
+               |       Domain        |   Business rules and contracts
+               +---------------------+
 
-```
-                  +---------------------+
-                  |      Api            |   (the web API)
-                  +---------------------+
-                       |        |
-              +---------------------+
-              |  Infrastructure     |   (database and outside tools)
-              +---------------------+
-                       |        |
-              +---------------------+
-              |    Application      |   (the work of the app)
-              +---------------------+
-                       |        |
-              +---------------------+
-              |      Domain         |   (the most important rules)
-              +---------------------+
-
-  Tests are extra. They can look at everything.
+   Tests are cross-cutting and may reference any production layer.
 ```
 
-The arrows point **inward**. That is the rule:
-- Outer layers may use inner layers.
-- Inner layers never use outer layers.
-
-The center (Domain) is the most important and depends on nothing.
-
----
-
-## The projects in this solution
-
-We have five projects. Here is a short summary of each, with more detail below.
-
-| Project | Folder | Role in the house |
+| Project | Path | Responsibility |
 | --- | --- | --- |
-| Domain | `src/TalebElm.Domain` | The rules of the business |
-| Application | `src/TalebElm.Application` | The actions the app can do |
-| Infrastructure | `src/TalebElm.Infrastructure` | The database and outside stuff |
-| Api | `src/TalebElm.Api` | The door people knock on (HTTP) |
-| Tests | `tests/TalebElm.Tests` | The check that everything works |
+| Domain | `src/TalebElm.Domain` | Entities, enums, domain exceptions, repository interfaces |
+| Application | `src/TalebElm.Application` | Service interfaces and implementations, DTOs, validators |
+| Infrastructure | `src/TalebElm.Infrastructure` | `AppDbContext`, entity configurations, repository implementations, `UnitOfWork`, DI wiring |
+| Api | `src/TalebElm.Api` | Controllers, middleware, composition root (`Program.cs`) |
+| Tests | `tests/TalebElm.Tests` | Unit, repository, and integration verification |
 
 ---
 
-## Layer 1: Domain (the heart of the business)
+## 3. Layer 1 — Domain (business rules)
 
-Full project folder: `src/TalebElm.Domain`
+**Path:** `src/TalebElm.Domain`
 
-### What it is for
+The Domain layer models the platform's core concepts — `User`, `Track`, `Module`, `Lesson`, `Exam`, `UserProgress` — along with their invariants, enumerations (`TrackStatus`, `LessonType`, `UserRole`), domain exceptions, and repository contracts (`IRepository<T>`, entity-specific interfaces, `IUnitOfWork`).
 
-This is the **most important** layer. It holds the core rules of your business.
-The "business" means: what is TalebElm really about? It is about learning tracks,
-lessons, roadmaps, and students. Those things are "business ideas".
+Containment rules:
 
-Domain represents those ideas as simple code objects.
+- Entities express state and invariants only (e.g., required names, ordering, uniqueness expectations).
+- Persistence needs are expressed as **interfaces**, never implementations.
+- The Domain references no other project and imports neither Entity Framework Core nor ASP.NET Core.
 
-### What files belong here
-
-- **Entities**: the "things" in the business, like `Track` (a learning track)
-  or `Module` (one part of a track).
-- **Enums**: a list of fixed choices. For example, a track status could be
-  "Draft" or "Published".
-- **Exceptions**: errors that are specific to this business, like
-  "A track with this id was not found".
-- **Interface** that define what the Domain needs, but not how it is done.
-
-### What NOT to put here (very important)
-
-- Do **not** put database code here. (No database imports, no SQL.)
-- Do **not** put web code here. (No controllers, no HTTP.)
-- Do **not** put anything about outer services (email, files, login) here.
-
-Rule to remember: If a file talks about "how the real world implements
-something", it does not belong in Domain. The Domain only says **what things
-are**, never **how they are stored or served**.
-
-### Example to make it clear
-
-Bad (do not do this):
-
-- A `Track` class that saves itself to a database.
-- A `Track` class that knows about HTTP requests.
-
-Good (do this):
-
-- A `Track` class that only holds its own data (name, description) and its own
-  rules (for example, a track must have a name).
-- An interface that says "I need a way to save tracks" without saying how.
+Anti-patterns: persistence logic inside entities, HTTP or serialization concerns in entities, direct dependencies on infrastructure types.
 
 ---
 
-## Layer 2: Application (the work of the platform)
+## 4. Layer 2 — Application (use cases)
 
-Full project folder: `src/TalebElm.Application`
+**Path:** `src/TalebElm.Application`
 
-### What it is for
+The Application layer implements the platform's use cases — for example, create/track retrieval, exam submission, progress evaluation — as service classes behind explicit interfaces:
 
-If Domain says "what the business is", Application says **"what the business
-can do"**. It is the list of actions, like "create a track", "show all tracks",
-or "delete a module".
+- **Interfaces** (`Services/Abstraction/`): `IUserService`, `ITrackService`, `IExamService`, `IUserProgressService`.
+- **Implementations** (`Services/Concrete/`): use-case orchestration depending only on Domain abstractions, normally `IUnitOfWork`. All business-logic decisions reside here.
+- **DTOs** (`DTOs/`): immutable `record` request/response contracts decoupling the HTTP surface from Domain entities.
+- **Validators** (`Validators/`): FluentValidation input rules.
 
-This layer holds the **use cases** (the things a user can do), but it does not
-do the actual database work itself. It only asks for help.
+Containment rules:
 
-### What files belong here
-
-- **Service Interfaces** (`Services/Abstraction/`): the actions the app can do, like "I need a way to create a track".
-- **Service Implementations** (`Services/Concrete/`): the real use-case code that carries out those actions using only Domain abstractions (normally `IUnitOfWork`). All business logic lives here.
-- **DTOs**: short for "Data Transfer Object". These are simple boxes for sending data between the web API and the Application. They are usually not the same as Domain entities.
-
-### What NOT to put here
-
-- Do **not** put actual database code. (The real database is in Infrastructure.)
-- Do **not** put actual web controllers.
-- Do **not** put how to connect to other services.
-
-The Application should not care whether we use SQL Server, a plain file, or a cloud database. It just says "I need to save a track" and another layer decides how.
+- No Entity Framework Core references (`DbContext`, `EntityTypeBuilder`).
+- No ASP.NET Core references (`HttpContext`, controllers).
+- No persistence technology assumptions (SQL Server vs. SQLite vs. managed storage are Infrastructure decisions).
+- Persistence access exclusively through `IUnitOfWork`; a separate `DbContext` abstraction in Application services is redundant and prohibited. `IUnitOfWork.SaveChangesAsync()` is the sole commit point.
 
 ---
 
-## Layer 3: Infrastructure (the how)
+## 5. Layer 3 — Infrastructure (persistence and integration)
 
-Full project folder: `src/TalebElm.Infrastructure`
+**Path:** `src/TalebElm.Infrastructure`
 
-### What it is for
+Infrastructure provides the concrete implementations requested by the inner layers:
 
-Infrastructure is the layer that actually **does the real work** that the inner layers asked for. This is where "the how" lives.
+- `Persistence/DbContext/AppDbContext` — the single EF Core context.
+- `Persistence/Configurations/` — one `IEntityTypeConfiguration<T>` per entity (column constraints, relationships, `DeleteBehavior.Restrict`, unique indexes).
+- `Persistence/Repositories/` — repository implementations plus the `UnitOfWork` commit point.
+- `DependencyInjection.cs` — persistence and repository service registration.
+- `Migrations/` — committed EF Core migrations with a design-time context factory.
+- External integrations (messaging, file storage, email) when introduced.
 
-The most common example is the **database**. Infrastructure uses a tool called **Entity Framework Core** to talk to real databases.
-
-### What files belong here
-
-- The database context (the file that talks to the database, at `Persistence/DbContext/`).
-- Entity configurations (at `Persistence/Configurations/`): field lengths, relationships, `Restrict` delete behavior, unique indexes.
-- Repositories (at `Persistence/Repositories/`): real code that saves and loads data, plus the `UnitOfWork` commit point.
-- Settings that say how to connect to the database.
-- Code that emails, files, or any outside tool like talking to APIs.
-
-### What NOT to put here
-
-- Do **not** put business rules here. Those belong in Domain.
-- Do **not** put use cases or service implementations here. Those belong in Application (`Services/Concrete/`).
-- Do **not** put controllers here. Those belong in Api.
-
-Infrastructure answers "how" questions. It does not decide "what rules" the
-business has.
+Containment rules: no business-rule decisions, no use-case orchestration, no controllers. Infrastructure answers **how** data is stored and retrieved; it does not define **what** the business rules are.
 
 ---
 
-## Layer 4: Api (the door)
+## 6. Layer 4 — Api (presentation)
 
-Full project folder: `src/TalebElm.Api`
+**Path:** `src/TalebElm.Api`
 
-### What it is for
+The Api layer is a thin HTTP adapter over Application use cases:
 
-This is the **web API**. It is the part real people and other apps talk to over
-the internet. When a browser visits a web address, it hits this layer.
+- Controllers (`Controllers/`) translate HTTP requests into service calls and map results to HTTP responses.
+- Middleware (`Middlewares/`) implements cross-cutting pipeline behavior, including centralized domain-exception → status-code mapping.
+- `Program.cs` is the composition root: service registration, middleware ordering, and endpoint mapping.
+- `appsettings*.json` carries environment-specific, non-secret configuration.
 
-### What a web API does
-
-A web API receives a request (like "give me all tracks") and sends back a
-response (a JSON list of tracks). Each address on the API is called an
-**endpoint** or a **route**.
-
-### What files belong here
-
-- **Controllers**: the files that handle incoming requests.
-- **Middleware**: small steps that every request passes through (like error
-  handling).
-- The startup file (`Program.cs`) that starts the app.
-- Settings files (`appsettings.json`) with options like connection strings.
-
-### What NOT to put here
-
-- Do **not** put business rules (those are in Domain).
-- Do **not** put use cases detail if they can live in Application.
-- Do **not** put real database code (that is in Infrastructure).
-
-The Api should stay "thin". It receives a request, passes it to the
-Application, and returns the result. It should not do all the thinking itself.
+Containment rules: no business logic, no direct repository or `DbContext` access, no persistence decisions. Controller actions delegate to injected `I<Feature>Service` contracts and remain free of domain orchestration.
 
 ---
 
-## Layer 5: Tests (the checker)
+## 7. Layer 5 — Tests (verification)
 
-Full project folder: `tests/TalebElm.Tests`
+**Path:** `tests/TalebElm.Tests`
 
-### What it is for
+The test suite verifies behavior at three levels:
 
-Tests are small programs that **check that our code works correctly**.
-A test says "given this input, I expect this output". If the output is wrong,
-the test fails, and we know there is a problem.
+- **Unit** — entity invariants, DTO contracts, validators, and service logic against mocked `IUnitOfWork`.
+- **Repository** — SQLite-backed verification of configurations, constraints, and relationship behavior.
+- **Integration** — controller and cross-layer relational-constraint coverage.
 
-We use a tool called **xUnit** to write tests. The word "unit" means we test
-one small piece of code at a time.
+Tests are intentionally placed outside the production dependency graph: they may reference any layer, while no production project references Tests.
 
-### What files belong here
-
-- Test files that check the Application actions (like "create a track should
-  return the new track id").
-- Test files that check the coordinates and rules in Domain.
-- Later, tests that check the Api by sending a real HTTP request.
-
-### Why are tests separate?
-
-Tests sit outside the main project, so they can look at many layers at once.
-The Domain, Application, Infrastructure, and Api do not need to know about
-tests. Tests are allowed to look at them, not the other way around.
-
-You run all the tests with this command:
-
-```
-dotnet test
+```bash
+dotnet test TalebElm.slnx
 ```
 
-You should get a happy message that says all tests passed.
+---
+
+## 8. Project references
+
+Dependency direction is enforced at the project level:
+
+1. **Domain** references nothing.
+2. **Application** references **Domain**.
+3. **Infrastructure** references **Application** and **Domain**.
+4. **Api** references **Infrastructure** (transitively reaching Application and Domain).
+5. **Tests** may reference **Api**, **Application**, and **Domain** for verification purposes.
+
+These references are declared in the respective `.csproj` files and must not be inverted or bypassed.
 
 ---
 
-## How the projects connect (references)
+## 9. Request lifecycle
 
-The way the projects connect is very important. We set these connections up
-so that power points inward. Here is what we did:
+Example — `GET /api/tracks` (list tracks):
 
-1. Domain has **no references to any other project**. It is the center.
-2. Application can use Domain (it references Domain).
-3. Infrastructure can use Application and Domain.
-4. Api can use Infrastructure (and, because of that, also Application and Domain).
-5. Tests can use everything (it can see Api, Application, and Domain).
+1. **Api** receives the HTTP request and binds/validates input.
+2. **Api** delegates to the injected Application service (e.g., `ITrackService`).
+3. **Application** executes the use case, querying persistence through `IUnitOfWork` without any EF Core coupling.
+4. **Infrastructure** executes the query via its repository implementation and returns mapped entities.
+5. **Application** maps the result to response DTOs and returns them.
+6. **Api** serializes the DTOs to JSON with the appropriate status code.
 
-If you open each `.csproj` file, you can see these references.
-
----
-
-## How a request flows (a small example)
-
-Imagine someone opens the website and asks: "Show me all the tracks."
-
-The request flows like this:
-
-1. **Api** receives the web request "get me all tracks".
-2. **Api** passes this request to the **Application** service interface.
-3. **Application** service implementation says "I need the list of tracks. I will ask `IUnitOfWork`." It never touches EF Core directly.
-4. **Infrastructure** has the real repository that reads the database.
-5. **Infrastructure** gets the data and gives it back.
-6. **Application** returns the data to **Api**.
-7. **Api** sends the data back to the browser as JSON.
-
-Notice the trip: Api -> Application -> Infrastructure (with Domain rules
-inside all the way). No step jumps ahead of the line, and every layer does
-only its own job.
+Domain rules participate at every step; no layer bypasses its adjacent boundary.
 
 ---
 
-## A simple rule of thumb
+## 10. Placement heuristic
 
-When you write a new file, ask yourself: "What job does this file do?"
+| Concern | Location |
+| --- | --- |
+| Business invariant, entity, or repository contract | Domain |
+| Use case, orchestration, DTO, or validator | Application |
+| EF Core mapping, repository implementation, or external integration | Infrastructure |
+| HTTP endpoint, middleware, or composition-root wiring | Api |
+| Behavioral verification | Tests |
 
-- Is it a core business rule? -> Domain.
-- Is it an action the app can do? -> Application.
-- Is it about the real database or outside services? -> Infrastructure.
-- Is it an internet endpoint (web request)? -> Api.
-- Is it checking that code works? -> Tests.
-
-When you are not sure, ask for help in your pull request. This is a learning
-project, and helping each other is the goal.
-
----
-
-## Final words
-
-You do not need to memorize everything today. This guide exists so you can
-come back to it. The most important thing to remember is the **one rule**:
-
-> Each layer does one job, and the layers only reach inward.
-
-Start small. Build from the Domain and work outward. If you ever feel lost,
-read this guide again, and reach out for help. We are all seekers of knowledge
-together.
+For normative conventions — service and repository patterns, DTO naming, EF Core constraint catalog, validation, controller standards, and current implementation status — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md).

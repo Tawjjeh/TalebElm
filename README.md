@@ -1,201 +1,265 @@
 # TalebElm
 
-TalebElm is an open-source educational platform made by the **Twajjeh** organization.
-Its goal is to teach people how to become software engineers from zero.
-The first track teaches the **.NET ecosystem** (C#, ASP.NET Core, and more).
+[![.NET CI](https://github.com/Tawjjeh/TalebElm/actions/workflows/ci.yml/badge.svg)](https://github.com/Tawjjeh/TalebElm/actions/workflows/ci.yml)
+[![Release Build](https://github.com/Tawjjeh/TalebElm/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/Tawjjeh/TalebElm/actions/workflows/dotnet-ci.yml)
+[![Security Scan](https://github.com/Tawjjeh/TalebElm/actions/workflows/security-scan.yml/badge.svg)](https://github.com/Tawjjeh/TalebElm/actions/workflows/security-scan.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/download)
 
-The word "TalebElm" comes from Arabic. It means "Seeker of Knowledge".
-It is a person who wants to learn. That is who this project is for.
+**TalebElm** is a scalable, enterprise-grade backend platform for structured learning delivery — tracks, modules, lessons, exams, and learner progression — built on **ASP.NET Core** with **Clean Architecture**, **Entity Framework Core**, and automated DevOps quality gates.
 
----
-
-## What is TalebElm?
-
-TalebElm is not just a website. It is a complete learning system. It will provide:
-
-- **Roadmaps**: a clear list of what to learn and in what order.
-- **Lessons**: simple explanations of each topic.
-- **Examples**: small pieces of working code to read and try.
-- **Projects**: bigger tasks you build yourself to practice.
-
-We start with .NET, but the project is built so we can add more tracks later
-(like JavaScript, mobile development, and more).
+The platform exposes a versioned HTTP API backed by a strictly layered domain model, explicit persistence boundaries, and a comprehensive automated test suite. It is designed for extensibility across content domains, Field-level data integrity, and safe evolution of business rules independent of infrastructure concerns.
 
 ---
 
-## What is this project right now?
+## Table of Contents
 
-Right now, this repository is a **working foundation**. It contains a **Clean Architecture** solution with core entities, services, and tests already in place.
-
-This means:
-
-- The project structure is fully established.
-- Core entities (Users, Tracks, Modules, Lessons, Exams) are defined.
-- Basic services and repositories are implemented.
-- A suite of unit and integration tests is available.
-- Most API endpoints are currently placeholders (returning `NotImplementedException`) as we build out the MVP features.
-
-This is intentional. It gives us a solid foundation to build on while allowing contributors to focus on specific feature implementations.
+- [Platform Capabilities](#platform-capabilities)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Solution Structure](#solution-structure)
+- [API Surface](#api-surface)
+- [Persistence](#persistence)
+- [Testing Strategy](#testing-strategy)
+- [DevOps and Quality Gates](#devops-and-quality-gates)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Database Migrations](#database-migrations)
+- [Documentation Index](#documentation-index)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## The projects in this solution
+## Platform Capabilities
 
-The solution has **five projects**. Here they are:
+| Capability | Description |
+| --- | --- |
+| **Content hierarchy** | Ordered `Track → Module → Lesson` content model with sequencing constraints and restricted delete semantics |
+| **Assessment engine** | Module-level exams with server-side grading contracts and pass-threshold progression rules |
+| **Learner progression** | Per-learner, per-module progress tracking (`UNIQUE(UserId, ModuleId)`) with forward-only unlock semantics |
+| **Identity foundation** | User profiles with role-based contracts (`Admin`, learner roles) and unique identity indexes |
+| **Operational health** | Health-check endpoint and centralized domain-exception → HTTP status mapping |
+| **Extensibility** | Planned contracts for enrollment (`TrackEnrollment`), lesson resources (`LessonResource`), and question banks (`ExamQuestion`/`ExamOption`) — see `docs/FEATURE_INDEX.md` |
 
-| Project name | Folder | What it holds |
+> Implementation maturity per capability is tracked explicitly in [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md). A controller or entity class documents a contract; it does not imply the full workflow is wired end to end.
+
+---
+
+## Architecture
+
+TalebElm follows **Clean Architecture** with strict inward-only dependencies:
+
+```text
+Api → Infrastructure → Application → Domain
+```
+
+- **Domain** (`src/TalebElm.Domain`) — Entities, value constraints, enums, domain exceptions, and repository interfaces. Zero dependencies on EF Core or ASP.NET Core.
+- **Application** (`src/TalebElm.Application`) — Use cases: service interfaces (`Services/Abstraction`), service implementations (`Services/Concrete`), DTO contracts (`DTOs/`), and input validators (`Validators/`). Depends only on Domain abstractions, normally via `IUnitOfWork`.
+- **Infrastructure** (`src/TalebElm.Infrastructure`) — EF Core persistence: `AppDbContext`, per-entity `IEntityTypeConfiguration<T>` classes, repository implementations, `UnitOfWork`, and DI wiring. Contains no business logic.
+- **Api** (`src/TalebElm.Api`) — Thin HTTP layer: controllers, exception-handling middleware, and composition root (`Program.cs`). Delegates to Application services; never accesses repositories directly.
+- **Tests** (`tests/TalebElm.Tests`) — Unit, repository (SQLite-backed), and integration coverage that may reference any production layer.
+
+Reference documentation:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — Layer responsibilities, dependency rules, and request lifecycle.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Technical reference: service/repository conventions, DTO standards, EF Core constraints, validation, and controller rules.
+- [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) — Current source layout and implemented vs. planned scope.
+
+---
+
+## Technology Stack
+
+| Concern | Technology |
+| --- | --- |
+| Runtime | .NET 10 / ASP.NET Core 10 |
+| Persistence | Entity Framework Core 10, SQLite (local development) |
+| Validation | FluentValidation 12 |
+| Testing | xUnit, Moq, EF Core SQLite provider |
+| DevOps | GitHub Actions (build, release validation, dependency review, NuGet audit, PR validation, labeling, reviewer assignment) |
+| Conventions | Nullable reference types, implicit usings, conventional commits, REST over JSON |
+
+---
+
+## Solution Structure
+
+```text
+TalebElm/
+├── src/
+│   ├── TalebElm.Domain/            Entities, Enums, Exceptions, repository interfaces
+│   ├── TalebElm.Application/       DTOs, Services/Abstraction, Services/Concrete, Validators
+│   ├── TalebElm.Infrastructure/    Persistence/{DbContext, Configurations, Repositories}, Migrations, DI
+│   └── TalebElm.Api/               Controllers, Middlewares, Program.cs, appsettings
+├── tests/
+│   └── TalebElm.Tests/             UnitTests, IntegrationTests, Infrastructure fixtures
+├── docs/                           Feature specs, ERD, API matrix, ADRs (OPEN_DECISIONS)
+├── .github/workflows/              CI, release validation, security, PR governance
+└── TalebElm.slnx                   Solution definition
+```
+
+---
+
+## API Surface
+
+Controllers in `src/TalebElm.Api/Controllers`:
+
+| Controller | Scope |
+| --- | --- |
+| `HealthController` | Liveness probe (`GET /api/health`) |
+| `AuthController` | Identity and authentication contracts |
+| `UsersController` | User profile management |
+| `TracksController` | Track catalog and content administration |
+| `ModulesController` | Module sequencing within a track |
+| `LessonsController` | Lesson content delivery |
+| `ExamsController` | Exam retrieval and submission |
+| `ProgressController` | Authenticated learner progress |
+
+Full route matrix, status codes, and implemented-vs-planned markings: [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md).
+
+---
+
+## Persistence
+
+- Single `AppDbContext` with per-entity `IEntityTypeConfiguration<T>` classes under `Infrastructure/Persistence/Configurations/`.
+- SQLite for local development via `ConnectionStrings:TalebElm` (`Data Source=talebelm.db` in `appsettings.Development.json`).
+- Baseline EF Core migration committed under `Infrastructure/Migrations/` with design-time `AppDbContextFactory`.
+- Enforced relational constraints:
+  - `UNIQUE(UserId, ModuleId)` on `UserProgress`
+  - `UNIQUE(TrackId, Order)` on `Module`
+  - `UNIQUE(ModuleId, Order)` on `Lesson`
+  - `UNIQUE(ModuleId)` on `Exam` (at most one exam per module)
+  - `DeleteBehavior.Restrict` on all learning-path foreign keys — blocked deletes surface as `409 Conflict`; learner data is never cascade-deleted.
+- `IUnitOfWork.SaveChangesAsync()` is the single commit point. Application services depend exclusively on `IUnitOfWork`; direct `DbContext` abstractions in Application are not permitted.
+
+See [`docs/DATABASE_ERD.md`](docs/DATABASE_ERD.md) for the entity-relationship model.
+
+---
+
+## Testing Strategy
+
+| Level | Coverage |
+| --- | --- |
+| Unit | Entity invariants, DTO contracts, validators, service use cases (mocked `IUnitOfWork`) |
+| Repository | SQLite-backed persistence tests: configurations, unique indexes, relationship behavior |
+| Integration | Controller and relational-constraint tests over a real SQLite database |
+
+```bash
+dotnet test TalebElm.slnx
+```
+
+Release-mode validation (as executed in CI):
+
+```bash
+dotnet test TalebElm.slnx --configuration Release
+```
+
+---
+
+## DevOps and Quality Gates
+
+| Workflow | Trigger | Purpose |
 | --- | --- | --- |
-| TalebElm.Domain | `src/TalebElm.Domain` | Core business rules, entities, and repository interfaces |
-| TalebElm.Application | `src/TalebElm.Application` | Use cases, DTOs, and service interfaces |
-| TalebElm.Infrastructure | `src/TalebElm.Infrastructure` | Database (EF Core), repositories, and service implementations |
-| TalebElm.Api | `src/TalebElm.Api` | Web API controllers and middleware |
-| TalebElm.Tests | `tests/TalebElm.Tests` | Unit and integration tests |
+| `.NET CI` (`ci.yml`) | Push / PR to `main` | Debug restore → build → test on .NET 10 |
+| `Release Build & Test` (`dotnet-ci.yml`) | Push / PR to `main` | Validates shippable Release binaries |
+| `Security & Vulnerability Scan` (`security-scan.yml`) | PR, weekly schedule, manual dispatch | Dependency-review (fails on high/critical) + full-tree NuGet transitive audit |
+| `PR Validation` (`pr-validation.yml`) | PR opened / edited / synchronized | Enforces conventional-commit titles; requires `Closes #NNN` linkage for `feat:` / `fix:` |
+| `Pull Request Labeler` (`labeler.yml` + `labeler.yml` rules) | PR events | Path-based automatic labeling |
+| `Auto Assign Reviewers` (`auto-assign.yml`) | PR opened / ready for review | Round-robin reviewer rotation |
 
-Do not worry if these words sound confusing. Read the file called
-`ARCHITECTURE.md`. It explains each project in simple words.
-
----
-
-## What you need before you start
-
-You need **one main tool**: the .NET SDK.
-
-The .NET SDK is a free program made by Microsoft. It lets you build and run
-.NET projects on your computer.
-
-### Step 1: Install the .NET SDK
-
-Go to this website:
-
-```
-https://dotnet.microsoft.com/download
-```
-
-Download the **.NET SDK** (not the runtime). The SDK includes the runtime.
-
-Then follow the install instructions for your computer.
-
-### Step 2: Check that it works
-
-Open a terminal (Command Prompt on Windows, Terminal on macOS, or your terminal on Linux).
-
-Type this command and press Enter:
-
-```
-dotnet --version
-```
-
-You should see a version number, like this:
-
-```
-10.0.0
-```
-
-If you see a number, the SDK is installed correctly.
-If you see an error, try installing again, then close and reopen your terminal.
-
-### Step 3: Get a code editor (optional but recommended)
-
-A code editor is a program that helps you read and edit code.
-Any of these work well with .NET:
-
-- **Visual Studio** (Windows only)
-- **Visual Studio Code** (free, works on all systems)
-- **Rider** by JetBrains
+Conventional-commit types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `ci`, `build`, `perf`, `style` (optional scope, e.g. `fix(auth): hash passwords`).
 
 ---
 
-## How to run this project locally
+## Getting Started
 
-Follow these steps in order.
+### Prerequisites
 
-### Step 1: Clone the repository
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) (`dotnet --version` should report `10.x`)
+- Git
+- A .NET-compatible IDE or editor (Visual Studio, Visual Studio Code, or JetBrains Rider)
 
-Clone means "download a copy to your computer".
-Open your terminal and type:
+### Clone, build, and run
 
-```
-git clone https://github.com/Twajjeh/TalebElm.git
-```
-
-Then move into the project folder:
-
-```
+```bash
+git clone https://github.com/Tawjjeh/TalebElm.git
 cd TalebElm
-```
-
-### Step 2: Restore packages
-
-Packages are small pieces of code made by other people. .NET downloads them
-for you. This step is called "restore". Type:
-
-```
 dotnet restore
-```
-
-### Step 3: Build the solution
-
-Build means "turn the code into a working program".
-It also checks that there are no errors. Type:
-
-```
 dotnet build
-```
-
-You should see a message that says **Build succeeded**.
-
-### Step 4: Run the API
-
-The API is the web part of the project. To start it, type:
-
-```
 dotnet run --project src/TalebElm.Api
 ```
 
-The program will start and print a web address (URL). It looks like this:
+Verify liveness:
 
-```
-http://localhost:5000
-```
-
-To verify it is running, you can visit the health check endpoint in your browser:
-
-```
-http://localhost:5000/api/health
+```text
+GET http://localhost:5000/api/health
 ```
 
-You should see a message that says `"healthy"`.
+Expected response: service reports healthy.
 
-To stop the API, go back to the terminal and press `Ctrl + C`.
+### Run the test suite
 
-### Step 5: Run the tests
-
-Tests are small programs that check that our code does what it should.
-To run them, type:
-
-```
+```bash
 dotnet test
 ```
 
-You should see a message that says your tests passed.
+---
+
+## Configuration
+
+| Setting | Source | Notes |
+| --- | --- | --- |
+| `ConnectionStrings:TalebElm` | `appsettings.Development.json` (dev) / environment (all other environments) | Defaults to `Data Source=talebelm.db` locally |
+| `ConnectionStrings__TalebElm` | Environment variable override | Takes precedence over JSON configuration |
+
+Rules:
+
+- `appsettings.json` intentionally carries no connection string; non-development environments must inject it via the environment.
+- `*.db`, `*.db-shm`, `*.db-wal` files are git-ignored and must never be committed.
+- Secrets and production connection strings must never be stored in `appsettings*.json`.
+
+Full reference: [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
 
 ---
 
-## A note for beginners
+## Database Migrations
 
-Do not worry if you do not understand everything right now. That is normal.
-The best way to learn is to do things one step at a time.
+```bash
+# Create a migration
+dotnet ef migrations add <MigrationName> --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Api
 
-If you want to help with this project, read `CONTRIBUTING.md`. It explains
-how to contribute in very simple words, and we will help you at every step.
+# Apply migrations to the configured database
+dotnet ef database update --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Api
+```
 
 ---
 
-## Project links
+## Documentation Index
 
-- **Main project**: `TalebElm.slnx` (the solution file, contains all projects)
-- **Source code**: `src/` folder
-- **Tests**: `tests/` folder
-- **Architecture guide**: `ARCHITECTURE.md`
-- **Product and technical docs**: `docs/FEATURE_INDEX.md` (start here)
-- **Contributing guide**: `CONTRIBUTING.md`
+| Document | Contents |
+| --- | --- |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layer guide, dependency rules, request lifecycle |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Technical conventions and contracts reference |
+| [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) | Feature-to-implementation status matrix (entry point for product docs) |
+| [`docs/MVP_LEARNING_JOURNEY.md`](docs/MVP_LEARNING_JOURNEY.md) | End-to-end learner flow and implementation gaps |
+| [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md) | Route matrix and authorization expectations |
+| [`docs/DATABASE_ERD.md`](docs/DATABASE_ERD.md) | Data model and integrity constraints |
+| [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) | Source layout and scope boundaries |
+| [`docs/USER_STORIES.md`](docs/USER_STORIES.md) | Learner and administrator stories |
+| [`docs/OPEN_DECISIONS.md`](docs/OPEN_DECISIONS.md) | Pending product and technical decisions |
+| [`docs/CLASS_FLOW.md`](docs/CLASS_FLOW.md) | Request flow across layers |
+| [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md) | Connection-string and environment setup |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution workflow and quality standards |
+
+---
+
+## Contributing
+
+Contributions follow a fork-based workflow with conventional-commit titles, mandatory checks (build, tests, architecture boundaries), and automated reviewer assignment.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full workflow, branch naming, commit conventions, and PR requirements.
+
+---
+
+## License
+
+Distributed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for the full terms.
