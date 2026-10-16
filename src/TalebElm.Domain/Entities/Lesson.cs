@@ -10,4 +10,5 @@ public class Lesson : BaseEntity
 
     public Guid ModuleId { get; set; }
 
+    public Module Module { get; set; } = default!;
 }

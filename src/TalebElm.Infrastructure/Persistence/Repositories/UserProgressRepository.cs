@@ -31,12 +31,9 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
 
     public async Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId)
     {
-        var r = await (from up in context.UserProgresses
-                       join m in context.Modules on up.ModuleId equals m.Id
-                       where m.TrackId == trackId && up.UserId == userId
-                       orderby m.Order
-                       select up)
-                    .ToListAsync();
-        return r;
+        return await context.UserProgresses
+            .Where(up => up.UserId == userId && up.Module.TrackId == trackId)
+            .OrderBy(up => up.Module.Order)
+            .ToListAsync();
     }
 }

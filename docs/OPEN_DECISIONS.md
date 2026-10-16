@@ -1,0 +1,26 @@
+# Open Decisions
+
+Items to settle before the related code is written. "Proposed" is what the docs currently assume; "Decided (MVP)" is binding for implementation. Change the docs together with the decision.
+
+| # | Decision | Status / Default | Affects |
+|---|---|---|---|
+| 1 | Authentication method | Proposed: Email + password with hashing, JWT bearer tokens | [01](features/01-auth-identity.md), [API](API_ENDPOINTS.md) |
+| 2 | Roles | Proposed: `Learner` (default) and `Admin`; stored on the user | [01](features/01-auth-identity.md), [API](API_ENDPOINTS.md) |
+| 3 | Score scale | Decided (MVP): `Score` is `0–100`; `PassThreshold` is `1–100`; pass is `score >= PassThreshold`, graded server-side | [04](features/04-exams-management.md) |
+| 4 | Exam retakes | Decided (MVP): unlimited attempts, no cooldown; latest `Score` kept; a pass (`PassedExam`) is sticky and never reverted | [04](features/04-exams-management.md), [05](features/05-student-enrollment-and-progression.md) |
+| 5 | Attempt history | Decided (MVP): not stored; only the latest aggregate result in `UserProgress` | [DATABASE_ERD](DATABASE_ERD.md) |
+| 6 | Exams per Module | Decided (MVP): at most one, enforced with a unique `ModuleId` index; a Module MAY have no Exam | [04](features/04-exams-management.md) |
+| 7 | Question format | Proposed: Multiple choice with exactly one correct option | [04](features/04-exams-management.md) |
+| 8 | Track visibility | Decided (MVP): only `Published` Tracks are browsable and enrollable; enrollment is explicit, never automatic | [02](features/02-tracks-content.md) |
+| 9 | Re-enrollment | Decided (MVP): duplicate enrollment returns `409`; no un-enroll in MVP | [05](features/05-student-enrollment-and-progression.md) |
+| 10 | Content added after enrollment | Decided (MVP): a new Module is locked until the previous Module is passed; inserting in the middle must shift sibling `Order` in one transaction; reordering a `Published` Track after start requires product approval | [05](features/05-student-enrollment-and-progression.md) |
+| 11 | Delete rules | Decided (MVP): `Restrict` on all learning-path FKs; blocked deletes return `409`; no cascade of learner data; no soft delete; archive shipped Tracks | [DATABASE_ERD](DATABASE_ERD.md) |
+| 12 | Unique `Order` | Decided (MVP): enforce unique `(TrackId, Order)` for Modules and `(ModuleId, Order)` for Lessons | [02](features/02-tracks-content.md) |
+| 13 | `LessonType` | Proposed: Decide whether to store it on `Lesson` or drop the enum | [02](features/02-tracks-content.md), [03](features/03-lessons-and-learning-resources.md) |
+| 14 | Password policy | Proposed: Min 8 chars, at least one letter and one digit; hashed with a salted slow algorithm; never stored or returned raw | [01](features/01-auth-identity.md) |
+| 15 | Field max lengths | Proposed: Track.Name 150, Track.Description 1000, Module.Title 150, Module.Summary 500, Lesson.Title 150, LessonResource.Title 200 | [02](features/02-tracks-content.md), [03](features/03-lessons-and-learning-resources.md) |
+| 16 | Lesson resource URL | Proposed: Must be absolute `http`/`https` when present; reject relative paths and unsupported schemes with `400` | [03](features/03-lessons-and-learning-resources.md) |
+| 17 | Authorization policies | Proposed: Named `LearnerOnly` and `AdminOnly` policies; critical user management is `AdminOnly` | [01](features/01-auth-identity.md) |
+| 18 | Service placement | Decided (MVP): all business logic and Application services live exclusively in the Application layer (`Services/Abstraction` + `Services/Concrete`); Infrastructure holds persistence only and never business logic | [ARCHITECTURE](ARCHITECTURE.md), [CLASS_FLOW](CLASS_FLOW.md) |
+| 19 | DbContext access | Decided (MVP): Application services depend only on `IUnitOfWork`; direct `IApplicationDbContext`/`IAppDbContext` dependency is redundant and forbidden | [ARCHITECTURE](ARCHITECTURE.md) |
+| 20 | Module unlock lifecycle | Decided (MVP): forward-only sticky unlock; enrollment opens the first Module; pass opens only the next; no auto re-lock; `Admin` may manual-unlock | [05](features/05-student-enrollment-and-progression.md), [DATABASE_ERD](DATABASE_ERD.md) |

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using TalebElm.Application.DTOs;
+﻿using TalebElm.Application.DTOs;
 
-namespace TalebElm.Application.Services
+namespace TalebElm.Application.Services.Abstraction
 {
     public interface ITrackService
     {
