@@ -15,8 +15,8 @@ public class TrackService(
     {
         var tracks = await unitOfWork.Tracks.GetAllAsync();
 
-        if (tracks is null || tracks.Count == 0)
-            return Array.Empty<TrackResponse>();
+        if (tracks.Count == 0)
+            return [];
 
         return tracks
             .Select(track => new TrackResponse(

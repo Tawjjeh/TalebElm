@@ -1,4 +1,5 @@
-﻿using TalebElm.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 
@@ -8,16 +9,16 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
 {
     public async Task AddAsync(Track entity)
     {
-        await context.Set<Track>().AddAsync(entity);
+        await context.Tracks.AddAsync(entity);
     }
 
-    public Task<IReadOnlyList<Track>> GetAllAsync()
+    public async Task<IReadOnlyList<Track>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await context.Tracks.AsNoTracking().ToListAsync();
     }
 
-    public Task<Track?> GetByIdAsync(Guid id)
+    public async Task<Track?> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id);
     }
 }
