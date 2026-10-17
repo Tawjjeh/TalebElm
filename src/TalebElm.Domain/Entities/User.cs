@@ -8,5 +8,5 @@ public class User : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Student;
-    public DateTime JoinedAt { get; set; }
+    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 }

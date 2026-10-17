@@ -37,8 +37,8 @@ TalebElm/
 - Domain entities and repository contracts exist for Users, Tracks, Modules, Lessons, Exams, and UserProgress.
 - EF Core uses SQLite for local development; AppDbContext exposes the current entity sets.
 - TrackService list/create and ExamService get-by-id have implementations.
-- Track, Module, and Exam repositories have some implemented methods. Track read methods and UserRepository methods remain placeholders.
-- Controllers exist for Auth, Users, Tracks, Modules, Lessons, Exams, Progress, and Health. Most feature actions remain placeholders (Exams actions throw `NotImplementedException`; Progress returns 501).
+- Track, Module, Exam, User, and UserProgress repositories implement their current contracts. Collection queries use `AsNoTracking`; single-entity lookups remain tracked to support read-modify-write flows.
+- Controllers exist for Auth, Users, Tracks, Modules, Lessons, Exams, Progress, and Health. Most feature actions remain placeholders (throwing `TalebElm.Domain.Exceptions.NotImplementedException`, mapped to `501` by `ExceptionHandlingMiddleware`; Progress returns 501 directly). `Program.cs` registers infrastructure, `IUnitOfWork`, Application services, and the track validator.
 - SQLite-backed repository tests exist for selected implementations; they do not yet cover the whole student journey.
 
 ## Planned Product Concepts Not Yet in the Model
