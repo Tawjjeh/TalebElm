@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TalebElm.Domain.Enums;
+﻿namespace TalebElm.Domain.Enums;
 
 public enum UserRole
 {

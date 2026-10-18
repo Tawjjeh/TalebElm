@@ -34,11 +34,20 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Exams");
+                    b.HasIndex("ModuleId")
+                        .IsUnique();
+
+                    b.ToTable("Exams", t =>
+                        {
+                            t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 0 AND PassThreshold <= 100");
+
+                            t.HasCheckConstraint("CK_Exams_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
@@ -62,11 +71,20 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Lessons");
+                    b.HasIndex("ModuleId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("Lessons", t =>
+                        {
+                            t.HasCheckConstraint("CK_Lessons_Order_Positive", "\"Order\" > 0");
+
+                            t.HasCheckConstraint("CK_Lessons_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Module", b =>
@@ -83,10 +101,12 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Summary")
                         .IsRequired()
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("TrackId")
@@ -94,9 +114,15 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TrackId");
+                    b.HasIndex("TrackId", "Order")
+                        .IsUnique();
 
-                    b.ToTable("Modules");
+                    b.ToTable("Modules", t =>
+                        {
+                            t.HasCheckConstraint("CK_Modules_Order_Positive", "\"Order\" > 0");
+
+                            t.HasCheckConstraint("CK_Modules_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Track", b =>
@@ -110,10 +136,12 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
@@ -121,7 +149,12 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tracks");
+                    b.ToTable("Tracks", t =>
+                        {
+                            t.HasCheckConstraint("CK_Tracks_Description_NotEmpty", "length(trim(Description)) > 0");
+
+                            t.HasCheckConstraint("CK_Tracks_Name_NotEmpty", "length(trim(Name)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.User", b =>
@@ -135,18 +168,38 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users", t =>
+                        {
+                            t.HasCheckConstraint("CK_Users_Email_NotEmpty", "length(trim(Email)) > 0");
+
+                            t.HasCheckConstraint("CK_Users_Name_NotEmpty", "length(trim(Name)) > 0");
+
+                            t.HasCheckConstraint("CK_Users_PasswordHash_NotEmpty", "length(PasswordHash) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
@@ -175,19 +228,79 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ModuleId");
+
                     b.HasIndex("UserId", "ModuleId")
                         .IsUnique();
 
-                    b.ToTable("UserProgresses");
+                    b.ToTable("UserProgresses", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserProgress_Score_Range", "Score >= 0 AND Score <= 100");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithOne("Exam")
+                        .HasForeignKey("TalebElm.Domain.Entities.Exam", "ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany("Lessons")
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Module");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Module", b =>
                 {
-                    b.HasOne("TalebElm.Domain.Entities.Track", null)
-                        .WithMany()
+                    b.HasOne("TalebElm.Domain.Entities.Track", "Track")
+                        .WithMany("Modules")
                         .HasForeignKey("TrackId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Module", b =>
+                {
+                    b.Navigation("Exam");
+
+                    b.Navigation("Lessons");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Track", b =>
+                {
+                    b.Navigation("Modules");
                 });
 #pragma warning restore 612, 618
         }
