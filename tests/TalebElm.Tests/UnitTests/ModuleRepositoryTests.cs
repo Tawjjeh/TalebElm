@@ -48,9 +48,14 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetByIdAsync_WhenModuleExists_ReturnsModule()
     {
-        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1 , TrackId = track.Id};
         DbContext.Tracks.Add(track);
-        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1, TrackId = track.Id };
         DbContext.Modules.Add(module);
         await SaveChangesAsync();
         ClearTracker();
@@ -72,13 +77,18 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task GetAllAsync_ReturnsAllModules()
     {
-        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
-        DbContext.Tracks.Add(track);
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
         var modules = new[]
         {
             new Module { Id = Guid.NewGuid(), Title = "First", Order = 1, TrackId = track.Id },
             new Module { Id = Guid.NewGuid(), Title = "Second", Order = 2, TrackId = track.Id }
         };
+        DbContext.Tracks.Add(track);
         DbContext.Modules.AddRange(modules);
         await SaveChangesAsync();
         ClearTracker();
@@ -92,10 +102,16 @@ public class ModuleRepositoryTests : SqliteTestBase
     [Fact]
     public async Task AddAsync_DoesNotPersistUntilUnitOfWorkSaves()
     {
-        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
+        var track = new Track
+        {
+            Id = Guid.NewGuid(),
+            Name = "Backend",
+            Description = "Backend track"
+        };
+
         DbContext.Tracks.Add(track);
         await SaveChangesAsync();
-        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics", Order = 1, TrackId = track.Id };
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# basics",TrackId = track.Id, Order = 1 };
         await _repository.AddAsync(module);
 
         await using var secondContext = CreateContext();

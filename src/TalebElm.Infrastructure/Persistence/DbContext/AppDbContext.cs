@@ -29,4 +29,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Module> Modules => Set<Module>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<Track> Tracks => Set<Track>();
+    public DbSet<TrackEnrollment> TrackEnrollments => Set<TrackEnrollment>();
 }
