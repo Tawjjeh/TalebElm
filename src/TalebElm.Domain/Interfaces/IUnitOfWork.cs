@@ -9,5 +9,6 @@ public interface IUnitOfWork
     IExamRepository Exams { get; }
     IUserProgressRepository UserProgresses { get; }
     ITrackEnrollmentRepository TrackEnrollments { get; }
+    ILessonResourceRepository LessonResources { get; }
     Task<int> SaveChangesAsync();
 }
