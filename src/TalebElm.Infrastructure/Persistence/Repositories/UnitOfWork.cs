@@ -15,6 +15,7 @@ public class UnitOfWork : IUnitOfWork
     public IModuleRepository Modules { get; }
 
     public IUserProgressRepository UserProgresses { get; }
+    public ILessonResourceRepository LessonResources { get; }
 
     public IExamRepository Exams { get; }
     public ITrackEnrollmentRepository TrackEnrollments { get; }
@@ -28,6 +29,8 @@ public class UnitOfWork : IUnitOfWork
         Exams = new ExamRepository(_context);
         UserProgresses = new UserProgressRepository(_context);
         TrackEnrollments = new TrackEnrollmentRepository(_context);
+        LessonResources = new LessonResourceRepository(_context);
+
     }
 
     public async Task<int> SaveChangesAsync()

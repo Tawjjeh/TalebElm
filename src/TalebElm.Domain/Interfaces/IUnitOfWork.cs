@@ -7,5 +7,6 @@ public interface IUnitOfWork
     IModuleRepository Modules { get; }
     IExamRepository Exams { get; }
     IUserProgressRepository UserProgresses { get; }
+    ILessonResourceRepository LessonResources { get; }
     Task<int> SaveChangesAsync();
 }
