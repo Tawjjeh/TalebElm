@@ -50,7 +50,7 @@ The layers and contracts are present, but the full learning journey is not wired
 | Domain | User, Track, Module, Lesson, Exam, and UserProgress entities exist. Enrollment, LessonResource, and ExamQuestion do not. |
 | Application | DTOs and service interfaces for User, Track, Exam, and progress exist. |
 | Infrastructure | SQLite registration, repositories for Track/Module/Exam, UnitOfWork, and parts of Track/Exam services exist. Several methods remain placeholders. |
-| API | Controllers are mostly placeholders, including a placeholder ExamsController. There is no enrollment endpoint or authentication setup. `Program.cs` does not register the feature services. |
+| API | Controllers are mostly placeholders. `Program.cs` registers infrastructure, `IUnitOfWork`, and Application services; feature controllers do not yet delegate to service interfaces. There is no enrollment endpoint or authentication setup. |
 | Tests | SQLite-backed repository and service tests exist, but the full register → enroll → study → exam → unlock journey is not tested or implemented. |
 
 See [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the target learner flow and [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for feature status.
@@ -95,7 +95,7 @@ Service implementations are registered in `Program.cs` via DI:
 builder.Services.AddScoped<IExamService, ExamService>();
 ```
 
-**Current status:** `Program.cs` currently calls `AddControllers()` only. It does not register Application services, repositories, or `IUnitOfWork`, and the existing feature controllers do not yet delegate to service interfaces. Treat the snippet above as the required wiring pattern, not as current behavior.
+**Current status:** `Program.cs` registers `AddInfrastructure`, `IUnitOfWork`, Application services, and the track request validator, and adds `ExceptionHandlingMiddleware` to the pipeline. The existing feature controllers do not yet delegate to service interfaces. Treat controller delegation as the required pattern, not as current behavior.
 
 ---
 
@@ -188,7 +188,7 @@ var track = await _unitOfWork.Tracks.GetByIdAsync(id)
     ?? throw new NotFoundException($"Track {id} not found.");
 ```
 
-**Current status:** the middleware has an empty `InvokeAsync` method and is not registered in `Program.cs`. Exception mappings in this section are the intended contract, not active runtime behavior. Use the custom `TalebElm.Domain.Exceptions.NotImplementedException` only when a deliberate placeholder response is needed; do not confuse it with `System.NotImplementedException`.
+**Current status:** `ExceptionHandlingMiddleware` maps domain exceptions to `application/problem+json` responses and is registered in `Program.cs`. Use the custom `TalebElm.Domain.Exceptions.NotImplementedException` only when a deliberate placeholder response is needed; do not confuse it with `System.NotImplementedException`.
 
 ---
 
