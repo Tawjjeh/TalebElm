@@ -29,7 +29,6 @@ namespace TalebElm.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<LessonResource>> GetByLessonIdAsync(Guid lessonId)
         {
             return await context.LessonResources
-                .AsNoTracking()
                 .Where(e => e.LessonId == lessonId)
                 .OrderBy(e => e.Order)
                 .ToListAsync();
