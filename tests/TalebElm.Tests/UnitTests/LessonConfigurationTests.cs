@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Tests.Infrastructure;
@@ -9,21 +10,21 @@ public class LessonConfigurationTests : SqliteTestBase
     [Fact]
     public void Model_ShouldConfigureLessonModuleRelationshipAndRestrictDelete()
     {
-        // Act
         var entityType = DbContext.Model.FindEntityType(typeof(Lesson));
         var foreignKey = entityType?.GetForeignKeys()
             .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Module));
 
-        // Assert
         Assert.NotNull(foreignKey);
-        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
         Assert.Equal(nameof(Lesson.ModuleId), foreignKey.Properties.Single().Name);
+        Assert.Equal(nameof(Module.Id), foreignKey.PrincipalKey.Properties.Single().Name);
+        Assert.True(foreignKey.IsRequired);
+        Assert.False(foreignKey.IsUnique);
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 
     [Fact]
     public async Task DeleteModule_WithAssociatedLessons_ThrowsDbUpdateExceptionDueToRestrict()
     {
-        // Arrange
         var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Backend track" };
         var module = new Module { Id = Guid.NewGuid(), Title = "C# Fundamentals", Order = 1, TrackId = track.Id };
         var lesson = new Lesson 
@@ -41,13 +42,14 @@ public class LessonConfigurationTests : SqliteTestBase
         await SaveChangesAsync();
         ClearTracker();
 
-        // Act
         var moduleToDelete = await DbContext.Modules.FindAsync(module.Id);
         Assert.NotNull(moduleToDelete);
-        
+
         DbContext.Modules.Remove(moduleToDelete);
 
-        // Assert
-        await Assert.ThrowsAsync<DbUpdateException>(async () => await SaveChangesAsync());
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => SaveChangesAsync());
+        var sqliteEx = Assert.IsType<SqliteException>(ex.InnerException);
+        Assert.Equal(19, sqliteEx.SqliteErrorCode); // SQLITE_CONSTRAINT
+        Assert.Equal(1811, sqliteEx.SqliteExtendedErrorCode);
     }
 }
