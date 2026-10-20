@@ -1,5 +1,6 @@
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
+using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Repositories;
 using TalebElm.Tests.Infrastructure;
 
@@ -40,5 +41,19 @@ public class UnitOfWorkTests : SqliteTestBase
 
         Assert.NotNull(await secondContext.Tracks.FindAsync(track.Id));
         Assert.NotNull(await secondContext.Modules.FindAsync(module.Id));
+    }
+
+    [Fact]
+    public void Repositories_AreExposedThroughTheInterface()
+    {
+        IUnitOfWork unitOfWork = new UnitOfWork(DbContext);
+
+        Assert.NotNull(unitOfWork.Users);
+        Assert.NotNull(unitOfWork.Tracks);
+        Assert.NotNull(unitOfWork.Modules);
+        Assert.NotNull(unitOfWork.Lessons);
+        Assert.NotNull(unitOfWork.Exams);
+        Assert.NotNull(unitOfWork.UserProgresses);
+        Assert.NotNull(unitOfWork.TrackEnrollments);
     }
 }

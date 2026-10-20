@@ -157,6 +157,34 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.TrackEnrollment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("EnrolledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrackId");
+
+                    b.HasIndex("UserId", "TrackId")
+                        .IsUnique();
+
+                    b.ToTable("TrackEnrollments");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -272,6 +300,25 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Track");
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.TrackEnrollment", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Track", "Track")
+                        .WithMany("TrackEnrollments")
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.User", "User")
+                        .WithMany("TrackEnrollments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Track");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
@@ -301,6 +348,13 @@ namespace TalebElm.Infrastructure.Migrations
             modelBuilder.Entity("TalebElm.Domain.Entities.Track", b =>
                 {
                     b.Navigation("Modules");
+
+                    b.Navigation("TrackEnrollments");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.User", b =>
+                {
+                    b.Navigation("TrackEnrollments");
                 });
 #pragma warning restore 612, 618
         }

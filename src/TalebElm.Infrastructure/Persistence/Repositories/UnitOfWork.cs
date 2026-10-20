@@ -14,6 +14,8 @@ public class UnitOfWork : IUnitOfWork
 
     public IModuleRepository Modules { get; }
 
+    public ILessonRepository Lessons { get; }
+
     public IUserProgressRepository UserProgresses { get; }
 
     public IExamRepository Exams { get; }
@@ -25,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
         Users = new UserRepository(_context);
         Tracks = new TrackRepository(_context);
         Modules = new ModuleRepository(_context);
+        Lessons = new LessonRepository(_context);
         Exams = new ExamRepository(_context);
         UserProgresses = new UserProgressRepository(_context);
         TrackEnrollments = new TrackEnrollmentRepository(_context);

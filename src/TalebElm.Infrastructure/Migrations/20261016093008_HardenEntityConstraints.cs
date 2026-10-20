@@ -29,14 +29,14 @@ namespace TalebElm.Infrastructure.Migrations
                 table: "Users",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: "!");
 
             migrationBuilder.AddColumn<int>(
                 name: "Role",
                 table: "Users",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 1);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
