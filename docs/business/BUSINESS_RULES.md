@@ -10,7 +10,7 @@
 
 | Concept | Domain type | Definition |
 |---|---|---|
-| User | `User` | A registered person. `Role` is `UserRole`: `Student` (the learner, default), `Instructor`, `Admin`. |
+| User | `User` | A registered person. `Role` is `UserRole`: `Student` (default; the MVP learner), `Instructor` (reserved), `Admin` (content author/operator). |
 | Track | `Track` | An ordered learning path. The product word is **Track**, never Course. |
 | Module | `Module` | One ordered section of a Track. Position is `Order` (≥ 1). |
 | Lesson | `Lesson` | One ordered study unit inside a Module. Position is `Order` (≥ 1). |
@@ -20,6 +20,18 @@
 
 All entities inherit `BaseEntity`: `Id` (auto-generated `Guid`, never reused, never reassigned) and `CreatedAt` (server UTC at insert, immutable afterwards).
 
+### Role taxonomy (decision D-1)
+
+| Role | Enum value | MVP status | Meaning |
+|---|---|---|---|
+| `Student` | 1 | Active (default) | A registered user who consumes a Track. This is the MVP learner. |
+| `Instructor` | 2 | Reserved | Future teaching/authoring role. No MVP permission differs from `Student`; content authoring is `Admin`-only in the MVP. |
+| `Admin` | 3 | Active | Content author/operator. May perform learner actions and all `Admin`-only operations. |
+
+**`Learner` is not a role.** It is an aggregate product concept meaning "any authenticated user who consumes learning content", not a value stored in `UserRole`, a token claim, or the database. In the MVP the learner is the `Student`; an `Admin` may also act as a learner for support and testing. Authorization policies are `StudentOnly` (`Student`, with `Admin` override) and `AdminOnly` (`Admin`).
+
+Decision rationale: the `UserRole` enum already ships with `Student`/`Instructor`/`Admin`; adding a fourth `Learner` value would duplicate `Student` and force a data migration, while removing `Instructor` would break the shipped enum and the future authoring split. Keeping `Instructor` reserved costs one unused value and is documented as non-MVP rather than left ambiguous.
+
 ## 2. User management & identity
 
 | ID | Rule | Status |
@@ -27,7 +39,7 @@ All entities inherit `BaseEntity`: `Id` (auto-generated `Guid`, never reused, ne
 | U-1 | `Name` is required, max 100, non-blank (whitespace-only rejected). Enforced by `CHECK (length(trim(Name)) > 0)` **and** the register validator. | Implemented |
 | U-2 | `Email` is required, max 256, non-blank, and unique **case-insensitively** (`NOCASE` collation: `A@test.com` ≡ `a@test.com`). Duplicates return `409 Conflict`. | Implemented |
 | U-3 | `PasswordHash` is required and non-blank. A raw password is never stored, never logged, and never appears in any DTO — `UserResponse` carries `Id`, `Name`, `Email` only (guarded by reflection test). | Implemented |
-| U-4 | New users default to `Role = Student`. The first `Admin` is provisioned, never self-registered. | Implemented |
+| U-4 | New users default to `Role = Student`. Self-registration never assigns `Instructor` or `Admin`; the first `Admin` is provisioned out of band. | Implemented (default) / Target (provisioning) |
 | U-5 | Registration sets `JoinedAt` to server UTC. `JoinedAt` (business fact) is independent of `CreatedAt` (technical fact); imports may backfill a different join date. | Target (registration flow) |
 | U-6 | Login with unknown email **or** wrong password returns `401` without revealing which failed. No account enumeration. | Target (auth service) |
 | U-7 | Learner history (`UserProgress`, enrollments) is never cascade-deleted with a User (`DeleteBehavior.Restrict`). | Implemented |

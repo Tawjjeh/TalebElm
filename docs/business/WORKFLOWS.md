@@ -20,7 +20,7 @@ stateDiagram-v2
 |---|---|---|
 | Register | Validate U-1…U-3; duplicate email → `409`; hash with salted slow algorithm; `Role = Student`; `JoinedAt` = server UTC. No token for duplicate, no partial user on failure. | U-1–U-5 |
 | Login | Unknown email **or** wrong password → indistinguishable `401`. Success returns token; hash never leaves the server. | U-3, U-6 |
-| Authorize | `LearnerOnly` (Student, Instructor, Admin): browse, enroll, study, exams, own progress. `AdminOnly`: content writes, user management, manual unlock. | §5 |
+| Authorize | `StudentOnly` (Student; Admin override): browse, enroll, study, exams, own progress. `AdminOnly`: content writes, user management, manual unlock. `Instructor` is defined but has no distinct MVP permissions. | D-1, §5 |
 
 ## 2. Track lifecycle (content authoring)
 
