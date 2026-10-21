@@ -129,7 +129,7 @@ Full route matrix, status codes, and implemented-vs-planned markings: [`docs/API
   - `UNIQUE(TrackId, Order)` on `Module`
   - `UNIQUE(ModuleId, Order)` on `Lesson`
   - `UNIQUE(ModuleId)` on `Exam` (at most one exam per module)
-  - `DeleteBehavior.Restrict` on all learning-path foreign keys; learner data is never cascade-deleted. Translating dependent-delete failures into API `409 Conflict` responses is target work.
+  - `DeleteBehavior.Restrict` on all learning-path foreign keys; learner data is never cascade-deleted. `UnitOfWork.SaveChangesAsync` translates unique and foreign-key violations into `ConflictException`, so a duplicate or a blocked delete returns `409 Conflict`.
 - `IUnitOfWork.SaveChangesAsync()` is the single commit point. Application services depend exclusively on `IUnitOfWork`; direct `DbContext` abstractions in Application are not permitted.
 
 See [`docs/DATABASE_ERD.md`](docs/DATABASE_ERD.md) for the entity-relationship model.

@@ -73,7 +73,7 @@ Student-facing reads should also return a Track's Modules and Lessons only to an
 - Use GUID route identifiers and JSON DTOs.
 - Return 400 for invalid input, 401 for missing/invalid authentication, 403 for forbidden actions, 404 for unknown resources, and 409 for duplicate enrollment or exam-per-module conflicts.
 - Keep controllers thin: bind HTTP input, call an Application service interface, and translate the result to HTTP. Do not put repository or progression logic in controllers.
-- `ExceptionHandlingMiddleware` is registered and maps `NotFoundException` to 404 and FluentValidation failures to 400 as a problem+json `detail` string. A field-keyed `errors` object is target work (#321), as is translating dependent-delete/constraint failures to 409 instead of 500 (#322). See [08](features/08-health-and-error-handling.md).
+- `ExceptionHandlingMiddleware` is registered and maps `NotFoundException` to 404 and FluentValidation failures to 400 as a problem+json `detail` string. Unique and foreign-key violations from the database (a duplicate that raced past a pre-check, or a blocked dependent delete) become `ConflictException` in `UnitOfWork.SaveChangesAsync` and so return 409. Other database failures stay 500. A field-keyed `errors` object is target work (#321). See [08](features/08-health-and-error-handling.md).
 - Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
 
 ## 4. Out of Scope for the Core Learning Flow

@@ -97,7 +97,7 @@ Reordering or inserting in the middle must shift sibling `Order` values inside t
 
 ### 5.4 Delete policy: `Restrict`, never silent cascade
 
-All learning-path foreign keys use `DeleteBehavior.Restrict`. There is no soft delete in the MVP and no cascading delete of learner data. The API does not yet translate dependent-delete failures into `409`; that mapping is tracked by #322.
+All learning-path foreign keys use `DeleteBehavior.Restrict`. There is no soft delete in the MVP and no cascading delete of learner data. `UnitOfWork.SaveChangesAsync` translates a dependent-delete failure, like a unique-index violation, into `ConflictException`, which the API returns as `409`.
 
 | Target | Rule |
 |---|---|

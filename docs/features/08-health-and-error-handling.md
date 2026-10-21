@@ -60,10 +60,10 @@ DomainException (base)
 | `NotFoundException`                | `404`       | `The requested resource was not found.`                              |
 | Domain `ValidationException`       | `400`       | `A business rule was violated.`                                      |
 | FluentValidation `ValidationException` | `400`   | `One or more validation errors occurred.`                            |
-| `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.`            |
+| `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.` (also raised by `UnitOfWork.SaveChangesAsync` for unique and foreign-key violations) |
 | `DomainException`                  | `400`       | `The request could not be processed.`                                |
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
-| Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (EF constraint/dependent-delete failures still fall here; #322 targets `409`) |
+| Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
 ### Validation error payload (target contract)
 

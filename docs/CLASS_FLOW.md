@@ -51,6 +51,6 @@ HTTP request
 4. The service uses `Exam.HasPassed(score)` and updates the current UserProgress.
 5. On a pass, it finds the next Module in the same Track by Order and unlocks that Module for this learner only.
 6. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together.
-7. The service returns an `ExamResultResponse`; the controller maps domain errors to HTTP responses through the registered middleware. Field-keyed validation responses and EF-conflict translation are still target work (#321, #322).
+7. The service returns an `ExamResultResponse`; the controller maps domain errors to HTTP responses through the registered middleware. Unique and foreign-key violations are translated into `ConflictException` (409) by `UnitOfWork.SaveChangesAsync`. Field-keyed validation responses are still target work (#321).
 
 Question storage, answer submission, enrollment initialization, and unlock behavior are still target design; they must not be described as existing functionality until implemented and tested.
