@@ -65,7 +65,7 @@ These rules close design-review questions Q2–Q3, Q5, Q7–Q12. They are bindin
 
 ### 5.1 Exam scoring, retries, and pass validation
 
-- **Score scale:** `Score` is an integer `0–100`. `Exam.PassThreshold` is an integer `1–100` in the same scale. `Exam.HasPassed(score)` is `score >= PassThreshold`. The current database check still allows `0`; issue #326 tightens it to `1–100`.
+- **Score scale:** `Score` is an integer `0–100`. `Exam.PassThreshold` is an integer `1–100` in the same scale. `Exam.HasPassed(score)` is `score >= PassThreshold`. The database check `CK_Exams_PassThreshold_Range` enforces `1–100`.
 - **Server-side grading only:** the score is computed by the Application service from server-side answer keys. A client-supplied score is never trusted.
 - **Retries:** unlimited attempts, no cooldown in the MVP.
 - **Latest-wins for `Score`, sticky-wins for `PassedExam`:** each submission overwrites `UserProgress.Score` with the latest attempt score, but `PassedExam`, once `true`, is never reset to `false` by a later failed retake. A pass is permanent.

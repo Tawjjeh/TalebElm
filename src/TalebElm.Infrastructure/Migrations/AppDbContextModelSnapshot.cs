@@ -15,7 +15,7 @@ namespace TalebElm.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
                 {
@@ -44,7 +44,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.ToTable("Exams", t =>
                         {
-                            t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 0 AND PassThreshold <= 100");
+                            t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 1 AND PassThreshold <= 100");
 
                             t.HasCheckConstraint("CK_Exams_Title_NotEmpty", "length(trim(Title)) > 0");
                         });
