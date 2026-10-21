@@ -95,7 +95,7 @@ Service implementations are registered in `Program.cs` via DI:
 builder.Services.AddScoped<IExamService, ExamService>();
 ```
 
-**Current status:** `Program.cs` registers `AddInfrastructure`, `IUnitOfWork`, Application services, and the track request validator, and adds `ExceptionHandlingMiddleware` to the pipeline. The existing feature controllers do not yet delegate to service interfaces. Treat controller delegation as the required pattern, not as current behavior.
+**Current status:** `Program.cs` registers `AddInfrastructure`, `AddApplication` (password hasher, validators, Module/Lesson services), `IUnitOfWork`, and adds `ExceptionHandlingMiddleware` to the pipeline. The existing feature controllers do not yet delegate to service interfaces. Treat controller delegation as the required pattern, not as current behavior.
 
 ---
 

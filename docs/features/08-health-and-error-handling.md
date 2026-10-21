@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Expose a lightweight health endpoint so callers can confirm the API process responds. A global exception middleware is planned, but exception-to-HTTP mapping is not active yet.
+Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors remain target behavior.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
@@ -53,20 +53,21 @@ DomainException (base)
 
 ### Exception Handling Middleware
 
-The intended `ExceptionHandlingMiddleware` mapping is:
+`ExceptionHandlingMiddleware` currently returns `application/problem+json` with `status`, `title`, and `detail` (the detail is suppressed for `500`):
 
-| Exception Type                     | HTTP Status | Response Body                                                                    |
-| ---------------------------------- | ----------- | -------------------------------------------------------------------------------- |
-| `NotFoundException`                | `404`       | `{ "error": "<message>" }`                                                       |
-| `ValidationException`              | `400`       | `{ "error": "Validation failed.", "errors": { "<field>": ["<message>", ...] } }` |
-| `ConflictException`                | `409`       | `{ "error": "A conflicting state or duplicate resource was detected."}`          |
-| `DomainException`                  | `400`       | `{ "error": "<message>" }`                                                       |
-| `NotImplementedException` (Domain) | `501`       | `{ "error": "<message>" }`                                                       |
-| Unhandled `Exception`              | `500`       | `{ "error": "An unexpected error occurred." }`                                   |
+| Exception Type                     | HTTP Status | Current Title                                                        |
+| ---------------------------------- | ----------- | -------------------------------------------------------------------- |
+| `NotFoundException`                | `404`       | `The requested resource was not found.`                              |
+| Domain `ValidationException`       | `400`       | `A business rule was violated.`                                      |
+| FluentValidation `ValidationException` | `400`   | `One or more validation errors occurred.`                            |
+| `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.`            |
+| `DomainException`                  | `400`       | `The request could not be processed.`                                |
+| `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
+| Unhandled `Exception`              | `500`       | `An unexpected error occurred.`                                      |
 
 ### Validation error payload (target contract)
 
-Validation failures must return field-specific errors so clients can attach each message to its input field:
+The current middleware returns a single `detail` string. The target contract adds field-specific errors so clients can attach each message to its input field:
 
 ```json
 {
@@ -82,7 +83,7 @@ Validation failures must return field-specific errors so clients can attach each
 - The top-level `error` string stays present for logging and generic display; failures that are not tied to a specific field are reported there only.
 - Services currently throw FluentValidation's `ValidationException` (for example `TrackService.CreateAsync`), whose `ValidationFailure` items already carry `PropertyName` and `ErrorMessage`. The middleware must map those into the `errors` object above. `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `error` only, until it is extended to carry per-field errors.
 
-### Registration (planned)
+### Registration (implemented)
 
 ```csharp
 // In Program.cs, before app.MapControllers():
@@ -100,6 +101,6 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 | `NotFoundException`       | User lookup by ID returns null                                                                          |
 | `ConflictException`       | Duplicate entity, unique constraint violation, or conflicting state (e.g. duplicate enrollment or exam) |
 | `ValidationException`     | Duplicate email or missing required fields (planned)                                                    |
-| `NotImplementedException` | All current service methods and controller actions (placeholder)                                        |
+| `NotImplementedException` | Remaining placeholder controller actions and unimplemented capabilities                                |
 
 This feature's middleware _handles_ all domain exceptions thrown by other features. See the mapping table above.

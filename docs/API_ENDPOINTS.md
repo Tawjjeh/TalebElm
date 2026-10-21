@@ -10,10 +10,10 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/auth/login` | Declared, no request/response DTO, throws `System.NotImplementedException`. |
 | GET | `/api/users` | Declared, action has no parameters and throws `System.NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws `System.NotImplementedException`. |
-| GET | `/api/tracks` | Declared, no service is wired to the controller; throws `System.NotImplementedException`. |
-| POST | `/api/tracks` | Declared, action has no request parameter; throws `System.NotImplementedException`. |
-| GET | `/api/modules` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
-| GET | `/api/lessons` | Declared as a parameterless placeholder; throws `System.NotImplementedException`. |
+| GET | `/api/tracks` | `TrackService` list exists, but is not wired to the controller; throws `System.NotImplementedException`. |
+| POST | `/api/tracks` | `TrackService` create exists, but the action has no request parameter and is not wired; throws `System.NotImplementedException`. |
+| GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
+| GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
 | POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
 | POST | `/api/exams/{id}/submit` | Declared as a placeholder; throws domain `NotImplementedException`. |
@@ -34,7 +34,7 @@ There is no registration endpoint, enrollment endpoint, nested lesson route, or 
 | GET | `/api/tracks/{trackId}` | None | Track detail with ordered Modules | 200, 404 |
 | POST | `/api/tracks/{trackId}/enrollment` | None; Student comes from auth | Enrollment response | 201, 401, 404, 409 |
 
-`User` currently has no password, role, or enrollment relationship. The registration/auth contract must be decided before these routes are implemented. `TrackEnrollment` is proposed separately from `UserProgress`.
+`User` now has `PasswordHash`, `Role` (`UserRole`: `Student`/`Instructor`/`Admin`), and a `TrackEnrollments` collection; password hashing is implemented. Registration, login, token issuance, and authorization policies are still not implemented. `TrackEnrollment` persistence exists separately from `UserProgress`; the enrollment endpoint is not wired.
 
 ### Lessons and learning sources
 
@@ -43,7 +43,7 @@ There is no registration endpoint, enrollment endpoint, nested lesson route, or 
 | GET | `/api/modules/{moduleId}/lessons` | None | Ordered Lesson summaries | 200, 403, 404 |
 | GET | `/api/lessons/{lessonId}` | None | Lesson detail and ordered source links | 200, 403, 404 |
 
-`Lesson` currently stores `Content`, `Order`, and `ModuleId`. Books, official documentation, videos, and other source links need a proposed `LessonResource` contract; there is no resource entity or service today.
+`Lesson` stores `Content`, `Order`, and `ModuleId`. `LessonResource` (title, kind, URL/citation, order) now exists in Domain/Infrastructure with a repository and migration; the lesson detail service loads them. Lesson HTTP endpoints remain placeholders.
 
 ### Exams and progression
 
@@ -58,7 +58,7 @@ The current `SubmitExamRequest` accepts a client-supplied score. Do not use that
 
 ### Who may call (proposed)
 
-The MVP role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). For the MVP learning flow, two roles are active: Student (the learner, assigned by default after registration) and Admin (content author).
+The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `Student` (the learner, default after registration) and `Admin` (content author/operator) are active in the MVP; `Instructor` is defined but reserved. "Learner" is an aggregate product term, not a stored role — see [`business/BUSINESS_RULES.md`](business/BUSINESS_RULES.md#role-taxonomy-decision-d-1).
 
 | Access | Routes |
 |---|---|

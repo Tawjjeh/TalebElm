@@ -1,7 +1,7 @@
 # Feature Specification: Lessons & Learning Resources
 
 ## Status
-`Lesson` exists in Domain with `Title`, `Content`, `Order`, and `ModuleId`. It has no resource collection or source metadata. The Lesson controller is a placeholder, and no Lesson service exists.
+`Lesson` exists with `Title`, `Content`, `Order`, and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
 
 ## MVP Objective
 Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the instructor. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.
@@ -18,11 +18,12 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | Lesson | ModuleId | Guid | No | Parent Module identifier |
 
 ### Relationship
-- `Lesson.ModuleId` identifies the parent Module. The current entity has no navigation property and EF relationship configuration is not complete.
+- `Lesson.ModuleId` is a required FK to `Module.Id` with `DeleteBehavior.Restrict`; `Lesson.Module` is the navigation.
+- A Lesson can have zero or more `LessonResource` rows. The relationship is uni-directional (`LessonResource.Lesson`, no `Lesson.Resources` collection).
 
-## Proposed MVP Resource Contract
+## Current Resource Contract
 
-Add a `LessonResource` entity rather than packing external links into `Lesson.Content`:
+`LessonResource` exists as a separate entity rather than packing external links into `Lesson.Content`:
 
 | Entity | Field | Type | Nullable | Constraints / Notes |
 |---|---|---|---|---|
@@ -36,22 +37,24 @@ Add a `LessonResource` entity rather than packing external links into `Lesson.Co
 
 Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format if it is added to Lesson; the latter describes a cited source. Do not claim `LessonType` is currently stored on Lesson.
 
-### Suggested Application Contract
+### Application Contract (Implemented)
 
-- Add `LessonResourceResponse` with `Id`, `Title`, `Kind`, `Url`, `Citation`, and `Order`.
-- Add `LessonDetailResponse` with `Id`, `ModuleId`, `Title`, `Content`, `Order`, and an ordered resource list.
-- Add a create/update request only when lesson authoring is scheduled; no Lesson service or request DTO currently exists.
+- `LessonResourceResponse` carries `Id`, `Title`, `Kind`, `Url`, `Citation`, and `Order`.
+- `LessonDetailResponse` carries `Id`, `ModuleId`, `Title`, `Content`, `Order`, and an ordered resource list.
+- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. Create/update request DTOs remain scheduled with lesson authoring.
 
 ### Suggested API Contract (Not Implemented)
 
 | Method | Route | Purpose | Status |
 |---|---|---|---|
-| GET | `/api/modules/{moduleId}/lessons` | List lessons in `Order` | Planned; no matching controller action |
-| GET | `/api/lessons/{lessonId}` | Return explanation and resources | Planned; current `LessonsController.Get()` has no id parameter and throws `NotImplementedException` |
+| GET | `/api/modules/{moduleId}/lessons` | List lessons in `Order` | Service exists; no matching controller action |
+| GET | `/api/lessons/{lessonId}` | Return explanation and resources | Service exists; current `LessonsController.Get()` has no id parameter and throws `NotImplementedException` |
 
 ### Resource validation rules (proposed)
 
-- `Title` is required and has a planned max length of **200**.
+The database currently enforces required `Title` (max 200), optional `Citation` (max 500), and `Order > 0`. The remaining rules are target behavior:
+
+- `Title` is required and has a max length of **200**.
 - At least one of `Url` or `Citation` must be provided; both may be provided.
 - When `Url` is present it must be a valid **absolute** URL using the `http` or
   `https` scheme. Reject relative paths, empty strings, and unsupported schemes

@@ -5,10 +5,10 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 ## Learner Flow
 
-1. **Create an account** — the learner provides a name and email. The current `User` model stores these fields, but registration, password storage, and login are not implemented.
-2. **Browse and choose a Track** — show available Tracks and their Modules in `Order`. The current model has `Track`, `Module`, and `TrackStatus`; Track read API behavior is incomplete.
-3. **Enroll in the Track** — create one enrollment for the learner and Track. There is no Enrollment entity or workflow yet. Do not use `UserProgress` as a substitute: it is per user and Module.
-4. **Study a Module** — display its ordered Lessons. A Lesson currently has a text `Content` field; books, official documentation, videos, and other sources need a separate resource contract.
+1. **Create an account** — the learner provides a name and email. The `User` model stores these fields plus a PBKDF2 `PasswordHash` and `Role` (`Student` default); registration, login, and token issuance are not implemented.
+2. **Browse and choose a Track** — show available Tracks and their Modules in `Order`. `Track`, `Module`, and `TrackStatus` exist; Track list/create services exist, while the HTTP API remains a placeholder.
+3. **Enroll in the Track** — create one enrollment for the learner and Track. The `TrackEnrollment` entity, repository, and migration exist; the enrollment workflow is not implemented. Do not use `UserProgress` as a substitute: it is per user and Module.
+4. **Study a Module** — display its ordered Lessons. `Lesson.Content` holds the explanation, and `LessonResource` stores books, official documentation, videos, and other sources; lesson HTTP endpoints remain placeholders.
 5. **Take the Module Exam** — load the Exam and its questions, accept answers, and calculate the score on the server. The current model stores only Exam title and pass threshold; it has no question/answer model. The current submit DTO accepts a client-provided score and is not suitable for trusted grading.
 6. **Record the result** — store the score and pass state in the learner's `UserProgress` row for that Module.
 7. **Unlock the next Module** — on a pass, unlock only the next Module in the same Track. A failed attempt records the score but leaves later Modules locked.
@@ -35,13 +35,13 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 | Area | Current code | MVP target |
 |---|---|---|
-| User identity | User name/email fields and user service contract | Registration and authentication before protected learner actions |
-| Track structure | Track, Module, Lesson entities; Track service list/create implementations | Browse a Track and its ordered content |
-| Lesson sources | Lesson has a text Content field | Store content plus explicit book/documentation/video/resource links |
-| Enrollment | No Enrollment entity or enrollment service | One enrollment per learner and Track; initialize the first Module's progress |
+| User identity | User name/email, `PasswordHash`, `Role`, and user service contract | Registration and authentication before protected learner actions |
+| Track structure | Track, Module, Lesson entities; Track/Module/Lesson read services | Browse a Track and its ordered content |
+| Lesson sources | Lesson text plus `LessonResource` entity/repository | Resource authoring, validation, and lesson endpoints |
+| Enrollment | `TrackEnrollment` entity/repository exists; no enrollment service | One enrollment per learner and Track; initialize the first Module's progress |
 | Exams | Exam title and threshold; service supports loading an Exam | Questions, answer submission, server-side scoring, and result recording |
 | Progression | UserProgress entity and read/service contracts | Per-learner unlock rules and progress queries |
-| API | Placeholder controllers including Exams; Program.cs has no DI/auth/middleware | Endpoints wired to Application service interfaces |
+| API | Placeholder controllers; DI, Application services, validators, and exception middleware are registered; auth is not | Endpoints wired to Application service interfaces |
 
 ## Suggested Delivery Order
 

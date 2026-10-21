@@ -14,7 +14,7 @@ Register / Sign in
   → Review progress
 ```
 
-This is the target MVP flow, not a claim that every step currently works. Authentication, Track enrollment, lesson source metadata, exam questions, trusted grading, and the progression-lock transaction are not implemented yet.
+This is the target MVP flow, not a claim that every step currently works. Authentication, the Track enrollment workflow, lesson HTTP endpoints and resource validation, exam questions, trusted grading, and the progression-lock transaction are not implemented yet. User/password persistence, TrackEnrollment and LessonResource persistence, and Track/Module/Lesson read services are implemented.
 
 ## 2. Clean Architecture Request Path
 

@@ -19,9 +19,9 @@ A signed-in learner chooses a Track and enrolls once. Enrollment opens the first
 
 The EF configuration enforces a unique index on `(UserId, ModuleId)` (exactly one row per learner + Module), `Restrict` delete behavior on both FKs, and plain-CLR navigation properties (`UserProgress.User`, `UserProgress.Module`).
 
-### Proposed Entity: TrackEnrollment
+### Current Entity: TrackEnrollment (Persistence Implemented)
 
-`UserProgress` records Module state and is not an enrollment record. Add a separate entity for the learner's Track choice:
+`UserProgress` records Module state and is not an enrollment record. A separate `TrackEnrollment` entity stores the learner's Track choice. The entity, EF configuration (including the unique `(UserId, TrackId)` index and `Restrict` FKs), repository, `IUnitOfWork.TrackEnrollments`, and `AddTrackEnrollment` migration exist; the enrollment workflow and endpoint are still target behavior.
 
 | Entity | Field | Type | Nullable | Constraints |
 |---|---|---|---|---|
@@ -30,9 +30,9 @@ The EF configuration enforces a unique index on `(UserId, ModuleId)` (exactly on
 | TrackEnrollment | TrackId | Guid | No | Required FK to Track |
 | TrackEnrollment | EnrolledAt | DateTimeOffset | No | Set by the server in UTC |
 
-Add a unique index on `(UserId, TrackId)`. Payment and attendance are separate features and are not fields on TrackEnrollment.
+The unique index on `(UserId, TrackId)` is implemented. Payment and attendance are separate features and are not fields on TrackEnrollment.
 
-### Relationships & Rules
+### Relationships & Rules (Target Workflow)
 
 - One User can enroll in many Tracks; one Track can have many Users.
 - One User has at most one progress row per Module (`UNIQUE(UserId, ModuleId)`).
@@ -60,7 +60,7 @@ Add a unique index on `(UserId, TrackId)`. Payment and attendance are separate f
 - Add `ITrackEnrollmentService.EnrollAsync(Guid userId, Guid trackId)`.
 - Change progress queries to accept `userId` explicitly. Application must not read `HttpContext` or JWT claims.
 
-**Current status:** `IUserProgressService.GetMyProgressAsync()` takes no user id and its implementation is a placeholder. The current progress model has no TrackEnrollment entity.
+**Current status:** `TrackEnrollment` persistence (entity, repository, migration) exists, but no enrollment service/endpoint is wired. `IUserProgressService.GetMyProgressAsync()` still takes no user id and its implementation is a placeholder.
 
 ## 4. API Contract
 

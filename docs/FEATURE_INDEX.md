@@ -4,12 +4,12 @@ This index separates current code from planned product behavior. A feature docum
 
 | Document | Feature | Current state |
 |---|---|---|
-| [01-auth-identity.md](features/01-auth-identity.md) | User profiles and authentication | User fields and service contracts exist; authentication and user API behavior are placeholders |
-| [02-tracks-content.md](features/02-tracks-content.md) | Tracks, Modules, and Lessons | Core entities and Track list/create service exist; Module/Lesson delivery APIs are placeholders |
-| [03-lessons-and-learning-resources.md](features/03-lessons-and-learning-resources.md) | Lesson content and source links | Lesson text exists; resource metadata is proposed and not implemented |
+| [01-auth-identity.md](features/01-auth-identity.md) | User profiles and authentication | User fields (`PasswordHash`, `Role`), PBKDF2 password hashing, repositories, and unique email index exist; registration, login, tokens, and authorization policies are not implemented |
+| [02-tracks-content.md](features/02-tracks-content.md) | Tracks, Modules, and Lessons | Core entities, Track list/create service, and ordered Module/Lesson read services exist; delivery APIs are placeholders |
+| [03-lessons-and-learning-resources.md](features/03-lessons-and-learning-resources.md) | Lesson content and source links | Lesson text and `LessonResource` entity/configuration/repository/migration exist; lesson delivery endpoints are placeholders |
 | [04-exams-management.md](features/04-exams-management.md) | Exams, questions, and results | Exam model/service contract and a placeholder ExamsController exist; question model, trusted grading, and create/submit behavior are missing |
-| [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md) | Track enrollment and per-module progress | UserProgress exists; TrackEnrollment and the unlock workflow are not implemented |
-| [08-health-and-error-handling.md](features/08-health-and-error-handling.md) | Health endpoint and exception mapping | Health route exists; middleware is an empty, unregistered placeholder |
+| [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md) | Track enrollment and per-module progress | `UserProgress` and `TrackEnrollment` persistence exist; the enrollment/unlock workflow and endpoints are not implemented |
+| [08-health-and-error-handling.md](features/08-health-and-error-handling.md) | Health endpoint and exception mapping | Health route and registered exception middleware exist, including `409 Conflict`; controller actions still return `501` placeholders |
 
 ## Other Documents
 

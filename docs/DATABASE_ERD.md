@@ -27,22 +27,22 @@ This document distinguishes Domain entities that exist in code from the relation
 
 ### Current EF Core mapping status
 
-- `UserProgressConfiguration` maps the primary key and unique `(UserId, ModuleId)` index.
-- `ModuleConfiguration` maps the `Module.TrackId → Track.Id` foreign key with `DeleteBehavior.Restrict` (merged via #262); remaining configurations are being completed with navigation-based mappings per §5.
-- Every relationship in §2 must be enforced by an explicit EF foreign key with `DeleteBehavior.Restrict` plus the unique indexes in §5 — see the target configurations in [ARCHITECTURE.md](ARCHITECTURE.md) §6.
-- Navigation properties (`Track.Modules`, `Module.Track`/`Lessons`/`Exam`, `Lesson.Module`, `Exam.Module`, `UserProgress.User`/`Module`) are the MVP target; treat any entity still missing them as pending implementation, not as the design.
+- Configurations exist for `User`, `Track`, `Module`, `Lesson`, `Exam`, `UserProgress`, `TrackEnrollment`, and `LessonResource`; required relationships use explicit foreign keys with `DeleteBehavior.Restrict` and the unique indexes in §5.
+- `UserProgressConfiguration` maps the unique `(UserId, ModuleId)` index; `TrackEnrollmentConfiguration` maps the unique `(UserId, TrackId)` index.
+- Navigation properties (`Track.Modules`/`TrackEnrollments`, `Module.Track`/`Lessons`/`Exam`, `Lesson.Module`, `Exam.Module`, `UserProgress.User`/`Module`, `TrackEnrollment.User`/`Track`, `LessonResource.Lesson`) are implemented. `Lesson.Resources` is intentionally not defined; resources are queried through `LessonResource`.
+- `ExamQuestion`/`ExamOption` remain proposed; see §3.
 
-## 3. Proposed MVP Entities Not Yet in Code
+## 3. MVP Entities: Persistence Status
 
-### TrackEnrollment
+### TrackEnrollment (Implemented)
 
-Keep Track enrollment distinct from per-Module progress. Proposed fields: `Id`, `UserId`, `TrackId`, `EnrolledAt`; add unique `(UserId, TrackId)`. Enrollment creates the initial UserProgress row for the first ordered Module.
+Keep Track enrollment distinct from per-Module progress. Fields: `Id`, `UserId`, `TrackId`, `EnrolledAt`; unique `(UserId, TrackId)`. The entity, configuration, repository, and migration exist. The enrollment workflow (including creation of the first `UserProgress` row) is target behavior.
 
-### LessonResource
+### LessonResource (Implemented)
 
-Allow one Lesson to cite multiple learning sources. Proposed fields: `Id`, `LessonId`, `Title`, `Kind`, `Url?`, `Citation?`, and `Order`. Require at least one of Url or Citation. Resource kinds can include Book, Documentation, Video, Article, Repository, and Other.
+Allow one Lesson to cite multiple learning sources. Fields: `Id`, `LessonId`, `Title`, `Kind`, `Url?`, `Citation?`, and `Order`. The entity, configuration, repository, and migration exist. URL/citation validation and authoring workflow remain target behavior.
 
-### ExamQuestion and ExamOption
+### ExamQuestion and ExamOption (Proposed)
 
 For the first exam format, use ordered multiple-choice questions. `ExamQuestion` belongs to Exam and stores Prompt, Order, and Points. `ExamOption` belongs to a question and stores learner-visible Text plus server-only `IsCorrect`. Never return `IsCorrect` in a learner response.
 
@@ -78,7 +78,7 @@ Enforced at the database boundary (unique indexes) **and** in Application valida
 | `Lesson` | `UNIQUE(ModuleId, Order)` | No two Lessons share an `Order` within one Module. |
 | `UserProgress` | `UNIQUE(UserId, ModuleId)` | Exactly one progress row per learner + Module. |
 | `Exam` | `UNIQUE(ModuleId)` | At most one Exam per Module. |
-| `TrackEnrollment` (planned) | `UNIQUE(UserId, TrackId)` | One enrollment per learner + Track. |
+| `TrackEnrollment` | `UNIQUE(UserId, TrackId)` | One enrollment per learner + Track. |
 
 Reordering or inserting in the middle must shift sibling `Order` values inside the same `UnitOfWork` transaction so the constraint never observes a duplicate. Reordering a `Published` Track after learners have started is discouraged: existing `UserProgress` rows stay keyed to Modules (by `ModuleId`, never by `Order`), but product must confirm the unlock impact before approving the change.
 

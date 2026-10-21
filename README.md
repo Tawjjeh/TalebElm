@@ -38,9 +38,9 @@ The platform exposes a versioned HTTP API backed by a strictly layered domain mo
 | **Content hierarchy** | Ordered `Track → Module → Lesson` content model with sequencing constraints and restricted delete semantics |
 | **Assessment engine** | Module-level exams with server-side grading contracts and pass-threshold progression rules |
 | **Learner progression** | Per-learner, per-module progress tracking (`UNIQUE(UserId, ModuleId)`) with forward-only unlock semantics |
-| **Identity foundation** | User profiles with role-based contracts (`Admin`, learner roles) and unique identity indexes |
+| **Identity foundation** | User profiles with `Student`/`Instructor`/`Admin` roles (`Student` default), password hashing, and unique identity indexes |
 | **Operational health** | Health-check endpoint and centralized domain-exception → HTTP status mapping |
-| **Extensibility** | Planned contracts for enrollment (`TrackEnrollment`), lesson resources (`LessonResource`), and question banks (`ExamQuestion`/`ExamOption`) — see `docs/FEATURE_INDEX.md` |
+| **Extensibility** | Persistence contracts for enrollment (`TrackEnrollment`) and lesson resources (`LessonResource`); their workflows and endpoints are planned, as are question banks (`ExamQuestion`/`ExamOption`) — see `docs/FEATURE_INDEX.md` |
 
 > Implementation maturity per capability is tracked explicitly in [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md). A controller or entity class documents a contract; it does not imply the full workflow is wired end to end.
 
@@ -225,10 +225,10 @@ Full reference: [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
 
 ```bash
 # Create a migration
-dotnet ef migrations add <MigrationName> --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Api
+dotnet ef migrations add <MigrationName> --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Infrastructure
 
 # Apply migrations to the configured database
-dotnet ef database update --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Api
+dotnet ef database update --project src/TalebElm.Infrastructure --startup-project src/TalebElm.Infrastructure
 ```
 
 ---
