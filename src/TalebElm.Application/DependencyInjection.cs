@@ -15,7 +15,10 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssemblyContaining<CreateTrackRequestValidator>();
 
-        // NOTE (#274): service and repository registrations land here.
+        services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped<ILessonService, LessonService>();
+
+        // NOTE (#274): remaining service and repository registrations land here.
         return services;
     }
 }

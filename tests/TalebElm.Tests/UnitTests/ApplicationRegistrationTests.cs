@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using TalebElm.Application;
 using TalebElm.Application.Services.Abstraction;
+using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -20,5 +22,19 @@ public class ApplicationRegistrationTests
             hasher.VerifyHashedPassword(
                 hasher.HashPassword("Correct-Horse-1"),
                 "Correct-Horse-1"));
+    }
+
+    [Fact]
+    public void AddApplication_RegistersModuleAndLessonServices()
+    {
+        var services = new ServiceCollection();
+        services.AddApplication();
+        services.AddScoped<IUnitOfWork>(_ => new Mock<IUnitOfWork>().Object);
+
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        Assert.NotNull(scope.ServiceProvider.GetService<IModuleService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<ILessonService>());
     }
 }
