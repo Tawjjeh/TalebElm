@@ -1,8 +1,18 @@
-﻿namespace TalebElm.Tests.UnitTests
+using TalebElm.Domain.Entities;
+
+namespace TalebElm.Tests.UnitTests;
+
+public class UserProgressEntityTests
 {
-    public class UserProgressEntityTests
+    [Fact]
+    public void NewUserProgress_IsLockedAndUnscored()
     {
-        [Fact]
-        public void UserProgress_ShouldHaveEmptyConstructor() { }
+        var progress = new UserProgress();
+
+        Assert.False(progress.IsUnlocked);
+        Assert.False(progress.PassedExam);
+        Assert.Equal(0, progress.Score);
+        Assert.Equal(Guid.Empty, progress.UserId);
+        Assert.Equal(Guid.Empty, progress.ModuleId);
     }
 }

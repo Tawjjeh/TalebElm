@@ -1,23 +1,30 @@
-﻿namespace TalebElm.Tests.UnitTests
+using TalebElm.Application.DTOs;
+
+namespace TalebElm.Tests.UnitTests;
+
+public class UserDtoTests
 {
-    public class UserDtoTests
+    [Fact]
+    public void CreateUserRequest_StoresNameAndEmail()
     {
-        [Fact]
-        public void CreateUserRequest_ShouldStoreValues() { }
+        var request = new CreateUserRequest("Ada Lovelace", "ada@example.com");
 
-        [Fact]
-        public void NoDto_ShouldExposePasswordOrHash()
+        Assert.Equal("Ada Lovelace", request.Name);
+        Assert.Equal("ada@example.com", request.Email);
+    }
+
+    [Fact]
+    public void NoDto_ShouldExposePasswordOrHash()
+    {
+        var dtoTypes = typeof(UserResponse).Assembly
+            .GetTypes()
+            .Where(t => t.IsClass && t.Namespace == typeof(UserResponse).Namespace);
+
+        foreach (var dtoType in dtoTypes)
         {
-            var dtoTypes = typeof(TalebElm.Application.DTOs.UserResponse).Assembly
-                .GetTypes()
-                .Where(t => t.IsClass && t.Namespace == typeof(TalebElm.Application.DTOs.UserResponse).Namespace);
-
-            foreach (var dtoType in dtoTypes)
-            {
-                Assert.DoesNotContain(dtoType.GetProperties(), p =>
-                    p.Name.Contains("Password", StringComparison.OrdinalIgnoreCase) ||
-                    p.Name.Contains("Hash", StringComparison.OrdinalIgnoreCase));
-            }
+            Assert.DoesNotContain(dtoType.GetProperties(), property =>
+                property.Name.Contains("Password", StringComparison.OrdinalIgnoreCase) ||
+                property.Name.Contains("Hash", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

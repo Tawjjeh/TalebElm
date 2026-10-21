@@ -1,12 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using TalebElm.Domain.Entities;
 
-namespace TalebElm.Tests.UnitTests
+namespace TalebElm.Tests.UnitTests;
+
+public class LessonEntityTests
 {
-    public class LessonEntityTests
+    [Fact]
+    public void NewLesson_HasEmptyContentAndNoOrder()
     {
-        [Fact]
-        public void Lesson_ShouldHaveEmptyConstructor() { }
+        var lesson = new Lesson();
+
+        Assert.Equal(string.Empty, lesson.Title);
+        Assert.Equal(string.Empty, lesson.Content);
+        Assert.Equal(0, lesson.Order);
+        Assert.Equal(Guid.Empty, lesson.ModuleId);
     }
 }

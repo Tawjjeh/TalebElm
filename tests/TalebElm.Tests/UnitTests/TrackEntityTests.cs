@@ -1,10 +1,19 @@
-﻿
+using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 
-namespace TalebElm.Tests.UnitTests
+namespace TalebElm.Tests.UnitTests;
+
+public class TrackEntityTests
 {
-    public class TrackEntityTests
+    [Fact]
+    public void NewTrack_HasDraftStatusAndEmptyCollections()
     {
-        [Fact]
-        public void Track_ShouldHaveEmptyConstructor() { }
+        var track = new Track();
+
+        Assert.Equal(TrackStatus.Draft, track.Status);
+        Assert.Equal(string.Empty, track.Name);
+        Assert.Equal(string.Empty, track.Description);
+        Assert.Empty(track.Modules);
+        Assert.Empty(track.TrackEnrollments);
     }
 }
