@@ -39,7 +39,7 @@ export ConnectionStrings__TalebElm="Data Source=my-other.db"
 $env:ConnectionStrings__TalebElm="Data Source=my-other.db"
 ```
 
-These enviornment variables only last until you end the terminal session.
+These environment variables only last until you end the terminal session.
 
 ## 4. "Connection string 'TalebElm' does not exist or is empty"
 

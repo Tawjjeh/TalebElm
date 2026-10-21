@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Let a learner choose a software-learning Track, then study its Modules and Lessons in order. Enrollment and lesson-source links are separate contracts; neither is currently implemented.
+Let a learner choose a software-learning Track, then study its Modules and Lessons in order. Enrollment and lesson-source links have persistence contracts now, but their workflows and HTTP endpoints are not implemented.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
@@ -12,19 +12,19 @@ Let a learner choose a software-learning Track, then study its Modules and Lesso
 |---|---|---|---|---|
 | Track | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Track | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Track | Name | `string` | No | Initialized `default!`; planned max length **150** |
-| Track | Description | `string` | No | Initialized `default!`; planned max length **1000** |
+| Track | Name | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
+| Track | Description | `string` | No | Initialized `string.Empty`; required, max length **1000**, non-blank check |
 | Track | Status | `TrackStatus` | No | Enum: `Draft=0`, `Published=1`, `Archived=2`; new tracks must default to `Draft` |
 | Module | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Module | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Module | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
-| Module | Summary | `string` | No | Initialized `string.Empty`; planned max length **500** |
+| Module | Title | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
+| Module | Summary | `string` | No | Initialized `string.Empty`; required, max length **500** |
 | Module | Order | `int` | No | Position within Track (`>= 1`); `UNIQUE(TrackId, Order)` — no two Modules share an `Order` in one Track |
 | Module | TrackId | `Guid` | No | FK → `Track.Id` with `DeleteBehavior.Restrict` |
 | Lesson | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Lesson | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Lesson | Title | `string` | No | Initialized `string.Empty`; planned max length **150** |
-| Lesson | Content | `string` | No | Initialized `string.Empty`; free text (no max length) |
+| Lesson | Title | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
+| Lesson | Content | `string` | No | Initialized `string.Empty`; required, free text (no max length) |
 | Lesson | LessonType | `LessonType` | Planned | Existing enum should become an entity field for content rendering and validation |
 | Lesson | Order | `int` | No | Position within Module (`>= 1`); `UNIQUE(ModuleId, Order)` — no two Lessons share an `Order` in one Module |
 | Lesson | ModuleId | `Guid` | No | FK → `Module.Id` with `DeleteBehavior.Restrict` |
@@ -69,13 +69,19 @@ public interface ILessonRepository : IRepository<Lesson> { }
 |---|---|---|
 | `CreateTrackRequest` | Input | `string Name`, `string Description` |
 | `TrackResponse` | Output | `Guid Id`, `string Name`, `string Description`, `int Status` |
+| `CreateModuleRequest` | Input | `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
+| `UpdateModuleRequest` | Input | `string Title`, `string? Summary`, `int Order`, `Guid TrackId` |
+| `ModuleResponse` | Output | `Guid Id`, `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
+| `CreateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order` |
+| `UpdateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order` |
 | `LessonResponse` | Output | `Guid Id`, `string Title`, `Guid ModuleId` |
+| `LessonDetailResponse` | Output | Lesson fields plus ordered `LessonResourceResponse` items |
 
-> Module request/response DTOs do not exist yet. `UpdateTrackRequest` is planned but not present.
+> `UpdateTrackRequest` is still planned. `CreateLessonRequest`/`UpdateLessonRequest` do not yet carry `Content`; that gap is tracked with the Lesson authoring work (#284).
 
-### Service Interface
+### Service Interfaces
 
-`ITrackService` exists in `Application/Services/`:
+`ITrackService`, `IModuleService`, and `ILessonService` live in `Application/Services/Abstraction/`:
 
 ```csharp
 public interface ITrackService
@@ -83,16 +89,28 @@ public interface ITrackService
     Task<IReadOnlyList<TrackResponse>> GetAllAsync();
     Task<TrackResponse> CreateAsync(CreateTrackRequest request);
 }
+
+public interface IModuleService
+{
+    Task<IReadOnlyList<ModuleResponse>> GetByTrackAsync(Guid trackId);
+    Task<ModuleResponse> GetByIdAsync(Guid id);
+}
+
+public interface ILessonService
+{
+    Task<IReadOnlyList<LessonResponse>> GetByModuleAsync(Guid moduleId);
+    Task<LessonDetailResponse> GetByIdAsync(Guid id);
+}
 ```
 
-**Implementation status:** `TrackService.GetAllAsync` and `CreateAsync` are implemented. `TrackRepository.AddAsync` and `ModuleRepository` methods are implemented, but TrackRepository reads are placeholders. No `IModuleService` or `ILessonService` exists.
+**Implementation status:** `TrackService.GetAllAsync` and `CreateAsync`, `ModuleService.GetByTrackAsync`/`GetByIdAsync`, and `LessonService.GetByModuleAsync`/`GetByIdAsync` are implemented. `TrackRepository` reads, `ModuleRepository` queries, and `LessonRepository` queries are implemented. The services are not yet wired to controllers, and the published/unlocked filters belong to the API/progression work.
 
-### Field length and default status rules (planned)
+### Field length and default status rules
 
-- Enforce the max lengths in the entity table through `TrackConfiguration`,
-  `ModuleConfiguration`, and a new `LessonConfiguration` so oversized input is
-  rejected at the database boundary as well as in Application validators.
-- `TrackService.CreateAsync` already creates every new Track with
+- The max lengths in the entity table are enforced by `TrackConfiguration`,
+  `ModuleConfiguration`, and `LessonConfiguration`. The Module/Lesson validators
+  also check them; invoking those validators from HTTP is still target work.
+- `TrackService.CreateAsync` creates every new Track with
   `Status = TrackStatus.Draft`; keep this default so a Track is never published
   accidentally. Publishing is a separate explicit operation.
 
@@ -112,7 +130,10 @@ public interface ITrackService
 
 ### Validators
 
-- `CreateTrackRequestValidator` validates that `Name` and `Description` are not empty.
+- `CreateTrackRequestValidator` validates that `Name` and `Description` are not empty. Maximum-length rules are database-enforced for Track input today.
+- `CreateModuleRequestValidator` / `UpdateModuleRequestValidator` enforce title, summary, order, and track id rules.
+- `CreateLessonRequestValidator` / `UpdateLessonRequestValidator` enforce title, module id, and order rules. They do not yet validate `Content` because the DTO does not carry it.
+- All validators are registered by `AddApplication()`.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 
@@ -120,20 +141,20 @@ public interface ITrackService
 
 | HTTP Method | Route | Request DTO | Response DTO | Status Codes |
 |---|---|---|---|---|
-| `GET` | `/api/tracks` | — | `TrackResponse[]` (planned) | Throws `NotImplementedException` |
-| `POST` | `/api/tracks` | `CreateTrackRequest` (planned) | `TrackResponse` (planned) | Throws `NotImplementedException` |
+| `GET` | `/api/tracks` | — | `TrackResponse[]` (planned) | Service exists; controller throws domain `NotImplementedException` |
+| `POST` | `/api/tracks` | `CreateTrackRequest` (planned) | `TrackResponse` (planned) | Service exists; controller action has no body and throws |
 | `GET` | `/api/tracks/{id}` | — | `TrackResponse` (planned) | Planned: `200`, `404` |
 | `PUT` | `/api/tracks/{id}` | `UpdateTrackRequest` (planned) | `TrackResponse` (planned) | Planned: `200`, `400`, `404` |
 | `DELETE` | `/api/tracks/{id}` | — | — | Planned: `204`, `404` |
 | `GET` | `/api/tracks/{id}/modules` | — | `ModuleResponse[]` (planned) | Planned: `200`, `404` |
 | `POST` | `/api/modules` | (planned) | (planned) | Planned: `201`, `400` |
 | `GET` | `/api/modules/{id}` | — | (planned) | Planned: `200`, `404` |
-| `GET` | `/api/modules` | — | — | Throws `NotImplementedException` |
+| `GET` | `/api/modules` | — | — | Service exists; controller is a parameterless placeholder |
 | `PUT` | `/api/modules/{id}` | `UpdateModuleRequest` (planned) | `ModuleResponse` (planned) | Planned: `200`, `400`, `404`, `409` |
 | `DELETE` | `/api/modules/{id}` | — | — | Planned: `204`, `404`, `409` |
 | `GET` | `/api/modules/{id}/lessons` | — | `LessonResponse[]` (planned) | Planned: `200`, `404` |
 | `POST` | `/api/lessons` | (planned) | (planned) | Planned: `201`, `400` |
-| `GET` | `/api/lessons` | — | — | Throws `NotImplementedException` |
+| `GET` | `/api/lessons` | — | — | Service exists; controller is a parameterless placeholder |
 | `GET` | `/api/lessons/{id}` | — | `LessonResponse` (planned) | Planned: `200`, `404` |
 | `PUT` | `/api/lessons/{id}` | `UpdateLessonRequest` (planned) | `LessonResponse` (planned) | Planned: `200`, `400`, `404`, `409` |
 | `DELETE` | `/api/lessons/{id}` | — | — | Planned: `204`, `404`, `409` |
@@ -142,13 +163,13 @@ public interface ITrackService
 
 - `DELETE /api/tracks/{id}` should fail with `409 Conflict` when the Track still has Modules or any learner enrollment/progress references.
 - `DELETE /api/modules/{id}` should fail with `409 Conflict` when Lessons, Exams, or learner progress depend on that Module.
-- `PUT` and `DELETE` routes for Modules and Lessons are planned contracts only; no controller actions or DTOs exist in the current code.
+- `PUT` and `DELETE` routes for Modules and Lessons are planned contracts only. Update DTOs and validators exist, but no controller actions are implemented.
 - Learner-facing browse endpoints should return `404` for missing Track/Module/Lesson ids and `400` for invalid request payloads.
 
 ### Input Validation
 
-- TrackService validates CreateTrackRequest with FluentValidation; Name and Description must not be empty.
-- No Module or Lesson request validation is implemented.
+- TrackService validates `CreateTrackRequest` with FluentValidation; Name and Description must not be empty.
+- Module and Lesson create/update validators exist and are registered, but no controller invokes them yet.
 - The learner-facing Track browse/detail and nested Module/Lesson routes in the table are planned; current controller actions are parameterless placeholders.
 
 ## 5. Domain Exceptions
@@ -157,4 +178,4 @@ public interface ITrackService
 |---|---|
 | `NotFoundException` | Track / Module / Lesson lookup by ID returns `null` |
 | `ValidationException` | Missing required fields, duplicate `Order` values (planned) |
-| `NotImplementedException` | All current controller actions and repository methods (placeholder) |
+| `NotImplementedException` | Remaining placeholder controller actions and unimplemented use cases |

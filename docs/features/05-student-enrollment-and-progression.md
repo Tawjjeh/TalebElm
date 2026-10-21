@@ -75,5 +75,6 @@ Authentication is not wired yet, so current-user routes cannot resolve a learner
 ## 5. Exceptions & Tests
 
 - `NotFoundException`: User or Track does not exist.
-- `ValidationException`: Track has no Modules or duplicate enrollment violates the chosen behavior.
+- `ValidationException`: Track has no Modules.
+- `ConflictException`: duplicate enrollment violates the unique `(UserId, TrackId)` rule.
 - Test first-Module unlock, duplicate enrollment, empty Track rejection, pass/fail/retry, final Module, and isolation between two Users.

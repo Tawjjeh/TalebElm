@@ -1,17 +1,19 @@
 # TalebElm Data Model: Current and Proposed
 
-This document distinguishes Domain entities that exist in code from the relational rules the MVP still needs. `AppDbContext` exposes the current entities and applies configuration classes, but most relationship configurations are empty.
+This document distinguishes Domain entities that exist in code from the relational rules the MVP still needs. `AppDbContext` applies a configuration for every current entity, and the committed migrations reflect that model.
 
 ## 1. Current Domain Entities
 
 | Entity | Properties | Current constraints/status |
 |---|---|---|
-| User | `Id: Guid`, `CreatedAt: DateTimeOffset`, `Name: string`, `Email: string`, `JoinedAt: DateTime` | No password, role, or enrollment property. `Email` must gain a unique index at implementation time. |
-| Track | `Id`, `CreatedAt`, `Name`, `Description`, `Status: TrackStatus` | `TrackStatus`: Draft=0, Published=1, Archived=2. New Tracks default to `Draft`. |
-| Module | `Id`, `CreatedAt`, `Title`, `Summary`, `Order: int`, `TrackId: Guid` | Intended parent Track is identified by `TrackId`. MVP requires `UNIQUE(TrackId, Order)` (see §5). |
-| Lesson | `Id`, `CreatedAt`, `Title`, `Content`, `Order: int`, `ModuleId: Guid` | No `LessonType` property; `LessonType` enum exists separately. No source/resource collection. MVP requires `UNIQUE(ModuleId, Order)` (see §5). |
-| Exam | `Id`, `CreatedAt`, `Title`, `PassThreshold: int`, `ModuleId: Guid` | `HasPassed(score)` returns `score >= PassThreshold`. No question model. MVP requires `UNIQUE(ModuleId)` — at most one exam per Module (see §5). |
-| UserProgress | `Id`, `CreatedAt`, `UserId: Guid`, `ModuleId: Guid`, `IsUnlocked: bool`, `PassedExam: bool`, `Score: int` | Unique index exists on `(UserId, ModuleId)`. `Score` stores the **latest** attempt score (0–100 scale); `PassedExam` is sticky (see §4). |
+| User | `Id: Guid`, `CreatedAt: DateTimeOffset`, `Name: string`, `Email: string`, `PasswordHash: string`, `Role: UserRole`, `JoinedAt: DateTime` | `Name` ≤ 100, `Email` ≤ 256 and unique `NOCASE`, `PasswordHash` required/non-blank, `Role` defaults to `Student`. Navigation: `TrackEnrollments`, `UserProgress`. |
+| Track | `Id`, `CreatedAt`, `Name`, `Description`, `Status: TrackStatus` | `Name` ≤ 150, `Description` ≤ 1000, non-empty checks. `TrackStatus`: Draft=0, Published=1, Archived=2. New Tracks default to `Draft`. Navigation: `Modules`, `TrackEnrollments`. |
+| Module | `Id`, `CreatedAt`, `Title`, `Summary`, `Order: int`, `TrackId: Guid` | `Title` ≤ 150, `Summary` ≤ 500, non-empty title, `Order > 0`. `UNIQUE(TrackId, Order)` is implemented (see §5). Navigation: `Track`, `Lessons`, `Exam`. |
+| Lesson | `Id`, `CreatedAt`, `Title`, `Content`, `Order: int`, `ModuleId: Guid` | `Title` ≤ 150, `Content` required, `Order > 0`. `UNIQUE(ModuleId, Order)` is implemented. No `LessonType` property; the enum exists separately. Navigation: `Module`; resources are queried through `LessonResource`. |
+| LessonResource | `Id`, `CreatedAt`, `LessonId: Guid`, `Title: string`, `Kind: LessonResourceKind`, `Url: string?`, `Citation: string?`, `Order: int` | `Title` ≤ 200, `Order > 0`, required `Lesson` FK with `Restrict`. URL/citation validation and unique `(LessonId, Order)` are target work (see #283). |
+| Exam | `Id`, `CreatedAt`, `Title`, `PassThreshold: int`, `ModuleId: Guid` | `Title` ≤ 150, `UNIQUE(ModuleId)` implemented. `HasPassed(score)` returns `score >= PassThreshold`. No question model yet. |
+| TrackEnrollment | `Id`, `CreatedAt`, `UserId: Guid`, `TrackId: Guid`, `EnrolledAt: DateTimeOffset` | `UNIQUE(UserId, TrackId)` implemented; both FKs use `Restrict`. Enrollment workflow is target behavior. |
+| UserProgress | `Id`, `CreatedAt`, `UserId: Guid`, `ModuleId: Guid`, `IsUnlocked: bool`, `PassedExam: bool`, `Score: int` | Unique index exists on `(UserId, ModuleId)`; score check is 0–100. `Score` stores the **latest** attempt score; `PassedExam` is sticky (see §4). |
 
 `Id` and `CreatedAt` are inherited from `BaseEntity`.
 
@@ -21,9 +23,11 @@ This document distinguishes Domain entities that exist in code from the relation
 
 - Track 1 → many Modules, ordered by `Module.Order`.
 - Module 1 → many Lessons, ordered by `Lesson.Order`.
-- Module 0/1 → Exam (product target: at most one exam per Module).
+- Module 0/1 → Exam (at most one exam per Module; unique index implemented).
 - User 1 → many UserProgress rows.
 - Module 1 → many UserProgress rows.
+- User 1 → many TrackEnrollments; Track 1 → many TrackEnrollments.
+- Lesson 1 → many LessonResources (queried directly; no reverse collection on Lesson).
 
 ### Current EF Core mapping status
 
@@ -61,7 +65,7 @@ These rules close design-review questions Q2–Q3, Q5, Q7–Q12. They are bindin
 
 ### 5.1 Exam scoring, retries, and pass validation
 
-- **Score scale:** `Score` is an integer `0–100`. `Exam.PassThreshold` is an integer `1–100` in the same scale. `Exam.HasPassed(score)` is `score >= PassThreshold`.
+- **Score scale:** `Score` is an integer `0–100`. `Exam.PassThreshold` is an integer `1–100` in the same scale. `Exam.HasPassed(score)` is `score >= PassThreshold`. The current database check still allows `0`; issue #326 tightens it to `1–100`.
 - **Server-side grading only:** the score is computed by the Application service from server-side answer keys. A client-supplied score is never trusted.
 - **Retries:** unlimited attempts, no cooldown in the MVP.
 - **Latest-wins for `Score`, sticky-wins for `PassedExam`:** each submission overwrites `UserProgress.Score` with the latest attempt score, but `PassedExam`, once `true`, is never reset to `false` by a later failed retake. A pass is permanent.
@@ -70,7 +74,7 @@ These rules close design-review questions Q2–Q3, Q5, Q7–Q12. They are bindin
 
 ### 5.2 Unique ordering constraints
 
-Enforced at the database boundary (unique indexes) **and** in Application validators:
+The current database indexes are enforced; duplicate-prevention in Application is target behavior where noted:
 
 | Table | Constraint | Meaning |
 |---|---|---|
@@ -79,6 +83,7 @@ Enforced at the database boundary (unique indexes) **and** in Application valida
 | `UserProgress` | `UNIQUE(UserId, ModuleId)` | Exactly one progress row per learner + Module. |
 | `Exam` | `UNIQUE(ModuleId)` | At most one Exam per Module. |
 | `TrackEnrollment` | `UNIQUE(UserId, TrackId)` | One enrollment per learner + Track. |
+| `LessonResource` | `UNIQUE(LessonId, Order)` (target) | No two resources share an `Order` within one Lesson. The index is not in the current migration; tracked by #283. |
 
 Reordering or inserting in the middle must shift sibling `Order` values inside the same `UnitOfWork` transaction so the constraint never observes a duplicate. Reordering a `Published` Track after learners have started is discouraged: existing `UserProgress` rows stay keyed to Modules (by `ModuleId`, never by `Order`), but product must confirm the unlock impact before approving the change.
 
@@ -92,7 +97,7 @@ Reordering or inserting in the middle must shift sibling `Order` values inside t
 
 ### 5.4 Delete policy: `Restrict`, never silent cascade
 
-All learning-path foreign keys use `DeleteBehavior.Restrict`. There is no soft delete in the MVP and no cascading delete of learner data.
+All learning-path foreign keys use `DeleteBehavior.Restrict`. There is no soft delete in the MVP and no cascading delete of learner data. The API does not yet translate dependent-delete failures into `409`; that mapping is tracked by #322.
 
 | Target | Rule |
 |---|---|

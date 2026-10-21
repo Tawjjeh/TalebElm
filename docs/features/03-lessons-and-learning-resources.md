@@ -4,7 +4,7 @@
 `Lesson` exists with `Title`, `Content`, `Order`, and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
 
 ## MVP Objective
-Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the instructor. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.
+Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the content author. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.
 
 ## Current Domain Contract
 
@@ -12,8 +12,8 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 |---|---|---|---|---|
 | Lesson | Id | Guid | No | Inherited primary key |
 | Lesson | CreatedAt | DateTimeOffset | No | Inherited creation timestamp |
-| Lesson | Title | string | No | Required by the non-nullable model; no max length configured |
-| Lesson | Content | string | No | Lesson explanation; currently the only learning material field |
+| Lesson | Title | string | No | Required, max length **150**, non-blank check |
+| Lesson | Content | string | No | Required lesson explanation |
 | Lesson | Order | int | No | Display order within a Module |
 | Lesson | ModuleId | Guid | No | Parent Module identifier |
 
@@ -41,7 +41,7 @@ Keep `LessonType` separate from `LessonResourceKind`: the former describes lesso
 
 - `LessonResourceResponse` carries `Id`, `Title`, `Kind`, `Url`, `Citation`, and `Order`.
 - `LessonDetailResponse` carries `Id`, `ModuleId`, `Title`, `Content`, `Order`, and an ordered resource list.
-- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. Create/update request DTOs remain scheduled with lesson authoring.
+- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. `CreateLessonRequest` and `UpdateLessonRequest` exist but do not yet carry `Content` (#284).
 
 ### Suggested API Contract (Not Implemented)
 
@@ -59,7 +59,7 @@ The database currently enforces required `Title` (max 200), optional `Citation` 
 - When `Url` is present it must be a valid **absolute** URL using the `http` or
   `https` scheme. Reject relative paths, empty strings, and unsupported schemes
   with `ValidationException` (HTTP `400`).
-- `Citation` is free text with a planned max length of **500**.
+- `Citation` is free text with a max length of **500** at the database boundary.
 - `Order` must be a positive integer; ordering is re-sequenced within the Lesson
   on create/update/delete, mirroring the Module/Lesson ordering rule.
 

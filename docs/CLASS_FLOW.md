@@ -41,7 +41,7 @@ HTTP request
 - `ExamService.GetByIdAsync` loads an Exam through `IUnitOfWork` and throws `NotFoundException` when missing. Create and Submit are placeholders.
 - `UserService` methods and `UserProgressService.GetMyProgressAsync` are placeholders.
 - User, Module, Lesson, Exams, and Progress controllers are placeholders; Exams actions throw `NotImplementedException` and Progress currently returns 501.
-- `Program.cs` does not yet register feature services, authentication, or exception middleware.
+- `Program.cs` registers persistence, Track/Exam/User/UserProgress services, `AddApplication`, and `ExceptionHandlingMiddleware`. Authentication and authorization are not registered.
 
 ## 4. Target Exam Submission Path
 
@@ -51,6 +51,6 @@ HTTP request
 4. The service uses `Exam.HasPassed(score)` and updates the current UserProgress.
 5. On a pass, it finds the next Module in the same Track by Order and unlocks that Module for this learner only.
 6. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together.
-7. The service returns an `ExamResultResponse`; the controller maps domain errors to HTTP responses once middleware is active.
+7. The service returns an `ExamResultResponse`; the controller maps domain errors to HTTP responses through the registered middleware. Field-keyed validation responses and EF-conflict translation are still target work (#321, #322).
 
 Question storage, answer submission, enrollment initialization, and unlock behavior are still target design; they must not be described as existing functionality until implemented and tested.

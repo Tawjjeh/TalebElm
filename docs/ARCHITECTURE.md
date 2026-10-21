@@ -47,11 +47,11 @@ The layers and contracts are present, but the full learning journey is not wired
 
 | Area | Current state |
 |---|---|
-| Domain | User, Track, Module, Lesson, Exam, and UserProgress entities exist. Enrollment, LessonResource, and ExamQuestion do not. |
-| Application | DTOs and service interfaces for User, Track, Exam, and progress exist. |
-| Infrastructure | SQLite registration, repositories for Track/Module/Exam, UnitOfWork, and parts of Track/Exam services exist. Several methods remain placeholders. |
-| API | Controllers are mostly placeholders. `Program.cs` registers infrastructure, `IUnitOfWork`, and Application services; feature controllers do not yet delegate to service interfaces. There is no enrollment endpoint or authentication setup. |
-| Tests | SQLite-backed repository and service tests exist, but the full register → enroll → study → exam → unlock journey is not tested or implemented. |
+| Domain | User, Track, Module, Lesson, LessonResource, Exam, TrackEnrollment, and UserProgress entities exist. ExamQuestion/ExamOption do not. |
+| Application | DTOs and service interfaces/implementations exist for User, Track, Module, Lesson, Exam, progress, and password hashing. Track create/list, Module/Lesson reads, and Exam get-by-id are implemented; the remaining use cases are placeholders. |
+| Infrastructure | SQLite registration, configurations, migrations, repositories for all current entities, and UnitOfWork exist. Registration is split between `AddApplication` and `Program.cs` (tracked by #274). |
+| API | Controllers are mostly placeholders. `Program.cs` registers infrastructure, `IUnitOfWork`, Application services, and the exception middleware; feature controllers do not yet delegate to service interfaces. There is no enrollment endpoint or authentication setup. |
+| Tests | SQLite-backed repository/configuration tests, service tests, validator tests, controller tests, and migration guards exist. The full register → enroll → study → exam → unlock journey is not implemented, so it is not tested end to end. |
 
 See [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the target learner flow and [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for feature status.
 
@@ -132,7 +132,11 @@ public interface IUnitOfWork
     IUserRepository Users { get; }
     ITrackRepository Tracks { get; }
     IModuleRepository Modules { get; }
+    ILessonRepository Lessons { get; }
     IExamRepository Exams { get; }
+    IUserProgressRepository UserProgresses { get; }
+    ITrackEnrollmentRepository TrackEnrollments { get; }
+    ILessonResourceRepository LessonResources { get; }
     Task<int> SaveChangesAsync();
 }
 ```
@@ -172,13 +176,13 @@ System.Exception
 
 ### HTTP mapping strategy
 
-The target `ExceptionHandlingMiddleware` (in `Api/Middlewares/`) should catch domain exceptions
-and map them to standard HTTP responses:
+The registered `ExceptionHandlingMiddleware` (in `Api/Middlewares/`) catches domain exceptions
+and maps them to standard HTTP responses:
 
 | Exception | HTTP Status | When to throw |
 |---|---|---|
 | `NotFoundException` | 404 | Entity lookup returned `null` |
-| `ValidationException` | 400 | Business rule violated (e.g., duplicate email) |
+| `ValidationException` | 400 | Invalid request fields or a violated business rule |
 | `DomainException` | 400 | Any other business error |
 | `ConflictException` | 409 | Duplicate entity, conflicting state, or blocked delete |
 | `NotImplementedException` | 501 | Placeholder for unfinished features |
@@ -230,8 +234,8 @@ Configurations define field constraints, relationships, indexes, and FK behavior
 - `UNIQUE(TrackId, Order)` on `Module` (no two Modules share an `Order` within one Track).
 - `UNIQUE(ModuleId, Order)` on `Lesson` (no two Lessons share an `Order` within one Module).
 - `UNIQUE(ModuleId)` on `Exam` (at most one Exam per Module).
-- `UNIQUE(UserId, TrackId)` on `TrackEnrollment` (one enrollment per learner + Track, planned entity).
-- All learning-path foreign keys use `DeleteBehavior.Restrict` (see `DATABASE_ERD.md` §5); deletes that would orphan dependent data fail with `409 Conflict` instead of cascading.
+- `UNIQUE(UserId, TrackId)` on `TrackEnrollment` (one enrollment per learner + Track).
+- All learning-path foreign keys use `DeleteBehavior.Restrict` (see `DATABASE_ERD.md` §5); dependent deletes are rejected by the database. Mapping those failures to `409 Conflict` at the API boundary is target work (#322).
 
 ---
 
@@ -269,7 +273,7 @@ The codebase splits ownership across two conceptual teams:
 
 ## 9. Validation
 
-Input validation uses **FluentValidation** (when enabled):
+Input validation uses **FluentValidation**. Validators are registered by `AddApplication()`:
 
 ```csharp
 public class CreateTrackRequestValidator : AbstractValidator<CreateTrackRequest>
@@ -282,4 +286,4 @@ public class CreateTrackRequestValidator : AbstractValidator<CreateTrackRequest>
 }
 ```
 
-Validators live in `Application/Validators/` and are registered via DI in `Program.cs`.
+Validators live in `Application/Validators/` and are registered from that assembly by `AddApplication()`.

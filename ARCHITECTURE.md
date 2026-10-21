@@ -52,7 +52,7 @@ This separation keeps business rules independent of persistence technology and d
 
 **Path:** `src/TalebElm.Domain`
 
-The Domain layer models the platform's core concepts — `User`, `Track`, `Module`, `Lesson`, `Exam`, `UserProgress` — along with their invariants, enumerations (`TrackStatus`, `LessonType`, `UserRole`), domain exceptions, and repository contracts (`IRepository<T>`, entity-specific interfaces, `IUnitOfWork`).
+The Domain layer models the platform's core concepts — `User`, `Track`, `Module`, `Lesson`, `LessonResource`, `Exam`, `TrackEnrollment`, `UserProgress` — along with their invariants, enumerations (`TrackStatus`, `LessonType`, `LessonResourceKind`, `UserRole`), domain exceptions, and repository contracts (`IRepository<T>`, entity-specific interfaces, `IUnitOfWork`).
 
 Containment rules:
 
@@ -70,7 +70,7 @@ Anti-patterns: persistence logic inside entities, HTTP or serialization concerns
 
 The Application layer implements the platform's use cases — for example, create/track retrieval, exam submission, progress evaluation — as service classes behind explicit interfaces:
 
-- **Interfaces** (`Services/Abstraction/`): `IUserService`, `ITrackService`, `IExamService`, `IUserProgressService`.
+- **Interfaces** (`Services/Abstraction/`): `IUserService`, `ITrackService`, `IModuleService`, `ILessonService`, `IExamService`, `IUserProgressService`, `IPasswordHasher`.
 - **Implementations** (`Services/Concrete/`): use-case orchestration depending only on Domain abstractions, normally `IUnitOfWork`. All business-logic decisions reside here.
 - **DTOs** (`DTOs/`): immutable `record` request/response contracts decoupling the HTTP surface from Domain entities.
 - **Validators** (`Validators/`): FluentValidation input rules.

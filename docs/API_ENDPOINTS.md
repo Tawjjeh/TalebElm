@@ -7,11 +7,11 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | HTTP | Route | Current behavior |
 |---|---|---|
 | GET | `/api/health` | Returns `200 OK` with `healthy`. |
-| POST | `/api/auth/login` | Declared, no request/response DTO, throws `System.NotImplementedException`. |
-| GET | `/api/users` | Declared, action has no parameters and throws `System.NotImplementedException`. |
-| POST | `/api/users` | Declared, action has no request parameter and throws `System.NotImplementedException`. |
-| GET | `/api/tracks` | `TrackService` list exists, but is not wired to the controller; throws `System.NotImplementedException`. |
-| POST | `/api/tracks` | `TrackService` create exists, but the action has no request parameter and is not wired; throws `System.NotImplementedException`. |
+| POST | `/api/auth/login` | Declared, no request/response DTO, throws domain `NotImplementedException`. |
+| GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
+| POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
+| GET | `/api/tracks` | `TrackService` list exists, but is not wired to the controller; throws domain `NotImplementedException`. |
+| POST | `/api/tracks` | `TrackService` create exists, but the action has no request parameter and is not wired; throws domain `NotImplementedException`. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
@@ -73,7 +73,7 @@ Student-facing reads should also return a Track's Modules and Lessons only to an
 - Use GUID route identifiers and JSON DTOs.
 - Return 400 for invalid input, 401 for missing/invalid authentication, 403 for forbidden actions, 404 for unknown resources, and 409 for duplicate enrollment or exam-per-module conflicts.
 - Keep controllers thin: bind HTTP input, call an Application service interface, and translate the result to HTTP. Do not put repository or progression logic in controllers.
-- Map `NotFoundException` to 404 and `ValidationException` to 400 after exception middleware is implemented, with a field-keyed `errors` object so clients can show per-field messages (see [08](features/08-health-and-error-handling.md)). The current middleware is empty and is not registered.
+- `ExceptionHandlingMiddleware` is registered and maps `NotFoundException` to 404 and FluentValidation failures to 400 as a problem+json `detail` string. A field-keyed `errors` object is target work (#321), as is translating dependent-delete/constraint failures to 409 instead of 500 (#322). See [08](features/08-health-and-error-handling.md).
 - Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
 
 ## 4. Out of Scope for the Core Learning Flow

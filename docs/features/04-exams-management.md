@@ -12,8 +12,8 @@ Attach an exam to a Module and grade the learner's answers against its pass thre
 |---|---|---|---|---|
 | Exam | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Exam | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
-| Exam | Title | `string` | No | Initialized `string.Empty`; no max length configured |
-| Exam | PassThreshold | `int` | No | `1–100` in the same `0–100` score scale; validated in Application and at the DB boundary |
+| Exam | Title | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
+| Exam | PassThreshold | `int` | No | `1–100` in the same `0–100` score scale; application validation exists. The DB check currently allows `0–100` and is being tightened by #326. |
 | Exam | ModuleId | `Guid` | No | FK → `Module.Id`; `UNIQUE(ModuleId)` — at most one exam per Module (a Module MAY have no Exam) |
 
 ### Relationships
@@ -28,8 +28,8 @@ public interface IExamRepository : IRepository<Exam> { }
 
 ### EF Core Notes
 
-- `ExamConfiguration` must map `Exam.Module` one-to-one (`HasOne/WithOne` on `ModuleId`) with `DeleteBehavior.Restrict` and a unique index on `ModuleId`.
-- Field rules: `Title` required with planned max length; `PassThreshold` range `1–100`.
+- `ExamConfiguration` maps `Exam.Module` one-to-one (`HasOne/WithOne` on `ModuleId`) with `DeleteBehavior.Restrict` and a unique index on `ModuleId`.
+- Field rules: `Title` required, max length 150; `PassThreshold` is validated as `1–100` in Application. The database check currently allows `0` (#326).
 
 ### Questions and answer keys
 
@@ -76,9 +76,9 @@ Proposed rules: each question has at least two options and exactly one correct o
 
 | DTO | Type | Fields |
 |---|---|---|
-| `CreateExamRequest` | Input | `Guid ModuleId`, `string Title`, `int PassThreshold`, `CreateExamQuestionRequest[] Questions` |
+| `CreateExamRequest` | Current input | `Guid ModuleId`, `string Title`, `int PassThreshold` (`Questions` is planned, #273) |
 | `SubmitExamRequest` | Current input | `Guid ExamId`, `int Score` |
-| `ExamResponse` | Output | `Guid Id`, `string Title`, `int PassThreshold`, `Guid ModuleId`, `ExamQuestionResponse[] Questions` |
+| `ExamResponse` | Current output | `Guid Id`, `string Title`, `int PassThreshold`, `Guid ModuleId` |
 | `ExamResultResponse` | Output | `Guid ExamId`, `bool Passed`, `int Score` |
 
 Add nested collections so POST/GET can describe the exam body:
@@ -99,7 +99,7 @@ public interface IExamService
 }
 ```
 
-**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `CreateAsync` and `SubmitAsync` still throw `System.NotImplementedException`. `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
+**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `CreateAsync` and `SubmitAsync` still throw domain `NotImplementedException`. `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
 
 The current Submit DTO accepts a client-supplied score and cannot provide trusted grading. Before implementing submission, replace it with selected question/option IDs and add an explicit learner ID argument to the service call.
 
@@ -113,16 +113,16 @@ The current Submit DTO accepts a client-supplied score and cannot provide truste
 | `GET` | `/api/exams/{id}` | — | `ExamResponse` | `200 OK`, `404 Not Found` |
 | `POST` | `/api/exams/{id}/submit` | `SubmitExamRequest` | `ExamResultResponse` | `200 OK`, `400 Bad Request`, `404 Not Found` |
 
-> An `ExamsController` placeholder exists (`GET /api/exams/{id}`, `POST /api/exams`, `POST /api/exams/{id}/submit` all throw `NotImplementedException`). These endpoints are planned and not yet wired to services.
+> An `ExamsController` placeholder exists. `GET /api/exams/{id}` could delegate to the implemented `ExamService.GetByIdAsync` but does not yet. All three actions throw domain `NotImplementedException`; the endpoints are not wired to services.
 
 The target submit request contains selected question/option IDs, not a score. The API takes the learner ID from the authenticated identity and passes it explicitly to Application; it must not come from request JSON. Calculate the score from server-side `IsCorrect` values, store the current Module result, and unlock only the next Module after a pass.
 
 ### Input Validation
 
-- `CreateExamRequest`: `Title` must not be empty; `PassThreshold` must be > 0.
-- `CreateExamRequest.Questions` must not be empty. Each question needs at least two options and exactly one correct option.
-- The referenced Exam must exist. Define a score scale before validating score bounds; the current code does not define one.
-- No validation classes exist for exam DTOs.
+- `CreateExamRequest`: `Title` must not be empty and must fit 150 characters; `PassThreshold` must be between 1 and 100.
+- `CreateExamRequest.Questions` must not be empty once the planned nested DTO exists (#273). Each question needs at least two options and exactly one correct option.
+- `SubmitExamRequest`: the current `Score` field is a placeholder and is not validated; replace it with selected answer IDs before submission is implemented.
+- `CreateExamRequestValidator` exists; question/option validators do not exist yet.
 
 ### Submission persistence decision (planned)
 
@@ -136,5 +136,6 @@ The target submit request contains selected question/option IDs, not a score. Th
 | Exception | When Thrown |
 |---|---|
 | `NotFoundException` | Exam lookup by ID returns `null`; Module referenced by `ModuleId` not found |
-| `ValidationException` | `PassThreshold` out of range; `Title` empty; duplicate exam per module (planned) |
+| `ValidationException` | `PassThreshold` out of range or `Title` empty (planned wiring) |
+| `ConflictException` | Duplicate exam per module (target; currently backed by the unique index) |
 | `DomainException` | General exam business rule violations |

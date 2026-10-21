@@ -6,7 +6,7 @@ These stories describe the MVP target. They are not a claim that the behavior ex
 ## Actors
 
 - **Student** — a registered user who studies a Track (the learner).
-- **Instructor** — a content creator or teacher (defined in `UserRole`; out of MVP scope).
+- **Instructor** — a future teaching/authoring role (defined in `UserRole`; reserved, with no distinct MVP permissions).
 - **Admin** — a content author who creates Tracks, Modules, Lessons, and Exams (defined in `UserRole`).
 
 ## Student Stories

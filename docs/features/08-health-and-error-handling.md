@@ -22,7 +22,7 @@ This feature _consumes_ the domain exception hierarchy rather than defining enti
 DomainException (base)
 ├── NotFoundException
 ├── ValidationException
-└── ConflictException
+├── ConflictException
 └── NotImplementedException
 ```
 
@@ -63,7 +63,7 @@ DomainException (base)
 | `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.`            |
 | `DomainException`                  | `400`       | `The request could not be processed.`                                |
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
-| Unhandled `Exception`              | `500`       | `An unexpected error occurred.`                                      |
+| Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (EF constraint/dependent-delete failures still fall here; #322 targets `409`) |
 
 ### Validation error payload (target contract)
 
@@ -100,7 +100,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 | ------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `NotFoundException`       | User lookup by ID returns null                                                                          |
 | `ConflictException`       | Duplicate entity, unique constraint violation, or conflicting state (e.g. duplicate enrollment or exam) |
-| `ValidationException`     | Duplicate email or missing required fields (planned)                                                    |
+| `ValidationException`     | Invalid request fields, invalid credentials shape, or other business-rule validation                    |
 | `NotImplementedException` | Remaining placeholder controller actions and unimplemented capabilities                                |
 
 This feature's middleware _handles_ all domain exceptions thrown by other features. See the mapping table above.

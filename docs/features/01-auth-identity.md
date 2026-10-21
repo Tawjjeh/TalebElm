@@ -104,9 +104,9 @@ public interface IUserService
 | HTTP Method | Route | Request DTO | Response DTO | Status Codes |
 |---|---|---|---|---|
 | `POST` | `/api/auth/login` | — (none declared) | — (none declared) | Current action throws `NotImplementedException`; target `200`, `400`, `401` |
-| `GET` | `/api/users` | — | `UserResponse[]` (planned) | Throws `NotImplementedException` |
+| `GET` | `/api/users` | — | `UserResponse[]` (planned) | Throws domain `NotImplementedException` |
 | `GET` | `/api/users/{id}` | — | `UserResponse` (planned) | Planned: `200`, `404` |
-| `POST` | `/api/users` | `CreateUserRequest` (planned) | `UserResponse` (planned) | Throws `NotImplementedException` |
+| `POST` | `/api/users` | `CreateUserRequest` (exists) | `UserResponse` (planned) | Throws domain `NotImplementedException`; the action currently takes no body |
 | `POST` | `/api/auth/register` | `RegisterRequest` (planned) | `AuthTokenResponse` or `UserResponse` (planned) | Planned: `201`, `400`, `409` |
 | `PUT` | `/api/users/{id}` | `UpdateUserRequest` (planned) | `UserResponse` (planned) | Planned: `200`, `400`, `403`, `404` |
 | `DELETE` | `/api/users/{id}` | — | — | Planned: `204`, `403`, `404` |
@@ -132,5 +132,6 @@ public interface IUserService
 | Exception | When Thrown |
 |---|---|
 | `NotFoundException` | User lookup by ID returns `null` |
-| `ValidationException` | Duplicate email or missing required fields (planned) |
-| `NotImplementedException` | All current service methods and controller actions (placeholder) |
+| `ValidationException` | Missing/invalid name, email, or password fields (planned) |
+| `ConflictException` | Duplicate email on registration (planned; unique index already rejects it) |
+| `NotImplementedException` | Remaining placeholder auth/user controller actions and service methods |

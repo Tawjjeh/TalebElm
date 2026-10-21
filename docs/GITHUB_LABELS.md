@@ -13,8 +13,8 @@
 | Label | Description | Color |
 |---|---|---|
 | `layer:domain` | The code goes in the Domain project — core business rules: entities, enums, exceptions, and repository interfaces. The innermost layer, depends on nothing. | `1D76DB` |
-| `layer:application` | The code goes in the Application project — what the app can do: DTOs, service interfaces, db-context contract, validators. | `5319E7` |
-| `layer:infrastructure` | The code goes in the Infrastructure project — the "how": EF Core, `AppDbContext`, entity configurations, repositories, service implementations. | `0E8A16` |
+| `layer:application` | The code goes in the Application project — what the app can do: DTOs, service interfaces and implementations, validators. | `5319E7` |
+| `layer:infrastructure` | The code goes in the Infrastructure project — the "how": EF Core, `AppDbContext`, entity configurations, migrations, and repositories. | `0E8A16` |
 | `layer:api` | The code goes in the Api project — the web door: controllers, middleware, startup. | `FB8C00` |
 | `layer:tests` | The code goes in the Tests project — unit and integration test classes. | `008672` |
 
@@ -22,12 +22,12 @@
 
 | Label | Description | Color |
 |---|---|---|
-| `entity` | You create a class that represents a core "thing" (User, Track, Module, Lesson, Exam, UserProgress). Inherits `BaseEntity`. | `006B75` |
-| `enum` | You create a fixed list of named choices (TrackStatus, LessonType, UserRole). | `FBCA04` |
+| `entity` | You create a class that represents a core "thing" (User, Track, Module, Lesson, LessonResource, Exam, TrackEnrollment, UserProgress). Inherits `BaseEntity`. | `006B75` |
+| `enum` | You create a fixed list of named choices (TrackStatus, LessonType, LessonResourceKind, UserRole). | `FBCA04` |
 | `exception` | You create an error class that inherits from `Exception` or `DomainException`. | `D93F0B` |
 | `interface` | You create a contract — a list of method names with no bodies. | `0075CA` |
 | `dto` | You create a record used to move data between layers (requests and responses). | `C5DEF5` |
-| `database` | The code is about the database — EF Core context, configurations, or a database contract. | `116329` |
+| `database` | The code is about the database — EF Core context, configurations, or migrations. | `116329` |
 | `controller` | You create a class that handles web requests (receives HTTP, sends HTTP). | `E99695` |
 | `middleware` | You create a pipeline step that every web request passes through. | `8B008B` |
 | `validation` | You create an input-validation class (for example using FluentValidation). | `FF7619` |
