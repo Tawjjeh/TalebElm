@@ -2,7 +2,7 @@
 
 ## 1. The setting name
 
-```
+```text
 ConnectionStrings:TalebElm
 ```
 
@@ -29,13 +29,13 @@ It wins over the value in `appsettings.Development.json`.
 
 **macOS / Linux:**
 
-```
+```bash
 export ConnectionStrings__TalebElm="Data Source=my-other.db"
 ```
 
 **Windows (PowerShell):**
 
-```
+```powershell
 $env:ConnectionStrings__TalebElm="Data Source=my-other.db"
 ```
 

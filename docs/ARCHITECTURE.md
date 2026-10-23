@@ -165,7 +165,7 @@ public class TrackService(IUnitOfWork unitOfWork) : ITrackService { ... }
 
 ### Exception hierarchy
 
-```
+```text
 System.Exception
  └── DomainException              → 400 Bad Request (general domain error)
       ├── NotFoundException       → 404 Not Found

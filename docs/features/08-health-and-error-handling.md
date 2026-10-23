@@ -18,7 +18,7 @@ Expose a lightweight health endpoint so callers can confirm the API process resp
 
 This feature _consumes_ the domain exception hierarchy rather than defining entities:
 
-```
+```text
 DomainException (base)
 ├── NotFoundException
 ├── ValidationException
