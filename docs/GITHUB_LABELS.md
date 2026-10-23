@@ -57,6 +57,18 @@
 | `question` | The issue is a question, not a code task. Great for learners. | `D876E3` |
 | `help wanted` | Anyone is welcome to pick this up. | `00816E` |
 
+## 6. Proposed Labels (Pending Maintainer Approval)
+
+> **Important:** Do NOT create these labels on GitHub yet. They are proposed to support upcoming roadmap slices and await maintainer approval at Gate 2. Until approved, use the nearest existing feature label (`feature:tracks` or `feature:exams`).
+
+| Label | Description | Proposed Color |
+|---|---|---|
+| `feature:resources` | Work that serves the Public Resource Hub slice: technology tree, curated resources, filtering, admin moderation. | `0052CC` |
+| `feature:problems` | Work that serves the Practice Problems & External Verification slice: Codeforces handle challenge, solve checking API, GitHub tasks. | `1F883D` |
+| `feature:capstone` | Work that serves the Capstone Projects slice: track-level projects, milestones, repository submissions, mentor reviews. | `8957E5` |
+| `feature:enrollment` | Work that serves the explicit Track Enrollment slice (separating track enrollment from per-module progress). | `0969DA` |
+
+
 ---
 
 ## Rules for contributors

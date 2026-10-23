@@ -36,8 +36,11 @@ The platform exposes a JSON HTTP API backed by a strictly layered domain model, 
 | Capability | Description |
 | --- | --- |
 | **Content hierarchy** | Ordered `Track → Module → Lesson` content model with sequencing constraints and restricted delete semantics |
-| **Assessment engine** | Module-level exam model and read contract; question storage and server-side grading are planned |
-| **Learner progression** | Per-learner, per-module progress persistence (`UNIQUE(UserId, ModuleId)`) with documented forward-only unlock rules; the submit/unlock workflow is planned |
+| **Assessment engine** | Module-level exam model and read contract; multiple-choice question storage and server-side grading are planned |
+| **Verified problems** | Dual-gated progression requiring Codeforces-verified problem solving (via challenge verification) and practical GitHub tasks; planned |
+| **Public Resource Hub** | 3-click anonymous public directory indexing curated learning resources across languages, frameworks, and topics; planned |
+| **Learner progression** | Per-learner, per-module progress persistence (`UNIQUE(UserId, ModuleId)`) with dual-gated sticky forward unlock rules (exam pass AND problem completion); planned |
+| **Capstone projects** | Portfolio project and cumulative milestones at track conclusion with mentor review lifecycle; planned |
 | **Identity foundation** | User profiles with `Student`/`Instructor`/`Admin` roles (`Student` default), password hashing, and unique identity indexes |
 | **Operational health** | Health-check endpoint and centralized domain-exception → HTTP status mapping |
 | **Extensibility** | Persistence contracts for enrollment (`TrackEnrollment`) and lesson resources (`LessonResource`); their workflows and endpoints are planned, as are question banks (`ExamQuestion`/`ExamOption`) — see `docs/FEATURE_INDEX.md` |
@@ -238,6 +241,9 @@ dotnet ef database update --project src/TalebElm.Infrastructure --startup-projec
 
 | Document | Contents |
 | --- | --- |
+| [`docs/business/PRODUCT_VISION.md`](docs/business/PRODUCT_VISION.md) | Product vision, three pillars, user personas, risks & mitigations |
+| [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md) | Phased implementation roadmap (Phases 0–5) and exit criteria |
+| [`docs/business/SUSTAINABILITY.md`](docs/business/SUSTAINABILITY.md) | Proposed open-source sustainability options under GPL-3.0 |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Layer guide, dependency rules, request lifecycle |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Technical conventions and contracts reference |
 | [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) | Feature-to-implementation status matrix (entry point for product docs) |

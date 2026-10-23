@@ -8,13 +8,15 @@ Register / Sign in
   → Choose a Track and Enroll
   → Open the first Module
   → Study ordered Lessons and their sources
-  → Submit answers for the Module exam
-  → Record score and pass state
-  → Unlock only the next Module after a pass
+  → Submit answers for the Module exam (server grades)
+  → Solve practice problems (Codeforces API verification / GitHub tasks)
+  → Record score, exam pass, and problem completion states
+  → Unlock only the next Module when BOTH exam and required problems are passed
   → Review progress
+  → Deliver Track Capstone project
 ```
 
-This is the target MVP flow, not a claim that every step currently works. Authentication, the Track enrollment workflow, lesson HTTP endpoints and resource validation, exam questions, trusted grading, and the progression-lock transaction are not implemented yet. User/password persistence, TrackEnrollment and LessonResource persistence, and Track/Module/Lesson read services are implemented.
+This is the target MVP flow, not a claim that every step currently works. Authentication, the Track enrollment workflow, lesson HTTP endpoints and resource validation, exam questions, trusted grading, practice problem verification, and the dual-gated progression-lock transaction are not implemented yet. User/password persistence, TrackEnrollment and LessonResource persistence, and Track/Module/Lesson read services are implemented.
 
 ## 2. Clean Architecture Request Path
 
@@ -43,14 +45,15 @@ HTTP request
 - User, Module, Lesson, Exams, and Progress controllers are placeholders; Exams actions throw `NotImplementedException` and Progress currently returns 501.
 - `Program.cs` registers persistence, Track/Exam/User/UserProgress services, `AddApplication`, and `ExceptionHandlingMiddleware`. Authentication and authorization are not registered.
 
-## 4. Target Exam Submission Path
+## 4. Target Exam & Problem Progression Path
 
 1. The API authenticates the learner and passes the learner ID to the Application service.
 2. `ExamService` loads the Exam and its questions through repository contracts.
 3. The learner submits selected option IDs. The server compares them with the stored answer key; it does not trust a client-provided score.
-4. The service uses `Exam.HasPassed(score)` and updates the current UserProgress.
-5. On a pass, it finds the next Module in the same Track by Order and unlocks that Module for this learner only.
-6. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together.
-7. The service returns an `ExamResultResponse`; the controller maps domain errors to HTTP responses through the registered middleware. Unique and foreign-key violations are translated into `ConflictException` (409) by `UnitOfWork.SaveChangesAsync`. Field-keyed validation responses are still target work (#321).
+4. The service uses `Exam.HasPassed(score)` and updates `UserProgress.Score` and `PassedExam = true`.
+5. `ModuleProblemService` verifies external problem solves via Codeforces public API or marks reviewed GitHub tasks, setting `UserProgress.CompletedRequiredProblems = true`.
+6. When **both** `PassedExam` and `CompletedRequiredProblems` are satisfied, the service finds the next Module in the same Track by Order and unlocks that Module for this learner only.
+7. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together.
+8. The service returns results; the controller maps domain errors to HTTP responses through the registered middleware. Unique and foreign-key violations are translated into `ConflictException` (409) by `UnitOfWork.SaveChangesAsync`. Field-keyed validation responses are still target work (#321).
 
-Question storage, answer submission, enrollment initialization, and unlock behavior are still target design; they must not be described as existing functionality until implemented and tested.
+Question storage, answer submission, problem verification, enrollment initialization, and unlock behavior are still target design; they must not be described as existing functionality until implemented and tested.
