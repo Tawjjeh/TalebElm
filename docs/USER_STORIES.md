@@ -39,19 +39,51 @@ As a Student, I want to read each Lesson and open its sources (books, documentat
 - Feature: [03-lessons-and-learning-resources.md](features/03-lessons-and-learning-resources.md)
 
 ### L5. Pass the Module exam
-As a Student, I want to take the Module exam to move forward.
+As a Student, I want to take the Module exam to test my theoretical understanding.
 - The exam shows questions and options but never which option is correct.
 - The server calculates the score; a client-supplied score is ignored.
-- `score >= PassThreshold` passes. A pass unlocks only the next Module.
-- A fail records the score, unlocks nothing, and the Student may retake.
-- Passing the last Module unlocks nothing further.
+- `score >= PassThreshold` passes (`PassedExam = true`).
+- A pass is sticky and cannot be revoked by a later failed retake.
+- Passing the exam satisfies one of the two gates needed to unlock the next Module (the other being problem completion).
 - Feature: [04-exams-management.md](features/04-exams-management.md)
 
 ### L6. See my progress
 As a Student, I want to see which Modules are locked, open, or passed.
 - Progress is returned per Module in Track order for the signed-in Student only.
 - One Student never sees or changes another Student's progress.
+- Both exam pass and problem completion flags are shown per Module.
 - Feature: [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md)
+
+### L7. Link and verify my Codeforces handle
+As a Student, I want to link my Codeforces account without sharing private credentials so my practice solves can be verified.
+- The platform issues a challenge: submit code with a compilation error to a designated problem within 30 minutes.
+- The platform verifies the submission via the public Codeforces API and marks the account verified.
+- Feature: [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md)
+
+### L8. Solve practice problems and unlock the next Module
+As a Student, I want to solve assigned Codeforces problems and have my solves verified directly by the platform.
+- Problems are displayed in order with direct links.
+- Clicking "Verify Solves" checks the Codeforces API for accepted submissions (`verdict == OK`).
+- Once all required problems are verified AND the exam is passed, the next Module unlocks automatically.
+- Feature: [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md)
+
+### L9. Submit framework practical tasks
+As a Student, I want to submit a GitHub repository for practical framework modules.
+- I provide a public GitHub repository URL and optional notes.
+- Submissions are evaluated against a checklist by an Admin or mentor.
+- Feature: [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md)
+
+### L10. Browse the Public Resource Hub
+As any learner or visitor, I want to find high-quality learning resources without logging in.
+- I can browse Language $\to$ Framework $\to$ Topic in $\le$ 3 clicks.
+- I can filter resources by human language (Arabic, English), difficulty level, and free vs. paid.
+- Feature: [06-resource-hub.md](features/06-resource-hub.md)
+
+### L11. Deliver Track Capstone project
+As an advanced Student who finished all Track modules, I want to build a comprehensive portfolio project.
+- Capstone requirements and rubric are unlocked once all modules are passed and completed.
+- I submit my public Git repository URL and optional live demo.
+- Feature: [09-capstone-project.md](features/09-capstone-project.md)
 
 ## Admin Stories
 
@@ -67,6 +99,25 @@ As an admin, I want to attach one exam to a Module.
 - Each question has at least two options and exactly one correct option.
 - A Module has at most one exam (`409` on a duplicate).
 
+### A3. Manage Module practice problems
+As an admin, I want to attach Codeforces problems and GitHub tasks to a Module.
+- Each problem has an external ID, title, URL, order, and `IsRequired` flag.
+- Problem ordering is contiguous within the Module.
+- Feature: [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md)
+
+### A4. Manage Resource Hub taxonomy and resources
+As an admin, I want to curate the public Resource Hub.
+- Create hierarchical technology nodes (`Language`, `Framework`, `Topic`, `Tool`).
+- Add curated resources with metadata (level, language, cost, citation, URL).
+- Moderate community submissions by approving or rejecting with notes.
+- Feature: [06-resource-hub.md](features/06-resource-hub.md)
+
+### A5. Define Track Capstones and review submissions
+As an admin/mentor, I want to review capstone project submissions.
+- Attach a capstone project definition and milestones to a Track.
+- Review submitted Git repositories against the rubric and set status (`Approved` or `NeedsRevision`).
+- Feature: [09-capstone-project.md](features/09-capstone-project.md)
+
 ## Out of Scope
 
-Scheduling, attendance, payments, certificates, and exam attempt history.
+Scheduling, attendance, live streaming, in-browser IDE sandbox, and automated contest hosting.

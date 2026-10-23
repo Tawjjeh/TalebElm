@@ -106,3 +106,203 @@ All learning-path foreign keys use `DeleteBehavior.Restrict`. There is no soft d
 | `Lesson` | Blocked (`409`) while learner-facing linkage depends on it (resources, progress views). After deletion, re-sequence surviving Lessons in the Module contiguously in the same transaction. |
 | `Exam` | Deleting an Exam is allowed only when no grading depends on it; it never deletes the parent Module or learner `UserProgress` rows. |
 | `User` | Learner history is preserved: never cascade-delete `TrackEnrollment` / `UserProgress` rows when a user is removed. Account removal follows the auth/identity retention policy. |
+
+---
+
+## 6. Proposed Target Architecture ERD (Three Pillars)
+
+> **Status discipline:** This section is **Proposed / Target**. Entities below expand the current domain to support the three product pillars (Resource Hub, verified problems, and capstone projects). Current entities in §1 remain untouched until corresponding migrations land.
+
+```mermaid
+erDiagram
+    USER ||--o{ TRACK_ENROLLMENT : "enrolls in"
+    USER ||--o{ USER_PROGRESS : "has progress"
+    USER ||--o{ USER_EXTERNAL_ACCOUNT : "links"
+    USER ||--o{ USER_PROBLEM_COMPLETION : "completes"
+    USER ||--o{ PROJECT_SUBMISSION : "submits"
+
+    TRACK ||--o{ MODULE : "contains"
+    TRACK ||--o{ TRACK_ENROLLMENT : "enrolled by"
+    TRACK ||--o| CAPSTONE_PROJECT : "concludes with"
+
+    MODULE ||--o{ LESSON : "contains"
+    MODULE ||--o| EXAM : "has assessment"
+    MODULE ||--o{ MODULE_PROBLEM : "assigns"
+    MODULE ||--o{ USER_PROGRESS : "tracked in"
+
+    LESSON ||--o{ LESSON_RESOURCE : "cites (current)"
+    LESSON ||--o{ LESSON_RESOURCE_LINK : "links to (proposed)"
+
+    EXAM ||--o{ EXAM_QUESTION : "contains"
+    EXAM_QUESTION ||--o{ EXAM_OPTION : "offers"
+
+    TECHNOLOGY ||--o{ TECHNOLOGY : "parent of (tree)"
+    TECHNOLOGY ||--o{ RESOURCE : "indexes"
+    RESOURCE ||--o{ LESSON_RESOURCE_LINK : "referenced by"
+
+    MODULE_PROBLEM ||--o{ USER_PROBLEM_COMPLETION : "verified in"
+
+    CAPSTONE_PROJECT ||--o{ PROJECT_MILESTONE : "defines"
+    CAPSTONE_PROJECT ||--o{ PROJECT_SUBMISSION : "receives"
+    PROJECT_MILESTONE ||--o{ PROJECT_SUBMISSION : "scopes"
+
+    USER {
+        Guid Id PK
+        string Name
+        string Email
+        string PasswordHash
+        int Role
+        DateTime JoinedAt
+    }
+
+    TRACK {
+        Guid Id PK
+        string Name
+        string Description
+        int Status
+    }
+
+    MODULE {
+        Guid Id PK
+        Guid TrackId FK
+        string Title
+        string Summary
+        int Order
+    }
+
+    LESSON {
+        Guid Id PK
+        Guid ModuleId FK
+        string Title
+        string Content
+        int Order
+    }
+
+    EXAM {
+        Guid Id PK
+        Guid ModuleId FK
+        string Title
+        int PassThreshold
+    }
+
+    EXAM_QUESTION {
+        Guid Id PK
+        Guid ExamId FK
+        string Prompt
+        int Points
+        int Order
+    }
+
+    EXAM_OPTION {
+        Guid Id PK
+        Guid ExamQuestionId FK
+        string Text
+        bool IsCorrect
+    }
+
+    USER_PROGRESS {
+        Guid Id PK
+        Guid UserId FK
+        Guid ModuleId FK
+        bool IsUnlocked
+        bool PassedExam
+        bool CompletedRequiredProblems
+        int Score
+    }
+
+    USER_EXTERNAL_ACCOUNT {
+        Guid Id PK
+        Guid UserId FK
+        int Platform
+        string Handle
+        int VerificationStatus
+        string VerificationChallengeToken
+        DateTimeOffset ChallengeExpiresAt
+        DateTimeOffset VerifiedAt
+    }
+
+    MODULE_PROBLEM {
+        Guid Id PK
+        Guid ModuleId FK
+        int Platform
+        string ExternalId
+        string Title
+        string Url
+        int Order
+        bool IsRequired
+    }
+
+    USER_PROBLEM_COMPLETION {
+        Guid Id PK
+        Guid UserId FK
+        Guid ModuleProblemId FK
+        DateTimeOffset CompletedAt
+        string ExternalSubmissionId
+        string SubmissionUrl
+        int ReviewStatus
+    }
+
+    TECHNOLOGY {
+        Guid Id PK
+        Guid ParentId FK "nullable"
+        string Name
+        string Slug
+        string Description
+        int Kind
+        int Order
+    }
+
+    RESOURCE {
+        Guid Id PK
+        Guid TechnologyId FK
+        string Title
+        int Kind
+        string Url
+        string Citation
+        string Language
+        int Level
+        bool IsPaid
+        int Status
+        Guid CreatedByUserId FK "nullable"
+    }
+
+    LESSON_RESOURCE_LINK {
+        Guid LessonId FK
+        Guid ResourceId FK
+        int Order
+    }
+
+    CAPSTONE_PROJECT {
+        Guid Id PK
+        Guid TrackId FK
+        string Title
+        string Description
+        string RubricUrl
+        bool IsCumulative
+    }
+
+    PROJECT_MILESTONE {
+        Guid Id PK
+        Guid ProjectId FK
+        Guid ModuleId FK "nullable"
+        string Title
+        string Instructions
+        int Order
+    }
+
+    PROJECT_SUBMISSION {
+        Guid Id PK
+        Guid UserId FK
+        Guid ProjectId FK
+        Guid MilestoneId FK "nullable"
+        string RepositoryUrl
+        string DemoUrl
+        string Notes
+        int Status
+        string ReviewNotes
+        DateTimeOffset SubmittedAt
+        DateTimeOffset ReviewedAt
+        Guid ReviewedByUserId FK "nullable"
+    }
+```
+
