@@ -41,6 +41,10 @@
 | `feature:auth` | Work that serves the Authentication & Users slice: register, login, user profiles. | `D4C5F9` |
 | `feature:tracks` | Work that serves the Tracks & Content Management slice: tracks, modules, lessons. | `BFDADC` |
 | `feature:exams` | Work that serves the Assessments & Progress slice: exams, results, user progress, progression lock. | `FAD8D0` |
+| `feature:enrollment` | Work that serves the explicit Track Enrollment slice (separating track enrollment from per-module progress). | `0969DA` |
+| `feature:problems` | Work that serves the Practice Problems & External Verification slice: Codeforces handle challenge, solve checking API, GitHub tasks. | `1F883D` |
+| `feature:resources` | Work that serves the Public Resource Hub slice: technology tree, curated resources, filtering, admin moderation. | `0052CC` |
+| `feature:capstone` | Work that serves the Capstone Projects slice: track-level projects, milestones, repository submissions, mentor reviews. | `8957E5` |
 
 ## 4. Difficulty / Onboarding Labels
 
@@ -48,26 +52,35 @@
 |---|---|---|
 | `good first issue` | Perfect for a beginner — small, clear, and safe to make mistakes on. Start here if you are new to the project. | `7057FF` |
 
-## 5. Status Labels (issue health)
+## 5. Status & Triage Labels (issue health)
 
 | Label | Description | Color |
 |---|---|---|
-| `bug` | Something is broken and needs to be fixed. | `D73A4A` |
-| `enhancement` | A feature idea or improvement request, not yet planned as a task. | `A2EEEF` |
-| `question` | The issue is a question, not a code task. Great for learners. | `D876E3` |
-| `help wanted` | Anyone is welcome to pick this up. | `00816E` |
+| `bug` | Something isn't working. | `D73A4A` |
+| `enhancement` | New feature or request. | `A2EEEF` |
+| `question` | Further information is requested or learner inquiry. | `D876E3` |
+| `help wanted` | Extra attention is needed. | `008672` |
+| `documentation` | Improvements or additions to documentation. | `0075CA` |
+| `duplicate` | This issue or pull request already exists. | `CFD3D7` |
+| `invalid` | This doesn't seem right. | `E4E669` |
+| `wontfix` | This will not be worked on. | `FFFFFF` |
 
-## 6. Proposed Labels (Pending Maintainer Approval)
+## 6. Priority Labels
 
-> **Important:** Do NOT create these labels on GitHub yet. They are proposed to support upcoming roadmap slices and await maintainer approval at Gate 2. Until approved, use the nearest existing feature label (`feature:tracks` or `feature:exams`).
-
-| Label | Description | Proposed Color |
+| Label | Description | Color |
 |---|---|---|
-| `feature:resources` | Work that serves the Public Resource Hub slice: technology tree, curated resources, filtering, admin moderation. | `0052CC` |
-| `feature:problems` | Work that serves the Practice Problems & External Verification slice: Codeforces handle challenge, solve checking API, GitHub tasks. | `1F883D` |
-| `feature:capstone` | Work that serves the Capstone Projects slice: track-level projects, milestones, repository submissions, mentor reviews. | `8957E5` |
-| `feature:enrollment` | Work that serves the explicit Track Enrollment slice (separating track enrollment from per-module progress). | `0969DA` |
+| `priority: critical` | Must be done first; blocks the roadmap. | `B60205` |
+| `priority: high` | Needed for the current milestone. | `D93F0B` |
+| `priority: medium` | Important but not blocking. | `FBCA04` |
+| `priority: low` | Nice to have / polish. | `0E8A16` |
 
+## 7. Cross-Cutting & Area Labels
+
+| Label | Description | Color |
+|---|---|---|
+| `backend` | Server-side implementation. | `1D76DB` |
+| `architecture` | Structural / layering decisions. | `5319E7` |
+| `security` | Auth, hashing, tokens, abuse prevention. | `B60205` |
 
 ---
 
@@ -75,7 +88,8 @@
 
 - Always include **one** `layer:` label and **one or two** `component` labels.
 - Add the matching `feature:` label when you can (`feature:auth`,
-  `feature:tracks`, or `feature:exams`).
+  `feature:tracks`, `feature:exams`, `feature:enrollment`, `feature:problems`,
+  `feature:resources`, or `feature:capstone`).
 - Add `good first issue` if the task is beginner-friendly AND tiny (most
   Very Easy / Easy tasks qualify).
 - Never invent new label names — propose them in a PR comment first so the
