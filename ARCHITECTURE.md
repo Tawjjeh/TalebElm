@@ -19,21 +19,24 @@ This separation keeps business rules independent of persistence technology and d
 ## 2. Layer overview
 
 ```text
-                   +---------------------+
-                   |         Api         |   Presentation / HTTP
-                   +---------------------+
-                        |        |
-               +---------------------+
-               |   Infrastructure    |   Persistence and external integrations
-               +---------------------+
-                        |        |
-               +---------------------+
-               |    Application      |   Use cases and orchestration
-               +---------------------+
-                        |        |
-               +---------------------+
-               |       Domain        |   Business rules and contracts
-               +---------------------+
+               +-----------------------+
+               |          Api          |   Presentation / HTTP
+               +-----------------------+
+                           |
+                           v
+               +-----------------------+
+               |    Infrastructure     |   Persistence and external integrations
+               +-----------------------+
+                           |
+                           v
+               +-----------------------+
+               |      Application      |   Use cases and orchestration
+               +-----------------------+
+                           |
+                           v
+               +-----------------------+
+               |        Domain         |   Business rules and contracts
+               +-----------------------+
 
    Tests are cross-cutting and may reference any production layer.
 ```

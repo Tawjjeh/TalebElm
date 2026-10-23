@@ -8,7 +8,7 @@
 
 ## 1. Layer Responsibilities
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │  TalebElm.Api          (presentation)           │
 │  Controllers, Middlewares, Program.cs            │
@@ -19,7 +19,7 @@
 ├─────────────────────────────────────────────────┤
 │  TalebElm.Application     (use cases)           │
 │  DTOs, Service Interfaces + Implementations,    │
-│  Validators                                    │
+│  Validators                                     │
 ├─────────────────────────────────────────────────┤
 │  TalebElm.Domain           (core rules)         │
 │  Entities, Enums, Exceptions, Repo Interfaces   │
@@ -37,7 +37,7 @@
 
 Inner layers never reference outer layers. The dependency arrow always points inward:
 
-```
+```text
 Api → Infrastructure → Application → Domain
 ```
 
