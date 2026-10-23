@@ -17,7 +17,7 @@
 | Exam | `Exam` | The assessment of a Module. At most one per Module; a Module may have none. |
 | Progress | `UserProgress` | One learner's state for one Module. Exactly one row per (`UserId`, `ModuleId`). Tracks both exam pass and problem completion flags. |
 | Enrollment | `TrackEnrollment` | A learner's explicit choice of a Track. Persisted separately from per-Module progress; the workflow is target behavior. |
-| Resource | `LessonResource` / `Resource` | A cited source for a Lesson or a public Resource Hub topic. Persisted separately from lesson text; unifying under shared `Resource` is Proposed (#25). |
+| Resource | `LessonResource` / `Resource` | A cited source for a Lesson or a public Resource Hub topic. Persisted separately from lesson text; unifying under shared `Resource` is Decided (MVP) (Decision 25). |
 | Technology | `Technology` | Hierarchical node in the public Resource Hub tree (Language, Framework, Topic, Tool). Target behavior. |
 | External Account | `UserExternalAccount` | Learner profile on an external problem platform (Codeforces, GitHub) with verification challenge state. Target behavior. |
 | Module Problem | `ModuleProblem` | An assigned practice problem (Codeforces) or practical task (GitHub) attached to a Module. Target behavior. |
@@ -59,10 +59,10 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | C-1 | A Track is created as `Draft` (`TrackStatus.Draft = 0`, the CLR default) and is invisible to learners until explicitly `Published`. Shipped Tracks are `Archived`, never deleted. | Implemented (entity + default) |
 | C-2 | Only `Published` Tracks are browsable and enrollable. Learner reads filter by status; admin reads are unfiltered. | Target (services/API) |
 | C-3 | Lengths: `Track.Name` ≤ 150, `Track.Description` ≤ 1000, `Module.Title` ≤ 150, `Module.Summary` ≤ 500, `Lesson.Title` ≤ 150. Oversize input is rejected at both the validator (`400`) and the database boundary. | Implemented (DB); validator coverage/wiring target |
-| C-4 | Ordering is strict and contiguous: `UNIQUE(TrackId, Order)` for Modules, `UNIQUE(ModuleId, Order)` for Lessons; `Order ≥ 1`; surviving siblings are re-sequenced to `1, 2, 3, …` in the same `UnitOfWork` transaction on insert/move/delete. | Unique indexes implemented; re-sequencing target (#12) |
+| C-4 | Ordering is strict and contiguous: `UNIQUE(TrackId, Order)` for Modules, `UNIQUE(ModuleId, Order)` for Lessons; `Order ≥ 1`; surviving siblings are re-sequenced to `1, 2, 3, …` in the same `UnitOfWork` transaction on insert/move/delete. | Unique indexes implemented; re-sequencing target (Decision 12) |
 | C-5 | Reordering a `Published` Track after learners started requires product approval. Progress rows are keyed by `ModuleId`, never by `Order`, so renames of positions never orphan history. | Target |
 | C-6 | Deletes never cascade learner data: `Track` with Modules/enrollments/progress, `Module` with Lessons/Exam/progress, `Lesson` with resources are blocked with `409 Conflict`. FKs use `DeleteBehavior.Restrict` (configured for Module→Track, Lesson→Module, Exam→Module, UserProgress→User/Module, TrackEnrollment→User/Track, LessonResource→Lesson). | Implemented (Restrict FKs, 409 via `UnitOfWork`) |
-| C-7 | `LessonType` (`Text`, `Video`, `Exercise`) exists as an enum but is **not** a `Lesson` property today. Until decision #13 lands, content kind must not be inferred from anywhere else. | Implemented (as absence) |
+| C-7 | `LessonType` (`Text`, `Video`, `Exercise`) exists as an enum but is **not** a `Lesson` property today. Until Decision 13 lands, content kind must not be inferred from anywhere else. | Implemented (as absence) |
 
 ## 4. Enrollment
 

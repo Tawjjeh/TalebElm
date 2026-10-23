@@ -52,7 +52,7 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 ## Suggested Delivery Order
 
-1. Finish database setup, mappings, repositories, and UnitOfWork (#274, #326).
+1. Finish database setup, mappings, repositories, and UnitOfWork (#274; #326 resolved in PR #328).
 2. Wire authentication and authorization policies (Phase 1).
 3. Implement Track enrollment, Exam questions, and server-side answer scoring (Phase 2).
 4. Integrate practice problems, handle verification, and dual-gated progression (Phase 3).
