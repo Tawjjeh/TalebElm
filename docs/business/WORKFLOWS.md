@@ -44,12 +44,12 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    A[Learner chooses Published Track] --> B{Already enrolled?}
-    B -- Yes --> C[409 Conflict — create nothing]
-    B -- No --> D{Track has Modules?}
-    D -- No --> E[400 — create nothing]
-    D -- Yes --> F[Create enrollment + ONE progress row: lowest-Order Module, IsUnlocked=true]
-    F --> G[Single UnitOfWork commit]
+    A["Learner chooses Published Track"] --> B{"Already enrolled?"}
+    B -- Yes --> C["409 Conflict (create nothing)"]
+    B -- No --> D{"Track has Modules?"}
+    D -- No --> E["400 Bad Request (create nothing)"]
+    D -- Yes --> F["Create enrollment + ONE progress row (lowest-Order Module, IsUnlocked=true)"]
+    F --> G["Single UnitOfWork commit"]
 ```
 
 Rules E-1…E-4. Identity comes from auth, never from the request body.
@@ -60,25 +60,25 @@ The unlock check runs after **either** event occurs (submitting an exam OR verif
 
 ```mermaid
 flowchart TD
-    E1[Event A: Submit Exam Answers] --> Grade[Server Grades Exam]
-    Grade --> CheckScore{Score >= PassThreshold?}
-    CheckScore -- Yes --> SetExam[Set PassedExam = true (Sticky)]
-    CheckScore -- No --> RetainExam[Retain Previous PassedExam Value]
+    E1["Event A: Submit Exam Answers"] --> Grade["Server Grades Exam"]
+    Grade --> CheckScore{"Score >= PassThreshold?"}
+    CheckScore -- Yes --> SetExam["Set PassedExam = true (Sticky)"]
+    CheckScore -- No --> RetainExam["Retain Previous PassedExam Value"]
     
-    E2[Event B: Verify Problem Solves] --> Match[Verify External Solves: CF / GitHub]
-    Match --> CheckAllProblems{All IsRequired Problems Complete?}
-    CheckAllProblems -- Yes --> SetProb[Set CompletedRequiredProblems = true (Sticky)]
-    CheckAllProblems -- No --> RetainProb[Retain Previous Value]
+    E2["Event B: Verify Problem Solves"] --> Match["Verify External Solves (CF / GitHub)"]
+    Match --> CheckAllProblems{"All IsRequired Problems Complete?"}
+    CheckAllProblems -- Yes --> SetProb["Set CompletedRequiredProblems = true (Sticky)"]
+    CheckAllProblems -- No --> RetainProb["Retain Previous Value"]
     
-    SetExam --> Eval{Evaluate Dual-Gate Invariant}
+    SetExam --> Eval{"Evaluate Dual-Gate Invariant"}
     RetainExam --> Eval
     SetProb --> Eval
     RetainProb --> Eval
     
-    Eval --> GateCheck{PassedExam == true AND CompletedRequiredProblems == true?}
-    GateCheck -- Yes --> Unlock[Set Next Module IsUnlocked = true in Same Transaction]
-    GateCheck -- No --> NoUnlock[Next Module Remains Locked]
-    Unlock --> Commit[Commit UnitOfWork Transaction]
+    Eval --> GateCheck{"PassedExam == true AND CompletedRequiredProblems == true?"}
+    GateCheck -- Yes --> Unlock["Set Next Module IsUnlocked = true in Same Transaction"]
+    GateCheck -- No --> NoUnlock["Next Module Remains Locked"]
+    Unlock --> Commit["Commit UnitOfWork Transaction"]
     NoUnlock --> Commit
 ```
 
@@ -128,7 +128,7 @@ sequenceDiagram
     Platform->>CF: GET /api/user.status?handle={handle}&count=50
     alt CF API Down or Throttled
         CF-->>Platform: Error / 5xx / 429
-        Platform-->>Learner: 503 Service Unavailable (External service temporarily unavailable; 0 state changed)
+        Platform-->>Learner: 503 Service Unavailable (External service temporarily unavailable, 0 state changed)
     else CF API OK
         CF-->>Platform: Submissions JSON (verdict, contestId, problem index)
         Platform->>Platform: Match problems with verdict == OK (All-time solves count)
@@ -170,21 +170,21 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    subgraph Public Anonymous Discovery (<= 3 Clicks + Search/Pagination)
-        V1[GET /api/hub/technologies] -->|Click 1: Select Language e.g. C#| V2[GET /api/hub/technologies/csharp]
-        V2 -->|Click 2: Select Framework e.g. ASP.NET Core| V3[GET /api/hub/technologies/aspnet-core]
-        V3 -->|Click 3: Select Topic e.g. Dependency Injection| V4[GET /api/hub/topics/{id}/resources]
-        V4 --> V5[View Paged Results with Filters: Language, Level, Cost, Title Search]
+    subgraph Discovery["Public Anonymous Discovery (3 Clicks + Search/Pagination)"]
+        V1["GET /api/hub/technologies"] -->|"Click 1: Select Language (C#)"| V2["GET /api/hub/technologies/csharp"]
+        V2 -->|"Click 2: Select Framework (ASP.NET Core)"| V3["GET /api/hub/technologies/aspnet-core"]
+        V3 -->|"Click 3: Select Topic (Dependency Injection)"| V4["GET /api/hub/topics/{id}/resources"]
+        V4 --> V5["View Paged Results with Filters (Language, Level, Cost, Title Search)"]
     end
 
-    subgraph Automated Link Health Background Service
-        H1[Scheduled Timer Fires Daily] --> H2[Fetch Active Resources]
-        H2 --> H3[Send HTTP HEAD Probe to Resource URL]
-        H3 -- 2xx/3xx Success --> H4[Reset Failure Count to 0]
-        H3 -- 4xx/5xx/Timeout --> H5[Increment Failure Count]
-        H5 --> H6{Failure Count >= 3?}
-        H6 -- Yes --> H7[Set Status = Broken — Hidden from Public Lists]
-        H6 -- No --> H8[Keep Current Status]
+    subgraph HealthChecker["Automated Link Health Background Service"]
+        H1["Scheduled Timer Fires Daily"] --> H2["Fetch Active Resources"]
+        H2 --> H3["Send HTTP HEAD Probe to Resource URL"]
+        H3 -- 2xx/3xx Success --> H4["Reset Failure Count to 0"]
+        H3 -- 4xx/5xx/Timeout --> H5["Increment Failure Count"]
+        H5 --> H6{"Failure Count >= 3?"}
+        H6 -- Yes --> H7["Set Status = Broken (Hidden from Public Lists)"]
+        H6 -- No --> H8["Keep Current Status"]
     end
 ```
 
@@ -194,15 +194,16 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    R[Register / Login] --> B[Browse Published Tracks]
-    B --> E[Enroll — Module 1 Unlocks]
-    E --> S[Study Lessons & Resources]
-    S --> X[Pass Exam]
-    S --> P[Solve Automated Problems / Tasks]
-    X & P --> N[Next Module Unlocks]
-    N --> V[Repeat Across All Modules]
-    V --> CAP[Complete Automated Capstone Milestones]
-    CAP --> DONE[Track Complete]
+    R["Register / Login"] --> B["Browse Published Tracks"]
+    B --> E["Enroll (Module 1 Unlocks)"]
+    E --> S["Study Lessons & Resources"]
+    S --> X["Pass Exam"]
+    S --> P["Solve Automated Problems / Tasks"]
+    X --> N["Next Module Unlocks"]
+    P --> N
+    N --> V["Repeat Across All Modules"]
+    V --> CAP["Complete Automated Capstone Milestones"]
+    CAP --> DONE["Track Complete"]
 ```
 
 ---
