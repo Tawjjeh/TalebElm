@@ -54,40 +54,45 @@ flowchart TD
 
 Rules E-1…E-4. Identity comes from auth, never from the request body.
 
-## 4. Study → exam + problems → unlock loop (Dual-Gated)
+## 4. Dual-Gated Unlock Check (Atomic UnitOfWork Evaluation)
+
+The unlock check runs after **either** event occurs (submitting an exam OR verifying practice problems) inside a single `UnitOfWork` transaction:
 
 ```mermaid
 flowchart TD
-    Locked[Module Locked] -->|Enrollment / Previous Module Completed| Unlocked[Module Unlocked]
-    Unlocked --> Study[Study Ordered Lessons & Resources]
-    Study --> G1{Take Module Exam}
-    Study --> G2{Solve Practice Problems}
+    E1[Event A: Submit Exam Answers] --> Grade[Server Grades Exam]
+    Grade --> CheckScore{Score >= PassThreshold?}
+    CheckScore -- Yes --> SetExam[Set PassedExam = true (Sticky)]
+    CheckScore -- No --> RetainExam[Retain Previous PassedExam Value]
     
-    G1 -- Submit Answers --> Grade[Server Grades Exam]
-    Grade -- Score < PassThreshold --> ExamFailed[Exam Failed — Retry Allowed]
-    Grade -- Score >= PassThreshold --> ExamPassed[PassedExam = true (Sticky)]
+    E2[Event B: Verify Problem Solves] --> Match[Verify External Solves: CF / GitHub]
+    Match --> CheckAllProblems{All IsRequired Problems Complete?}
+    CheckAllProblems -- Yes --> SetProb[Set CompletedRequiredProblems = true (Sticky)]
+    CheckAllProblems -- No --> RetainProb[Retain Previous Value]
     
-    G2 -- Submit Codeforces / GitHub --> Verify[Platform Verifies Solves via API]
-    Verify -- Missing Required Solves --> ProblemsIncomplete[Problems Incomplete — Continue Solving]
-    Verify -- All Required Solves Verified --> ProblemsPassed[CompletedRequiredProblems = true (Sticky)]
+    SetExam --> Eval{Evaluate Dual-Gate Invariant}
+    RetainExam --> Eval
+    SetProb --> Eval
+    RetainProb --> Eval
     
-    ExamPassed --> CheckBoth{PassedExam AND CompletedRequiredProblems?}
-    ProblemsPassed --> CheckBoth
-    
-    CheckBoth -- Yes --> UnlockNext[Unlock ONLY Next Module in Track]
-    CheckBoth -- No --> WaitOther[Wait for Remaining Requirement]
+    Eval --> GateCheck{PassedExam == true AND CompletedRequiredProblems == true?}
+    GateCheck -- Yes --> Unlock[Set Next Module IsUnlocked = true in Same Transaction]
+    GateCheck -- No --> NoUnlock[Next Module Remains Locked]
+    Unlock --> Commit[Commit UnitOfWork Transaction]
+    NoUnlock --> Commit
 ```
 
-| Event | Effect | Rules |
+| Invariant Trigger | Condition | Transactional Action |
 |---|---|---|
-| Submit Exam | Server computes `Score`; overwrites row `Score`; sets `PassedExam = true` if $\ge$ threshold. Failed retake never resets `PassedExam`. | A-1, A-4 |
-| Verify Problems | Platform verifies external solves via API; sets `CompletedRequiredProblems = true` once all required problems pass. Never resets once `true`. | X-1, X-3 |
-| Dual-Gate Pass | When **both** `PassedExam` and `CompletedRequiredProblems` are `true`, unlock the next Module in the same Track in the same `UnitOfWork` transaction. | P-2 |
-| Locked content read/submit | `403 Forbidden`, not `404`. Cross-learner access `403`. | P-4 |
+| Exam Submission | Score $\ge$ threshold | Sets `PassedExam = true`. If all required problems were already completed, unlocks next Module. |
+| Problem Verification | All required problems verified | Sets `CompletedRequiredProblems = true`. If exam was already passed, unlocks next Module. |
+| Single Transaction | Atomic commit | Row creation/update of current module and unlock of next module committed in one `UnitOfWork` commit. |
 
 ---
 
-## 5. External Account Verification & Problem Solve Flow
+## 5. Codeforces Verification Workflows
+
+### 5.1 Handle Ownership Verification via Profile Token
 
 ```mermaid
 sequenceDiagram
@@ -96,71 +101,113 @@ sequenceDiagram
     participant Platform as TalebElm Platform
     participant CF as Codeforces Public API
 
-    Note over Learner,Platform: Step 1: Handle Ownership Challenge
-    Learner->>Platform: POST /api/users/me/external-accounts (Platform=Codeforces, Handle)
-    Platform->>Platform: Generate Challenge Token (30m expiry) + Challenge Problem
-    Platform-->>Learner: Challenge Instructions (submit code with compilation error)
-    Learner->>CF: Submit code to designated problem triggering COMPILATION_ERROR
+    Learner->>Platform: POST /api/users/me/external-accounts/codeforces (Handle)
+    Platform->>Platform: Generate 128-bit single-use token (15m expiry)
+    Platform-->>Learner: Return Token & Instructions: Paste into Codeforces profile First Name
+    Learner->>CF: Save Profile (firstName = Token)
     Learner->>Platform: POST /api/users/me/external-accounts/{id}/verify
-    Platform->>CF: GET user.status?handle={handle}&from=1&count=10
-    CF-->>Platform: Submissions JSON
-    Platform->>Platform: Confirm COMPILATION_ERROR submission inside time window
-    Platform-->>Learner: Account Verified (VerificationStatus = Verified)
+    Platform->>CF: GET /api/user.info?handles={handle}
+    CF-->>Platform: User JSON (firstName, organization)
+    Platform->>Platform: Assert firstName or organization contains Token
+    Platform->>Platform: Set VerificationStatus = Verified, clear Token
+    Platform-->>Learner: 200 OK (Verified! You may remove the token from your profile)
+```
 
-    Note over Learner,Platform: Step 2: Problem Solve Verification
-    Learner->>CF: Submit solution to assigned ModuleProblem
-    CF-->>Learner: Verdict = OK (Accepted)
-    Learner->>Platform: POST /api/modules/{moduleId}/problems/verify
-    Platform->>CF: GET user.status?handle={handle}&from=1&count=20
-    CF-->>Platform: Submissions JSON
-    Platform->>Platform: Match problem ID & verdict == "OK"
-    Platform->>Platform: Insert UserProblemCompletion records
-    Platform-->>Learner: Return updated solve status (AllRequiredCompleted: true/false)
+### 5.2 Problem Solve Verification
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Learner
+    participant Platform as TalebElm Platform
+    participant CF as Codeforces Public API
+
+    Learner->>CF: Solve and submit code on Codeforces (verdict == OK)
+    Learner->>Platform: POST /api/modules/{moduleId}/problems/verify (60s cooldown)
+    Platform->>Platform: Assert cooldown has elapsed (429 if < 60s)
+    Platform->>CF: GET /api/user.status?handle={handle}&count=50
+    alt CF API Down or Throttled
+        CF-->>Platform: Error / 5xx / 429
+        Platform-->>Learner: 503 Service Unavailable (External service temporarily unavailable; 0 state changed)
+    else CF API OK
+        CF-->>Platform: Submissions JSON (verdict, contestId, problem index)
+        Platform->>Platform: Match problems with verdict == OK (All-time solves count)
+        Platform->>Platform: Insert UserProblemCompletion records
+        Platform->>Platform: Evaluate Dual-Gated Unlock (Section 4)
+        Platform-->>Learner: 200 OK (Solves verified, ModuleUnlocked: true/false)
+    end
 ```
 
 ---
 
-## 6. Resource Hub 3-Click Discovery & Curation Flow
+## 6. Automated GitHub Task Verification Workflow (CodeCrafters-Style)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Learner
+    participant Platform as TalebElm Platform
+    participant GH as GitHub REST API
+
+    Note over Learner,Platform: Prerequisite: OAuth Account Link (Numeric ExternalUserId Stored)
+    Learner->>GH: Push commit to default branch of repository created from official template
+    GH->>GH: Execute .github/workflows/test.yml (Status: Completed, Conclusion: Success)
+    Learner->>Platform: POST /api/tasks/{taskId}/verify (repoName)
+    Platform->>GH: GET /repos/{owner}/{repo}
+    Platform->>Platform: Assert owner.id == ExternalUserId AND template_repository == TaskVersion.TemplateRepoFullName
+    Platform->>GH: GET /repos/{owner}/{repo}/actions/runs?branch=default&event=push
+    Platform->>Platform: Assert latest run conclusion == "success" (head_sha)
+    Platform->>GH: GET /repos/{owner}/{repo}/git/trees/{head_sha}?recursive=1
+    Platform->>Platform: Assert blob SHA of workflow == TaskVersion.WorkflowBlobSha
+    Platform->>Platform: Assert tree SHA of tests/ == TaskVersion.TestsTreeSha
+    Platform->>Platform: Record UserProblemCompletion & Evaluate Dual-Gated Unlock
+    Platform-->>Learner: 200 OK (Task Verified! Dual-gate progression evaluated)
+```
+
+---
+
+## 7. Resource Hub 3-Click Discovery & Curation Flow
 
 ```mermaid
 flowchart TD
-    subgraph Public Anonymous Visitor (<= 3 Clicks)
-        V1[Visit Resource Hub: GET /api/hub/technologies] -->|Click 1: Choose Language| V2[Select Language e.g. C#]
-        V2 -->|Click 2: Choose Framework| V3[Select Framework e.g. ASP.NET Core]
-        V3 -->|Click 3: Choose Topic| V4[Select Topic e.g. Dependency Injection]
-        V4 --> V5[View Curated Resources with Filters: Language, Level, Cost]
+    subgraph Public Anonymous Discovery (<= 3 Clicks + Search/Pagination)
+        V1[GET /api/hub/technologies] -->|Click 1: Select Language e.g. C#| V2[GET /api/hub/technologies/csharp]
+        V2 -->|Click 2: Select Framework e.g. ASP.NET Core| V3[GET /api/hub/technologies/aspnet-core]
+        V3 -->|Click 3: Select Topic e.g. Dependency Injection| V4[GET /api/hub/topics/{id}/resources]
+        V4 --> V5[View Paged Results with Filters: Language, Level, Cost, Title Search]
     end
 
-    subgraph Admin Curation & Moderation
-        A1[Admin Authenticates] --> A2[Create/Update Technology Node]
-        A2 --> A3[Create Resource with Status = Approved]
-        A4[Future: Community Submits Resource] --> A5[Status: PendingApproval]
-        A5 --> A6{Admin Review}
-        A6 -- Approve --> A7[Status: Approved — Visible Publicly]
-        A6 -- Reject --> A8[Status: Rejected with Feedback]
+    subgraph Automated Link Health Background Service
+        H1[Scheduled Timer Fires Daily] --> H2[Fetch Active Resources]
+        H2 --> H3[Send HTTP HEAD Probe to Resource URL]
+        H3 -- 2xx/3xx Success --> H4[Reset Failure Count to 0]
+        H3 -- 4xx/5xx/Timeout --> H5[Increment Failure Count]
+        H5 --> H6{Failure Count >= 3?}
+        H6 -- Yes --> H7[Set Status = Broken — Hidden from Public Lists]
+        H6 -- No --> H8[Keep Current Status]
     end
 ```
 
 ---
 
-## 7. Learner Journey End-to-End
+## 8. Learner Journey End-to-End
 
 ```mermaid
 flowchart LR
-    R[Register/Login] --> B[Browse Published Tracks]
+    R[Register / Login] --> B[Browse Published Tracks]
     B --> E[Enroll — Module 1 Unlocks]
-    E --> S[Study Ordered Lessons & Sources]
-    S --> X[Pass Module Exam]
-    S --> P[Complete Required Practice Problems]
+    E --> S[Study Lessons & Resources]
+    S --> X[Pass Exam]
+    S --> P[Solve Automated Problems / Tasks]
     X & P --> N[Next Module Unlocks]
-    N --> V[Repeat for All Modules]
-    V --> CAP[Submit Capstone Project]
-    CAP -- Approved --> DONE[Track Complete & Job Ready]
+    N --> V[Repeat Across All Modules]
+    V --> CAP[Complete Automated Capstone Milestones]
+    CAP --> DONE[Track Complete]
 ```
 
 ---
 
-## 8. Failure → Status Map
+## 9. Failure → Status Map
 
 | Situation | Status | Rule |
 |---|---|---|
@@ -170,5 +217,6 @@ flowchart LR
 | Locked content, incomplete prerequisites, cross-learner access | `403 Forbidden` | P-2, P-4, J-2 |
 | Missing / invalid / expired token | `401 Unauthorized` | U-6 |
 | Delete with dependents | `409 Conflict`, nothing deleted; archive instead | C-6 |
-| Codeforces API down / rate limit exceeded | `429 Too Many Requests` (user throttle) / `503 Service Unavailable` | X-5 |
-| Unimplemented placeholder | `501 Not Implemented` | Technical, not a business state |
+| Codeforces / GitHub API rate limit | `429 Too Many Requests` (per-user throttle) | X-3, D-J |
+| External provider downtime / network failure | `503 Service Unavailable` (fail-safe; 0 state changed) | X-6, D-J |
+| Tampered GitHub task test suite / workflow SHA mismatch | `400 Bad Request` (`IntegrityShaMismatch`) | D-D |

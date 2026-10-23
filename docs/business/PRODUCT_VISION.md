@@ -49,36 +49,29 @@ Learning software engineering today is broken in two distinct ways:
   1. An Exam (knowledge recall with multiple-choice questions, `Target`).
   2. A set of practice problems (3 or more coding problems/tasks, `Target`).
 - **Dual-Gated Sticky Progression:** To unlock the next Module in the Track, the learner must **both** pass the Exam **and** complete all required practice problems (`Target`). Both completion flags are permanent and sticky (`Target`).
-- **Track Capstone:** At the end of each Track, the learner completes a comprehensive capstone project, or builds one cumulative project progressively across the Track's modules, ensuring real-world practical experience (`Proposed`).
+- **Track Capstone:** A single cumulative portfolio project built progressively across ordered milestones in the Track, verified automatically via GitHub tasks (`Target`).
 
-### Pillar 2: Problems (Externally Verified Practice)
+### Pillar 2: Problems (100% Automated Verification)
 
-- **Fundamentals Modules (Codeforces-Verified):**
-  - Practice problems for fundamentals (syntax, algorithms, data structures) are sourced from Codeforces (`Target`).
-  - The learner links their public Codeforces handle on their profile (`Target`).
-  - **Ownership Verification Challenge:** The platform issues a time-boxed challenge requiring the learner to submit a deliberately failing solution (e.g., a compilation error) to a designated problem. The platform checks this submission via the public Codeforces API (`user.status`) to cryptographically prove handle ownership without asking for passwords (`Target`).
-  - **Automated Solve Verification:** When the learner solves an assigned problem, the platform queries the public Codeforces API (`user.status`) to confirm an `OK` (Accepted) verdict (`Target`). The learner never self-reports solves.
-- **Framework Modules (Practical GitHub Tasks):**
-  - Algorithm problems do not fit framework concepts (e.g., ASP.NET Core, EF Core, Spring Boot). Instead, framework modules assign practical tasks (`Target`).
-  - In the MVP, the learner submits a GitHub repository URL, reviewed manually or via an evaluation checklist (`Proposed`). Automated verification via GitHub Actions or test suites is reserved for a future phase (`Proposed`).
-- **Extensibility:** The domain model supports multiple external platforms via an enum and external identifier (`PlatformEnum`, `ExternalId`), but only Codeforces and manual GitHub tasks are in scope for the initial rollout (`Target`).
+- **Guiding Principle: Zero Manual Gating:** Every step that unlocks a learner is verified automatically by the server. Humans only author content and curate public Hub resources.
+- **Problem Kinds (`ProblemKind` Enum):**
+  1. `CodeforcesProblem`: Algorithmic problems on Codeforces for fundamentals modules (`Target`).
+  2. `GitHubTask`: CodeCrafters-style automated repository tasks for framework modules (`Target`).
+- **Codeforces Handle Ownership Challenge:** The server generates a random 128-bit single-use token (expires in 15 minutes). The learner places the token into their Codeforces profile (`firstName` or `organization`). The server reads the profile via the public `user.info` API and stores the verified handle (`Target`).
+- **Automated Solve Verification:** The platform queries the public Codeforces API (`user.status`) for `OK` (Accepted) verdicts matching `contestId` and problem `index` (`Target`). All-time accepted solves count.
+- **Automated GitHub Tasks:** Learners link their GitHub account via OAuth (numeric `ExternalUserId` stored). For each framework task, the learner generates a repository from an official template (`Tawjjeh/task-<slug>-template`), implements code, and pushes. The server queries the GitHub REST API to verify that:
+  - The repository owner matches the linked numeric account ID.
+  - The repository was generated from the official template.
+  - The latest workflow run on the default branch succeeded.
+  - Cryptographic blob/tree SHAs of `.github/workflows/test.yml` and `tests/` match the official `TaskVersion` (`Target`).
+- **Extensible Verifier Architecture:** Verifiers sit behind the `IProblemVerifier` interface in Application (`Target`).
 
 ### Pillar 3: Resource Hub (Public & Anonymous)
 
 - **Public Access:** A well-organized index of learning references across languages, frameworks, and tools. Read access is 100% anonymous; no account or login is required (`Target`).
-- **Three-Click Rule:** A visitor can reach any specific topic (e.g., "Spring Boot $\to$ Dependency Injection") in at most 3 clicks:
-  1. Language / Ecosystem (e.g., Java, C#, TypeScript)
-  2. Framework / Technology (e.g., Spring Boot, ASP.NET Core)
-  3. Topic $\to$ Curated Resources
-- **Rich Metadata:** Every topic supports multiple sources. Each Resource record includes:
-  - Title, URL, or bibliographic citation
-  - Kind (`Book`, `Documentation`, `Video`, `Article`, `Repository`, `Other`)
-  - Human Language (e.g., Arabic, English)
-  - Difficulty Level (`Beginner`, `Intermediate`, `Advanced`)
-  - Cost (`Free`, `Paid`)
-  - Approval Status (`Approved`, `PendingApproval`, `Rejected`)
-- **Unified Resource Model:** Hub resources and Lesson resources share one underlying `Resource` domain concept so references are never duplicated (`Proposed`).
-- **Community Contributions:** Community submissions with admin moderation are planned for a subsequent phase (`Proposed`).
+- **Three-Click Rule:** A visitor can reach any specific topic (e.g., "Spring Boot $\to$ Dependency Injection") in at most 3 clicks via a self-referencing `Technology` tree (`Target`).
+- **Unified Resource Model:** Hub resources and Lesson references share one underlying `Resource` entity (`Target`). `LessonResource` becomes a join table, populated via a two-step non-destructive migration.
+- **Automated Quality & Link Health:** Scheduled background link checker probes URLs and marks resources `Broken` after 3 consecutive failures, hiding them from public listings until resolved (`Target`).
 
 ---
 
@@ -90,25 +83,37 @@ To maintain high development velocity and architectural focus, the following are
 2. **Contest Hosting Platform:** TalebElm is an educational progression engine, not a competitive programming judge.
 3. **Live Classrooms & Scheduling:** No live streams, calendar scheduling, or attendance systems.
 4. **Accredited Degree Granting:** TalebElm produces portfolio-ready engineers, not university credentials.
+5. **Human-in-the-Loop Progression Review:** No human code review or manual checklist gating for learner unlocking.
 
 ---
 
-## 6. Risks & Mitigations
+## 6. Known Limitations & Future Hardening
+
+### Automated GitHub Task Verification Limitation
+- **The Limitation:** Because the test suite executes on GitHub Actions within the learner's own repository, a determined, technically sophisticated user could theoretically manipulate the CI environment (e.g., monkey-patching runner binaries, intercepting process outputs, or spoofing execution hooks) to make the workflow pass while keeping the file SHAs intact.
+- **Future Hardening (Post-MVP):**
+  - **Platform-Owned Runners:** In a future phase, webhooks on push will trigger task execution on TalebElm-owned ephemeral runner sandboxes (e.g., isolated Docker containers or Firecracker microVMs).
+  - **Hidden / Canary Test Suites:** The platform will inject private, undisclosed test cases at evaluation time that do not exist in the public starter template.
+- **MVP Assessment:** For the MVP, Git blob/tree SHA verification combined with template provenance provides strong tamper resistance against 99% of learners while maintaining zero server compute cost.
+
+---
+
+## 7. Risks & Mitigations
 
 | Risk | Impact | Mitigation Strategy |
 |---|---|---|
 | **Content Authoring Bottleneck** | Slow release of new Tracks due to the effort of authoring lessons, exams, and curating problem sets. | Focus initial tracks on backend core (.NET). Use open-source community contributions with clear Markdown authoring templates and admin review. |
-| **Dead External Links** | Third-party tutorials, docs, or repositories move or go offline. | Hub topics support multiple fallback sources. Implement automated link-health validation jobs (`Target`). |
-| **Learner Gating Frustration** | Hard problem sets or strict exams cause learners to abandon the platform. | Carefully calibrate initial problem difficulty (Codeforces 800–1000 rating bounds). Admin manual-unlock capability exists for support overrides (`Target`). |
-| **Codeforces Dependency & Rate Limits** | Public Codeforces API may experience downtime or enforce rate limits (~1 req / 2s). | Verify all specifics against official docs (`codeforces.com/apiHelp`). Implement aggressive local caching, request debouncing, and asynchronous background polling queues (`Target`). |
-| **Beginner Difficulty Mismatch** | Competitive programming problems can overwhelm novice programmers with math riddles. | Curate problem sets strictly focused on language fundamentals (loops, conditionals, basic data structures) rather than tricky competitive algorithms (`Target`). |
+| **Dead External Links** | Third-party tutorials, docs, or repositories move or go offline. | Hub topics support multiple fallback sources. Scheduled automated background link checker (`Target`). |
+| **Learner Gating Frustration** | Hard problem sets or strict exams cause learners to abandon the platform. | Calibrate initial problem difficulty: Module 1 problems must be Codeforces rating $\le 800$, rising gradually. Admin manual-unlock support override exists for stuck learners (`Target`). |
+| **Codeforces Dependency & Rate Limits** | Public Codeforces API may experience downtime or enforce rate limits (~1 req / 2s). | Verify all specifics against official docs (`codeforces.com/apiHelp`). Implement 60s per-user debouncing, in-memory caching, and fail-safe 503 responses that alter zero learner state (`Target`). |
+| **Beginner Difficulty Mismatch** | Competitive programming problems can overwhelm novice programmers with math riddles. | Curate problem sets strictly focused on language fundamentals (loops, conditionals, basic data structures) with soft validator warnings during authoring (`Target`). |
 
 ---
 
-## 7. Success Metrics
+## 8. Success Metrics
 
 1. **Enrollment-to-Completion Ratio:** Percentage of learners who enroll in a Track and reach the capstone project.
-2. **Problem Verification Throughput:** Number of Codeforces solves verified through the automated API pipeline.
+2. **Problem Verification Throughput:** Number of Codeforces solves and GitHub tasks verified through the automated API pipeline.
 3. **Resource Hub Reach:** Monthly unique anonymous visitors and search-to-resource click-through rates.
 4. **Time-to-Second-Module:** Median time for a new learner to complete Module 1 (indicates healthy onboarding difficulty).
 5. **Contributor Velocity:** Number of merged community pull requests adhering to Clean Architecture standards.

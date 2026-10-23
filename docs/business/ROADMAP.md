@@ -91,63 +91,66 @@ gantt
 ## Phase 3: External Problems & Automated Verification
 
 - **Status:** Target
-- **Goal:** Integrate external coding problem platforms (Codeforces) and practical framework tasks, enforcing dual-gated progression (exam pass **and** problem completion).
+- **Goal:** Integrate external coding problem platforms (Codeforces) and practical framework tasks (automated GitHub tasks), enforcing zero manual gating and dual-gated progression.
 - **Scope:**
-  - `UserExternalAccount` entity & repository: handle, verification challenge, verification status (`Target`).
-  - Codeforces handle verification challenge flow: platform generates a challenge problem; learner submits failing code (compilation error); platform verifies ownership via `user.status` Codeforces API (`Target`).
-  - `ModuleProblem` entity & repository: attaches Codeforces problems or GitHub tasks to modules with order and required flags (`Target`).
-  - `UserProblemCompletion` entity: records verified problem completion and external submission metadata (`Target`).
-  - Problem verification service: queries public Codeforces API with local caching, rate limiting (~1 req / 2s), and debouncing (`Target`).
-  - Practical framework tasks: learner submits a GitHub repository URL for manual or checklist review in the MVP (`Proposed`).
-  - Update Module unlock condition: Module N unlocks **only** when Module N-1 has `PassedExam = true` **and** all required `ModuleProblem` entries are verified (`Target`).
+  - `ProblemKind` enum: `CodeforcesProblem` and `GitHubTask`, implemented behind `IProblemVerifier`.
+  - `UserExternalAccount` entity & repository: stores Codeforces handle and GitHub OAuth numeric ID (`ExternalUserId`).
+  - Codeforces handle verification: server issues 128-bit single-use token; learner pastes into Codeforces profile; platform verifies via public `user.info` API.
+  - Codeforces solve verification: queries public `user.status` for `verdict == "OK"` matching `contestId` and problem `index`. All-time accepted solves count. Enforces 60s per-user debouncing.
+  - Automated GitHub tasks (CodeCrafters-style): official starter template repositories (`Tawjjeh/task-<slug>-template`), GitHub REST API client (`IGitHubClient`), checking repository ownership, template provenance, latest workflow run success, and cryptographic blob/tree SHA matches against `TaskVersion`.
+  - Unified `UserProblemCompletion` entity.
+  - Dual-gated atomic progression: Module unlock check evaluates after BOTH exam submission and problem verification inside one `UnitOfWork` transaction.
 - **Dependencies:** Phase 2.
 - **Exit Criteria:**
-  - Learner links and verifies a Codeforces handle without sharing passwords or private credentials.
-  - Learner solves an assigned Codeforces problem; platform verifies the solve via the public API and marks it completed.
+  - Learner links and verifies Codeforces handle via profile token without sharing credentials.
+  - Learner solves Codeforces problems; platform verifies solves via public API with 60s debouncing and fail-safe 503 error handling.
+  - Learner completes framework task by pushing to GitHub default branch; platform automatically verifies test success and SHA integrity.
   - A learner with a passing exam but incomplete practice problems remains locked out of the next module.
-  - Rate limiting and caching protect against Codeforces API throttling and temporary outages.
+  - Zero human-in-the-loop manual review or checklist gating.
 - **Issue Areas:** `feature:problems` (proposed label), `layer:domain`, `layer:infrastructure`, `layer:application`, `layer:api`.
 
 ---
 
 ## Phase 4: Public Resource Hub
 
-- **Status:** Target (Read-only Hub) / Proposed (Admin & Community Authoring)
-- **Goal:** Provide a public, anonymous, highly curated index of programming resources organized in a 3-click hierarchy (`Language` $\to$ `Framework/Technology` $\to$ `Topic` $\to$ `Resources`).
+- **Status:** Target (Read-only Hub) / Target (Admin Authoring) / Proposed (Community Submissions)
+- **Goal:** Provide a public, anonymous, highly curated index of programming resources organized in a 3-click hierarchy (`Language` $\to$ `Framework/Technology` $\to$ `Topic` $\to$ `Resources`), sharing one unified resource model with Lessons.
 - **Scope:**
   - **Phase 4A (Read-only Public Hub - Target):**
-    - `Technology` hierarchical tree entity (`ParentId`, `Slug`, `Name`, `Description`, `Kind`, `Order`).
+    - `Technology` hierarchical self-referencing tree entity (`ParentId`, `Slug`, `Name`, `Description`, `Kind`, `Order`).
     - `Resource` entity with metadata: `Title`, `Url`, `Citation`, `Kind`, `Language`, `Level`, `IsPaid`, `Status`.
-    - Public read-only endpoints: `GET /api/hub/technologies`, `GET /api/hub/technologies/{slug}`, `GET /api/hub/topics/{id}/resources` with query filtering (`language`, `level`, `isPaid`).
+    - Public read-only endpoints: `GET /api/hub/technologies`, `GET /api/hub/technologies/{slug}`, `GET /api/hub/topics/{id}/resources` with pagination, keyword search, and filters (`language`, `level`, `isPaid`, `kind`).
     - Anonymous access: zero authentication required for reading.
-  - **Phase 4B (Admin Authoring & Moderation - Target):**
+  - **Phase 4B (Admin Authoring & Shared Model Migration - Target):**
     - Admin CRUD endpoints for technologies, topics, and resources.
-    - Status workflow: `PendingApproval`, `Approved`, `Rejected`.
+    - Two-step non-destructive migration: Step 1 adds `Resource` and backfills from existing `LessonResource` rows; Step 2 retires duplicated columns, making `LessonResource` a join entity (`LessonId`, `ResourceId`, `Order`, `Note`).
+    - Scheduled background link checker hosted service: probes resource URLs, tracking failures and marking resources `Broken` after 3 consecutive failures.
   - **Phase 4C (Community Submissions - Proposed):**
-    - Authenticated community submissions with moderation queue and review checklist.
-  - **Unified Model Migration:** Evaluate migration of existing `LessonResource` entity to point to the shared `Resource` catalog (Open Decision #25).
+    - Community submissions running automated safety checks (HTTPS, domain blocklist, reachability probe) before entering an admin approval queue.
 - **Dependencies:** Phase 0 (for 4A read-only). Phase 1 (for 4B/4C authoring). Can proceed in parallel with Phases 1–3.
 - **Exit Criteria:**
-  - Visitors can browse from Language to Topic in $\le$ 3 clicks without logging in.
-  - Resources can be filtered by human language (Arabic, English), level, and cost.
+  - Visitors can browse from Language to Topic in $\le$ 3 clicks and search/filter resources without logging in.
   - Admin can curate and publish resources.
+  - Lesson resources and Hub resources share one underlying `Resource` entity.
+  - Broken links are automatically detected and hidden from public views.
 - **Issue Areas:** `feature:resources` (proposed label), `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`.
 
 ---
 
 ## Phase 5: Capstone Projects
 
-- **Status:** Proposed
-- **Goal:** Provide real-world portfolio capstone projects at the end of Tracks, ensuring learners graduate with job-ready practical experience.
+- **Status:** Target
+- **Goal:** Build a single cumulative portfolio project across the entire Track, split into ordered milestones verified automatically via GitHub tasks.
 - **Scope:**
-  - `Project` entity: title, description, architecture requirements, grading rubric.
-  - `Milestone` entity: ordered milestones defining incremental deliverables.
-  - `ProjectSubmission` entity: learner repository URL, submission notes, review status (`Submitted`, `UnderReview`, `Approved`, `NeedsRevision`).
-  - Settle architectural format: single capstone at track completion vs. cumulative project developed across track modules (Open Decision #27).
-  - Admin/mentor review workflow with evaluation checklist.
+  - `CapstoneProject` entity attached to Track.
+  - `ProjectMilestone` entity: ordered milestones defining incremental deliverables, each referencing an automated `GitHubTask`.
+  - `UserMilestoneProgress` entity: records automated test pass and verified commit SHA.
+  - Automated verification: each milestone is verified by the exact same automated GitHub task verification pipeline (CodeCrafters-style).
+  - Derived Track completion: learner completes Track when all Modules are passed AND all Capstone Milestones are verified.
+  - Zero manual gating: peer or mentor feedback is optional and non-blocking.
 - **Dependencies:** Phase 2, Phase 3.
 - **Exit Criteria:**
-  - Learners reaching the end of a Track can view capstone requirements and submit their GitHub repository.
-  - Mentors/Admins can review submissions, provide feedback, and record approval.
-  - Track completion requires approved capstone project.
+  - Learners can view project milestones in order and submit repository names for automated verification.
+  - Milestone unlock is forward-only, sticky, and 100% automated.
+  - Track completion is derived automatically upon completion of the final milestone.
 - **Issue Areas:** `feature:capstone` (proposed label), `layer:domain`, `layer:application`, `layer:api`.
