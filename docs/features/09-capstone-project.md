@@ -1,20 +1,18 @@
-# Feature Specification: Capstone Projects & Track Completion
+# Feature Specification: Cumulative Capstone Projects & Track Completion
 
-> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation) or **Proposed** (design pending team decision). None are currently Implemented in code.
+> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation in Phase 5). None are currently Implemented in code.
+> Adheres strictly to the **Zero Manual Gating** principle: all milestone progress is verified automatically.
 
 ---
 
 ## 1. Scope & Objective
 
-At the conclusion of a Track, learners transition from guided modular learning to synthesis: building and delivering a substantial software project.
+Rather than building isolated toy exercises, a Track culminates in a **single comprehensive portfolio project built progressively across the entire Track**:
 
-Key objectives:
-- **Real-World Portfolio Piece:** The capstone project requires the learner to architect, implement, test, and document a complete software system demonstrating mastery of the Track's concepts.
-- **Architectural Flexibility (Open Decision #27):** Supports two delivery formats:
-  1. *Terminal Capstone:* A standalone comprehensive project unlocked after all track modules are completed.
-  2. *Cumulative Milestone Project:* A single cohesive system developed incrementally across the Track, where each module completes a discrete milestone.
-- **Submission & Mentorship:** Learners submit a public Git repository URL (e.g., GitHub) accompanied by deployment links and architecture notes.
-- **Review Lifecycle:** In the MVP, submissions undergo review against a structured checklist (`Submitted`, `UnderReview`, `Approved`, `NeedsRevision`) by an Admin or mentor. Automated testing via CI/CD runners is a future enhancement (`Proposed`).
+- **Cumulative Milestones:** The capstone project is partitioned into ordered `ProjectMilestone`s (e.g., Milestone 1: Domain Model, Milestone 2: Persistence & Unit of Work, Milestone 3: Web API & Middlewares, Milestone 4: Docker & CI/CD).
+- **Automated Milestone Verification:** Each milestone references an official `GitHubTask` (detailed in [`10-automated-task-verification.md`](10-automated-task-verification.md)). When a learner completes the requirements of a milestone, tests in their public repository pass and the server verifies completion automatically via the GitHub REST API and SHA integrity checks.
+- **Derived Track Completion:** A Track is marked complete if and only if **all Modules are passed** AND **all capstone Milestones are verified**.
+- **Optional Supplementary Mentorship:** While peer or mentor code reviews may be added as an optional learning enhancement in the future, they **never block** milestone unlocking, track completion, or certificates. Progression is 100% automated.
 
 ---
 
@@ -22,112 +20,68 @@ Key objectives:
 
 ### 2.1 Entity: CapstoneProject (Target)
 
-Represents the capstone project definition attached to a Track.
+Represents the cumulative project definition attached to a Track.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
 | `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
 | `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
-| `TrackId` | `Guid` | No | Required FK to `Track.Id`. Delete behavior: `Restrict`. `UNIQUE(TrackId)` (at most one capstone per track). | Target |
-| `Title` | `string` | No | Required, max length **150**, non-blank. | Target |
-| `Description` | `string` | No | Detailed project requirements, user stories, and architectural expectations. Max length **4000**. | Target |
-| `RubricUrl` | `string?` | Yes | External link to evaluation rubric or checklist. Max length **500**. | Target |
-| `IsCumulative` | `bool` | No | `false` = Terminal project after all modules; `true` = Progressive milestones mapped to modules. Default `false`. | Proposed |
+| `TrackId` | `Guid` | No | Required FK to `Track.Id`. Delete behavior: `Restrict`. `UNIQUE(TrackId)` (exactly one capstone per track). | Target |
+| `Title` | `string` | No | Project title (e.g., "Build an Enterprise E-Commerce Engine"). Max length **150**. | Target |
+| `Description` | `string` | No | Architectural overview, technology stack, and high-level requirements. Max length **4000**. | Target |
+| `StarterTemplateRepo` | `string` | No | GitHub repository template under `Tawjjeh/`. Max length **150**. | Target |
 
 ### 2.2 Entity: ProjectMilestone (Target)
 
-Defines an ordered checkpoint or milestone within the capstone project.
+Defines an ordered deliverable checkpoint within the cumulative project.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
 | `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
 | `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
 | `ProjectId` | `Guid` | No | Required FK to `CapstoneProject.Id`. Delete behavior: `Restrict`. | Target |
-| `ModuleId` | `Guid?` | Yes | Optional link to a specific `Module.Id` if the milestone corresponds to that module's completion. | Proposed |
-| `Title` | `string` | No | Required, max length **150**. | Target |
-| `Instructions` | `string` | No | Deliverable requirements for this milestone. Max length **2000**. | Target |
-| `Order` | `int` | No | Display sequence (1, 2, 3...). `UNIQUE(ProjectId, Order)`. | Target |
+| `TaskId` | `Guid` | No | Required FK to `GitHubTask.Id`. Delete behavior: `Restrict`. Links to the automated verifier. | Target |
+| `ModuleId` | `Guid?` | Yes | Optional link to the corresponding Track `Module.Id` if the milestone is tackled alongside that module. | Target |
+| `Title` | `string` | No | Milestone title (e.g., "Milestone 2: Relational Persistence"). Max length **150**. | Target |
+| `Instructions` | `string` | No | Specific milestone requirements and test suite guide. Max length **2000**. | Target |
+| `Order` | `int` | No | Sequence number (1, 2, 3...). `UNIQUE(ProjectId, Order)`. | Target |
 
-### 2.3 Entity: ProjectSubmission (Target)
+### 2.3 Milestone Progress: UserMilestoneProgress (Target)
 
-Stores a learner's project submission and tracks its review lifecycle.
+Tracks the learner's completion of capstone milestones.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
 | `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
 | `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Target |
-| `ProjectId` | `Guid` | No | Required FK to `CapstoneProject.Id`. Delete behavior: `Restrict`. | Target |
-| `MilestoneId` | `Guid?` | Yes | Optional FK to specific `ProjectMilestone.Id` if submitted per milestone. | Target |
-| `RepositoryUrl` | `string` | No | Public Git repository URL (e.g., `https://github.com/user/repo`). Max length **500**. | Target |
-| `DemoUrl` | `string?` | Yes | Optional live deployment URL. Max length **500**. | Target |
-| `Notes` | `string?` | Yes | Learner submission notes or architectural highlights. Max length **1000**. | Target |
-| `Status` | `SubmissionStatus` | No | Enum: `Submitted = 1`, `UnderReview = 2`, `Approved = 3`, `NeedsRevision = 4`. | Target |
-| `ReviewNotes` | `string?` | Yes | Feedback from the reviewer. Max length **2000**. | Target |
-| `ReviewedAt` | `DateTimeOffset?` | Yes | Timestamp of review completion. | Target |
-| `ReviewedByUserId` | `Guid?` | Yes | Admin/Mentor reviewer FK to `User.Id`. Delete behavior: `SetNull`. | Target |
+| `MilestoneId` | `Guid` | No | Required FK to `ProjectMilestone.Id`. Delete behavior: `Restrict`. `UNIQUE(UserId, MilestoneId)`. | Target |
+| `IsCompleted` | `bool` | No | Marked `true` automatically once the linked `GitHubTask` passes verification. Sticky once `true`. | Target |
+| `CompletedAt` | `DateTimeOffset?` | Yes | Timestamp of verified automated test pass. | Target |
+| `RepositoryUrl` | `string?` | Yes | Learner's public GitHub repository URL. Max length **500**. | Target |
+| `HeadCommitSha` | `string?` | Yes | Verified Git commit hash. | Target |
 
 ---
 
-## 3. Application Contracts
+## 3. Automated Milestone Workflow
 
-### 3.1 DTOs (Target)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Learner
+    participant Platform as TalebElm Platform
+    participant GH as GitHub REST API
 
-```csharp
-public record CapstoneProjectResponse(
-    Guid Id,
-    Guid TrackId,
-    string Title,
-    string Description,
-    string? RubricUrl,
-    bool IsCumulative,
-    IReadOnlyList<ProjectMilestoneResponse> Milestones);
-
-public record ProjectMilestoneResponse(
-    Guid Id,
-    Guid ProjectId,
-    Guid? ModuleId,
-    string Title,
-    string Instructions,
-    int Order);
-
-public record SubmitProjectRequest(
-    Guid ProjectId,
-    Guid? MilestoneId,
-    string RepositoryUrl,
-    string? DemoUrl,
-    string? Notes);
-
-public record ProjectSubmissionResponse(
-    Guid Id,
-    Guid ProjectId,
-    Guid? MilestoneId,
-    string RepositoryUrl,
-    string? DemoUrl,
-    string? Notes,
-    int Status,
-    string? ReviewNotes,
-    DateTimeOffset SubmittedAt,
-    DateTimeOffset? ReviewedAt);
-
-public record ReviewSubmissionRequest(
-    int Status, // Approved or NeedsRevision
-    string? ReviewNotes);
-```
-
-### 3.2 Service Interface (Target)
-
-```csharp
-public interface ICapstoneProjectService
-{
-    Task<CapstoneProjectResponse> GetProjectByTrackIdAsync(Guid trackId, Guid userId);
-    Task<ProjectSubmissionResponse> SubmitProjectAsync(Guid userId, SubmitProjectRequest request);
-    Task<IReadOnlyList<ProjectSubmissionResponse>> GetMySubmissionsAsync(Guid trackId, Guid userId);
-
-    // Admin / Mentor review
-    Task<IReadOnlyList<ProjectSubmissionResponse>> GetPendingReviewsAsync(Guid adminUserId);
-    Task<ProjectSubmissionResponse> ReviewSubmissionAsync(Guid submissionId, ReviewSubmissionRequest request, Guid adminUserId);
-}
+    Learner->>Platform: GET /api/tracks/{trackId}/project/milestones
+    Platform-->>Learner: List of ordered milestones & current completion state
+    Note over Learner: Learner implements milestone requirements and pushes to GitHub default branch
+    Learner->>Platform: POST /api/tracks/{trackId}/project/milestones/{id}/verify (RepoName)
+    Platform->>GH: Execute Automated GitHub Task Verification (D-D algorithm)
+    GH-->>Platform: Workflow Success & SHA Integrity Verified
+    Platform->>Platform: Set UserMilestoneProgress.IsCompleted = true
+    Platform->>Platform: If next milestone exists, unlock it
+    Platform->>Platform: Check if all modules & milestones complete -> Mark Track Completed
+    Platform-->>Learner: 200 OK (Milestone Verified! Next milestone unlocked)
 ```
 
 ---
@@ -136,29 +90,17 @@ public interface ICapstoneProjectService
 
 | HTTP Method | Route | Access | Request | Response | Status Codes |
 |---|---|---|---|---|---|
-| `GET` | `/api/tracks/{trackId}/project` | **Student** | None | `CapstoneProjectResponse` | `200 OK`, `401 Unauthorized`, `403 Forbidden` (if track modules incomplete), `404 Not Found` |
-| `POST` | `/api/tracks/{trackId}/project/submissions` | **Student** | `SubmitProjectRequest` | `ProjectSubmissionResponse` | `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden` |
-| `GET` | `/api/tracks/{trackId}/project/submissions/me` | **Student** | None | `ProjectSubmissionResponse[]` | `200 OK`, `401 Unauthorized` |
-| `GET` | `/api/admin/projects/submissions/pending` | **AdminOnly** | None | `ProjectSubmissionResponse[]` | `200 OK`, `401 Unauthorized`, `403 Forbidden` |
-| `PUT` | `/api/admin/projects/submissions/{id}/review` | **AdminOnly** | `ReviewSubmissionRequest` | `ProjectSubmissionResponse` | `200 OK`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found` |
+| `GET` | `/api/tracks/{trackId}/project` | **Student** | None | `CapstoneProjectResponse` | `200 OK`, `401 Unauthorized`, `404 Not Found` |
+| `GET` | `/api/tracks/{trackId}/project/milestones` | **Student** | None | `ProjectMilestoneResponse[]` | `200 OK`, `401 Unauthorized`, `404 Not Found` |
+| `POST` | `/api/tracks/{trackId}/project/milestones/{id}/verify` | **Student** | `VerifyMilestoneRequest` | `MilestoneVerificationResponse` | `200 OK`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `429 Too Many Requests`, `503 Service Unavailable` |
+| `POST` | `/api/admin/tracks/{trackId}/project` | **AdminOnly** | `CreateCapstoneProjectRequest` | `CapstoneProjectResponse` | `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden` |
+| `POST` | `/api/admin/projects/{id}/milestones` | **AdminOnly** | `CreateProjectMilestoneRequest` | `ProjectMilestoneResponse` | `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden` |
 
 ---
 
-## 5. Domain Exceptions
+## 5. Acceptance Criteria
 
-| Exception | Scenario | HTTP Status |
-|---|---|---|
-| `ValidationException` | Invalid Git repository URL scheme, missing required submission fields. | `400 Bad Request` |
-| `DomainException` | Attempting to access or submit a capstone before completing prerequisite track modules (`403 Forbidden`). | `403 Forbidden` |
-| `ConflictException` | A submission is already currently `UnderReview` for this milestone. | `409 Conflict` |
-| `NotFoundException` | Track, project, milestone, or submission not found. | `404 Not Found` |
-
----
-
-## 6. Acceptance Criteria
-
-- [ ] A learner cannot access or submit a terminal capstone project until all Track modules are marked both passed and completed (`403 Forbidden`).
-- [ ] Submitting a project requires a valid absolute HTTP/HTTPS URL pointing to a Git repository.
-- [ ] Once submitted, the submission state moves to `Submitted`.
-- [ ] An admin/mentor can approve or request revisions with notes; learner sees updated status.
-- [ ] Track completion requires an approved capstone project submission (`Target`).
+- [ ] Capstone is structured as ordered milestones building a single cumulative project.
+- [ ] Milestone completion is 100% automated via the linked `GitHubTask` verification pipeline (CodeCrafters-style).
+- [ ] No manual review or approval from an admin or mentor is required to unlock subsequent milestones or complete the track.
+- [ ] Track completion is derived automatically when all Track Modules are passed and all Capstone Milestones are verified.
