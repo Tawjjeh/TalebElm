@@ -15,9 +15,14 @@
 | Module | `Module` | One ordered section of a Track. Position is `Order` (≥ 1). |
 | Lesson | `Lesson` | One ordered study unit inside a Module. Position is `Order` (≥ 1). |
 | Exam | `Exam` | The assessment of a Module. At most one per Module; a Module may have none. |
-| Progress | `UserProgress` | One learner's state for one Module. Exactly one row per (`UserId`, `ModuleId`). |
+| Progress | `UserProgress` | One learner's state for one Module. Exactly one row per (`UserId`, `ModuleId`). Tracks both exam pass and problem completion flags. |
 | Enrollment | `TrackEnrollment` | A learner's explicit choice of a Track. Persisted separately from per-Module progress; the workflow is target behavior. |
-| Resource | `LessonResource` | A cited source for a Lesson (book, documentation, video, article, repository, or other). Persisted separately from lesson text. |
+| Resource | `LessonResource` / `Resource` | A cited source for a Lesson or a public Resource Hub topic. Persisted separately from lesson text; unifying under shared `Resource` is Proposed (#25). |
+| Technology | `Technology` | Hierarchical node in the public Resource Hub tree (Language, Framework, Topic, Tool). Target behavior. |
+| External Account | `UserExternalAccount` | Learner profile on an external problem platform (Codeforces, GitHub) with verification challenge state. Target behavior. |
+| Module Problem | `ModuleProblem` | An assigned practice problem (Codeforces) or practical task (GitHub) attached to a Module. Target behavior. |
+| Problem Completion | `UserProblemCompletion` | Record of verified solve on an external platform or reviewed framework task. Target behavior. |
+| Capstone Project | `CapstoneProject` | Comprehensive portfolio project or progressive track milestone deliverables. Target/Proposed behavior. |
 
 All entities inherit `BaseEntity`: `Id` (auto-generated `Guid`, never reused, never reassigned) and `CreatedAt` (server UTC at insert, immutable afterwards).
 
@@ -83,16 +88,45 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | ID | Rule | Status |
 |---|---|---|
 | P-1 | Exactly one `UserProgress` row per (`UserId`, `ModuleId`), enforced by unique index. | Implemented |
-| P-2 | Unlock is forward-only and sticky: a pass unlocks **only** the next Module in the same Track; a fail unlocks nothing; an unlocked Module is never auto re-locked; the final Module unlocks nothing. | Target (submit behavior) |
-| P-3 | An `Admin` may manually unlock any Module for a learner (row created if missing, `Score`/`PassedExam` untouched) as an auditable support action. | Target |
+| P-2 | Unlock is forward-only, sticky, and **dual-gated**: unlocking the next Module in a Track requires **both** `PassedExam = true` (score $\ge$ PassThreshold) **and** `CompletedRequiredProblems = true` (all required module problems verified). Both flags are sticky and cannot be cleared by later retakes. A failure in either gate unlocks nothing. | Target (progression behavior) |
+| P-3 | An `Admin` may manually unlock any Module for a learner (row created if missing, `Score`/`PassedExam`/`CompletedRequiredProblems` untouched) as an auditable support action. | Target |
 | P-4 | Locked content returns `403 Forbidden` (exists but not allowed), never `404`. One learner never sees or changes another's progress (`403` on cross-access). | Target (API) |
-| P-5 | Track completion is derived, not stored: all Modules `PassedExam = true` (exam-less Modules via explicit unlock). No completion record exists in the MVP. | Target |
+| P-5 | Track completion is derived, not stored: all Modules in the Track have `PassedExam = true` and `CompletedRequiredProblems = true`, plus approval of any required Track Capstone project. No completion record exists in the MVP. | Target |
 
-## 7. Invariants enforcement map
+## 7. Public Resource Hub
+
+| ID | Rule | Status |
+|---|---|---|
+| R-1 | Read access to the Resource Hub is 100% public and anonymous; no authentication or bearer token is accepted or required for browsing and search. | Target |
+| R-2 | The taxonomy follows a strict 3-click maximum hierarchy: Language $\to$ Framework/Technology $\to$ Topic $\to$ Resources. Nodes are modeled as self-referencing `Technology` trees. | Target |
+| R-3 | Resources must have a non-blank `Title` (max 200), ISO language code, difficulty `Level`, `Kind`, and cost flag (`IsPaid`). At least one of `Url` (absolute `http`/`https`) or `Citation` (max 500) must be present. | Target |
+| R-4 | Public anonymous queries only return resources with `Status = Approved`. Resources created by admin default to `Approved`; future community submissions start `PendingApproval`. | Target |
+| R-5 | Lesson resources and Hub resources share one underlying `Resource` concept, unified via a link table (`LessonResourceLink`) so external citations are not duplicated across the platform. | Proposed (Decision #25) |
+
+## 8. External practice problems & verification
+
+| ID | Rule | Status |
+|---|---|---|
+| X-1 | Fundamentals Modules must provide at least 3 practice problems. Algorithmic problems are sourced from Codeforces; framework modules provide practical GitHub tasks. | Target |
+| X-2 | Handle ownership is cryptographically verified via a time-boxed challenge (submitting code with a deliberate `COMPILATION_ERROR` containing a platform token to a designated problem). Verified via Codeforces `user.status` API. Never store or ask for third-party passwords. | Target |
+| X-3 | Problem solve verification queries the public Codeforces API directly (`user.status` with `verdict == "OK"`). Solves are never self-reported by learners. | Target |
+| X-4 | Practical framework tasks require a public GitHub repository URL. In the MVP, review is conducted manually or by checklist; automated CI testing is reserved for a future phase. | Target (manual) / Proposed (CI) |
+| X-5 | External API calls must enforce rate limits (minimum 2s interval for Codeforces), aggressive in-memory caching, and user-facing debouncing (max 1 verify request per 30s per module). | Target |
+
+## 9. Capstone projects
+
+| ID | Rule | Status |
+|---|---|---|
+| J-1 | A Track concludes with a Capstone Project (or builds one cumulative project across milestones), demonstrating synthesis of the Track's concepts in a production-grade portfolio repository. | Target / Proposed (Decision #27) |
+| J-2 | Terminal Capstone project is locked (`403 Forbidden`) until all Track modules satisfy both `PassedExam = true` and `CompletedRequiredProblems = true`. | Target |
+| J-3 | Submissions require a public Git repository URL; review is performed by an Admin or mentor against a structured rubric (`Submitted`, `UnderReview`, `Approved`, `NeedsRevision`). | Target |
+
+## 10. Invariants enforcement map
 
 | Invariant | Database | Application |
 |---|---|---|
 | One progress row per learner+Module | `UNIQUE(UserId, ModuleId)` ✅ | Upsert, never duplicate-insert |
+| Dual-gated module unlock | — | Next module unlocked only if exam passed AND required problems completed |
 | One exam per Module | `UNIQUE(ModuleId)` ✅ | Duplicate create → `409` (target) |
 | Case-insensitive unique email | `UNIQUE(Email)` + `NOCASE` ✅ | Identical normalization in register/login (target) |
 | Non-blank identity fields | `CK_Users_*_NotEmpty` ✅ | Register validator → `400` (target) |
@@ -100,5 +134,7 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | Contiguous sibling order | Unique `(parent, Order)` ✅ | Shift/re-sequence in one transaction (target) |
 | Length bounds | `HasMaxLength` ✅ | Module/Lesson validators; Track validator gaps → `400` (partial) |
 | Server-side grading | — | Submit path ignores client score |
+| Verified handle challenge | — | Compilation error submission verified via Codeforces API |
+| Anonymous Hub access | — | Public read endpoints bypass authorization filter |
 
 ✅ Implemented · ⏳ Target (decided, scheduled)

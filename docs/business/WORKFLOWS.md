@@ -54,50 +54,121 @@ flowchart TD
 
 Rules E-1…E-4. Identity comes from auth, never from the request body.
 
-## 4. Study → exam → unlock loop
+## 4. Study → exam + problems → unlock loop (Dual-Gated)
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Locked
-    Locked --> Unlocked: enroll (first) / pass previous / admin unlock
-    Unlocked --> Studied: read ordered Lessons + resources
-    Studied --> Submitted: submit answers — server grades
-    Submitted --> Passed: score ≥ threshold — record Score, PassedExam=true, unlock ONLY next Module
-    Submitted --> Failed: record Score, PassedExam=false — nothing unlocked, retry allowed
-    Passed --> Passed: later failed retake updates Score only
+flowchart TD
+    Locked[Module Locked] -->|Enrollment / Previous Module Completed| Unlocked[Module Unlocked]
+    Unlocked --> Study[Study Ordered Lessons & Resources]
+    Study --> G1{Take Module Exam}
+    Study --> G2{Solve Practice Problems}
+    
+    G1 -- Submit Answers --> Grade[Server Grades Exam]
+    Grade -- Score < PassThreshold --> ExamFailed[Exam Failed — Retry Allowed]
+    Grade -- Score >= PassThreshold --> ExamPassed[PassedExam = true (Sticky)]
+    
+    G2 -- Submit Codeforces / GitHub --> Verify[Platform Verifies Solves via API]
+    Verify -- Missing Required Solves --> ProblemsIncomplete[Problems Incomplete — Continue Solving]
+    Verify -- All Required Solves Verified --> ProblemsPassed[CompletedRequiredProblems = true (Sticky)]
+    
+    ExamPassed --> CheckBoth{PassedExam AND CompletedRequiredProblems?}
+    ProblemsPassed --> CheckBoth
+    
+    CheckBoth -- Yes --> UnlockNext[Unlock ONLY Next Module in Track]
+    CheckBoth -- No --> WaitOther[Wait for Remaining Requirement]
 ```
 
-| Event | Effect |
-|---|---|
-| Submit | Server computes `Score`; overwrites row `Score`; sets `PassedExam` only upward. |
-| Pass | Unlock next Module in same Track (create its row if missing). Final Module: terminal. |
-| Fail | State change limited to the current row. Immediate retry permitted. |
-| Locked read/submit/view | `403`, not `404`. Cross-learner access `403`. |
+| Event | Effect | Rules |
+|---|---|---|
+| Submit Exam | Server computes `Score`; overwrites row `Score`; sets `PassedExam = true` if $\ge$ threshold. Failed retake never resets `PassedExam`. | A-1, A-4 |
+| Verify Problems | Platform verifies external solves via API; sets `CompletedRequiredProblems = true` once all required problems pass. Never resets once `true`. | X-1, X-3 |
+| Dual-Gate Pass | When **both** `PassedExam` and `CompletedRequiredProblems` are `true`, unlock the next Module in the same Track in the same `UnitOfWork` transaction. | P-2 |
+| Locked content read/submit | `403 Forbidden`, not `404`. Cross-learner access `403`. | P-4 |
 
-## 5. Learner journey end to end
+---
+
+## 5. External Account Verification & Problem Solve Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Learner
+    participant Platform as TalebElm Platform
+    participant CF as Codeforces Public API
+
+    Note over Learner,Platform: Step 1: Handle Ownership Challenge
+    Learner->>Platform: POST /api/users/me/external-accounts (Platform=Codeforces, Handle)
+    Platform->>Platform: Generate Challenge Token (30m expiry) + Challenge Problem
+    Platform-->>Learner: Challenge Instructions (submit code with compilation error)
+    Learner->>CF: Submit code to designated problem triggering COMPILATION_ERROR
+    Learner->>Platform: POST /api/users/me/external-accounts/{id}/verify
+    Platform->>CF: GET user.status?handle={handle}&from=1&count=10
+    CF-->>Platform: Submissions JSON
+    Platform->>Platform: Confirm COMPILATION_ERROR submission inside time window
+    Platform-->>Learner: Account Verified (VerificationStatus = Verified)
+
+    Note over Learner,Platform: Step 2: Problem Solve Verification
+    Learner->>CF: Submit solution to assigned ModuleProblem
+    CF-->>Learner: Verdict = OK (Accepted)
+    Learner->>Platform: POST /api/modules/{moduleId}/problems/verify
+    Platform->>CF: GET user.status?handle={handle}&from=1&count=20
+    CF-->>Platform: Submissions JSON
+    Platform->>Platform: Match problem ID & verdict == "OK"
+    Platform->>Platform: Insert UserProblemCompletion records
+    Platform-->>Learner: Return updated solve status (AllRequiredCompleted: true/false)
+```
+
+---
+
+## 6. Resource Hub 3-Click Discovery & Curation Flow
+
+```mermaid
+flowchart TD
+    subgraph Public Anonymous Visitor (<= 3 Clicks)
+        V1[Visit Resource Hub: GET /api/hub/technologies] -->|Click 1: Choose Language| V2[Select Language e.g. C#]
+        V2 -->|Click 2: Choose Framework| V3[Select Framework e.g. ASP.NET Core]
+        V3 -->|Click 3: Choose Topic| V4[Select Topic e.g. Dependency Injection]
+        V4 --> V5[View Curated Resources with Filters: Language, Level, Cost]
+    end
+
+    subgraph Admin Curation & Moderation
+        A1[Admin Authenticates] --> A2[Create/Update Technology Node]
+        A2 --> A3[Create Resource with Status = Approved]
+        A4[Future: Community Submits Resource] --> A5[Status: PendingApproval]
+        A5 --> A6{Admin Review}
+        A6 -- Approve --> A7[Status: Approved — Visible Publicly]
+        A6 -- Reject --> A8[Status: Rejected with Feedback]
+    end
+```
+
+---
+
+## 7. Learner Journey End-to-End
 
 ```mermaid
 flowchart LR
     R[Register/Login] --> B[Browse Published Tracks]
-    B --> E[Enroll — first Module unlocks]
-    E --> S[Study ordered Lessons]
-    S --> X[Submit exam — server grades]
-    X -- pass --> N[Next Module unlocks]
-    X -- fail --> S
-    N --> V[Review progress]
-    V --> DONE[All Modules passed — Track complete]
+    B --> E[Enroll — Module 1 Unlocks]
+    E --> S[Study Ordered Lessons & Sources]
+    S --> X[Pass Module Exam]
+    S --> P[Complete Required Practice Problems]
+    X & P --> N[Next Module Unlocks]
+    N --> V[Repeat for All Modules]
+    V --> CAP[Submit Capstone Project]
+    CAP -- Approved --> DONE[Track Complete & Job Ready]
 ```
 
-Completion is derived from progress rows (P-5). Scheduling, payments, certificates, and attempt history are out of the MVP scope.
+---
 
-## 6. Failure → status map
+## 8. Failure → Status Map
 
 | Situation | Status | Rule |
 |---|---|---|
-| Duplicate email / enrollment / exam-per-Module | `409`, nothing created | U-2, E-2, A-3 |
-| Blank / oversize / bad URL / bad `Order` | `400` field-keyed errors | U-1, C-3 |
-| Unknown id | `404` | — |
-| Locked content, cross-learner access, self-unlock | `403` | P-3, P-4 |
-| Missing / invalid token | `401` | U-6 |
-| Delete with dependents | `409`, nothing deleted; archive instead | C-6 |
-| Unimplemented placeholder | `501` | Technical, not a business state |
+| Duplicate email / enrollment / exam-per-Module | `409 Conflict`, nothing created | U-2, E-2, A-3 |
+| Blank / oversize / bad URL / bad `Order` | `400 Bad Request` field-keyed errors | U-1, C-3, R-3 |
+| Unknown id | `404 Not Found` | — |
+| Locked content, incomplete prerequisites, cross-learner access | `403 Forbidden` | P-2, P-4, J-2 |
+| Missing / invalid / expired token | `401 Unauthorized` | U-6 |
+| Delete with dependents | `409 Conflict`, nothing deleted; archive instead | C-6 |
+| Codeforces API down / rate limit exceeded | `429 Too Many Requests` (user throttle) / `503 Service Unavailable` | X-5 |
+| Unimplemented placeholder | `501 Not Implemented` | Technical, not a business state |
