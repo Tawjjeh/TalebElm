@@ -51,9 +51,9 @@ HTTP request
 2. `ExamService` loads the Exam and its questions through repository contracts.
 3. The learner submits selected option IDs. The server compares them with the stored answer key; it does not trust a client-provided score.
 4. The service uses `Exam.HasPassed(score)` and updates `UserProgress.Score` and `PassedExam = true`.
-5. `ModuleProblemService` verifies external problem solves via Codeforces public API or marks reviewed GitHub tasks, setting `UserProgress.CompletedRequiredProblems = true`.
-6. When **both** `PassedExam` and `CompletedRequiredProblems` are satisfied, the service finds the next Module in the same Track by Order and unlocks that Module for this learner only.
-7. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together.
+5. `ModuleProblemService` verifies external problem solves via Codeforces public API (`user.status`) or `TaskVerificationService` verifies GitHub tasks via GitHub REST API (workflow run success and test/workflow SHA integrity check), setting `UserProgress.CompletedRequiredProblems = true`.
+6. Progression check runs inside the same `UnitOfWork` transaction after **either** event (exam submit or problem completion): when **both** `PassedExam` and `CompletedRequiredProblems` are satisfied, the service finds the next Module in the same Track by Order and unlocks that Module for this learner only.
+7. `UnitOfWork.SaveChangesAsync()` commits the result and progress changes together atomically.
 8. The service returns results; the controller maps domain errors to HTTP responses through the registered middleware. Unique and foreign-key violations are translated into `ConflictException` (409) by `UnitOfWork.SaveChangesAsync`. Field-keyed validation responses are still target work (#321).
 
 Question storage, answer submission, problem verification, enrollment initialization, and unlock behavior are still target design; they must not be described as existing functionality until implemented and tested.

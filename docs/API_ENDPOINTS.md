@@ -61,11 +61,14 @@ The current `SubmitExamRequest` accepts a client-supplied score. Do not use that
 | HTTP | Route | Request | Response | Target status |
 |---|---|---|---|---|
 | GET | `/api/modules/{moduleId}/problems` | None | Ordered module problems list | 200, 401, 403, 404 |
-| POST | `/api/users/me/external-accounts` | Link request (platform, handle) | Account details with challenge instructions | 201, 400, 401, 409 |
-| POST | `/api/users/me/external-accounts/{id}/verify` | None | Account details with verification status | 200, 400, 401, 404 |
-| POST | `/api/modules/{moduleId}/problems/verify` | None | Solves summary & module completion state | 200, 400, 401, 403, 429 |
-| POST | `/api/modules/{moduleId}/tasks/submit` | Task submission (repo URL) | Task submission confirmation | 201, 400, 401, 403 |
+| POST | `/api/users/me/external-accounts/codeforces` | Link request (handle) | Account details with challenge instructions | 201, 400, 401, 409 |
+| POST | `/api/users/me/external-accounts/codeforces/verify` | None | Verified account details | 200, 400, 401, 404, 503 |
+| GET | `/api/auth/github` | None | Redirect to GitHub OAuth authorize URL | 302 |
+| GET | `/api/auth/github/callback` | OAuth code & state | Identity linked confirmation | 200, 400, 401, 503 |
+| POST | `/api/modules/{moduleId}/problems/verify` | None | Solves summary & module completion state | 200, 400, 401, 403, 429, 503 |
+| POST | `/api/tasks/{taskId}/verify` | Verify task request (repoName) | Task completion response & unlock state | 200, 400, 401, 403, 429, 503 |
 | POST | `/api/admin/modules/{moduleId}/problems` | Problem creation DTO | Created problem DTO | 201, 400, 401, 403 |
+| POST | `/api/admin/tasks` | Task creation DTO | Created task DTO | 201, 400, 401, 403 |
 
 ### Public Resource Hub
 
@@ -73,20 +76,20 @@ The current `SubmitExamRequest` accepts a client-supplied score. Do not use that
 |---|---|---|---|---|
 | GET | `/api/hub/technologies` | None | Top-level languages & categories | 200 |
 | GET | `/api/hub/technologies/{slug}` | Query filters (language, level, cost) | Technology detail with children & resources | 200, 404 |
-| GET | `/api/hub/topics/{id}/resources` | Query filters (language, level, cost) | Filtered curated resources | 200, 404 |
-| POST | `/api/hub/resources` | Resource creation DTO | Created resource DTO | 201, 400, 401, 403 |
-| PUT | `/api/hub/resources/{id}/status` | Status update DTO | Updated resource DTO | 200, 400, 401, 403, 404 |
-| DELETE | `/api/hub/resources/{id}` | None | None | 204, 401, 403, 404, 409 |
+| GET | `/api/hub/resources` | Query filters (search, language, level, cost, kind, page, size) | Paginated curated resources | 200 |
+| POST | `/api/admin/hub/resources` | Resource creation DTO | Created resource DTO | 201, 400, 401, 403 |
+| PUT | `/api/admin/hub/resources/{id}` | Resource update DTO | Updated resource DTO | 200, 400, 401, 403, 404 |
+| DELETE | `/api/admin/hub/resources/{id}` | None | None | 204, 401, 403, 404, 409 |
 
 ### Capstone projects
 
 | HTTP | Route | Request | Response | Target status |
 |---|---|---|---|---|
 | GET | `/api/tracks/{trackId}/project` | None | Capstone project & milestones | 200, 401, 403, 404 |
-| POST | `/api/tracks/{trackId}/project/submissions` | Submission request (repo URL, notes) | Project submission confirmation | 201, 400, 401, 403 |
-| GET | `/api/tracks/{trackId}/project/submissions/me` | None | User's submissions & review status | 200, 401 |
-| GET | `/api/admin/projects/submissions/pending` | None | Pending submissions list | 200, 401, 403 |
-| PUT | `/api/admin/projects/submissions/{id}/review` | Review decision (status, notes) | Updated submission DTO | 200, 400, 401, 403, 404 |
+| GET | `/api/tracks/{trackId}/project/milestones` | None | Ordered milestones with completion status | 200, 401, 403, 404 |
+| POST | `/api/tracks/{trackId}/project/milestones/{id}/verify` | Verify milestone request (repoName) | Milestone completion & track unlock state | 200, 400, 401, 403, 429, 503 |
+| POST | `/api/admin/tracks/{trackId}/project` | Project creation DTO | Created capstone project DTO | 201, 400, 401, 403 |
+| POST | `/api/admin/projects/{id}/milestones` | Milestone creation DTO | Created milestone DTO | 201, 400, 401, 403 |
 
 ### Who may call (proposed)
 
@@ -94,9 +97,9 @@ The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `
 
 | Access | Routes |
 |---|---|
-| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/topics/{id}/resources` |
-| Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/modules/{moduleId}/tasks/submit`, `/api/tracks/{trackId}/project*` |
-| Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, and `GET /api/users`, `PUT /api/admin/projects/submissions/{id}/review` |
+| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/resources` |
+| Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/tasks/{taskId}/verify`, `/api/tracks/{trackId}/project*` |
+| Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, and `GET /api/users` |
 
 Student-facing reads should also return a Track's Modules and Lessons only to an enrolled Student once the unlock rule is implemented: a locked Module's Lessons, Exam, and Problems must not be served. When an authenticated Student requests a Lesson, Exam, or Problem set that belongs to a Module the Student has not unlocked, the API must return `403 Forbidden` — not `404` — because the resource exists but the Student is not allowed to access it yet.
 

@@ -51,9 +51,10 @@ TalebElm/
 - `ExamQuestion` and `ExamOption`: store questions and server-side answer keys; correct answers must not be returned to learners (issue #246).
 - Authentication and authorization workflows: registration, login, JWT issuance, and the `StudentOnly`/`AdminOnly` policies (issues #248 and #278).
 - Enrollment, exam submission, progression, and the HTTP surface for content reads/writes (issues #244, #250, #254, #255, #256).
-- `UserExternalAccount`, `ModuleProblem`, `UserProblemCompletion`: Codeforces handle verification challenge, solve checking via public API, framework GitHub tasks, and dual-gated progression (Feature 07).
-- `Technology`, `Resource`: 3-click anonymous public Resource Hub taxonomy and shared resource citations (Feature 06).
-- `CapstoneProject`, `ProjectMilestone`, `ProjectSubmission`: portfolio capstone projects and mentor review lifecycle (Feature 09).
+- `UserExternalAccount`, `ModuleProblem`, `UserProblemCompletion`: Codeforces handle token verification, solve checking via public API (`user.status`), and dual-gated progression (Feature 07).
+- `GitHubTask`, `TaskVersion`: CodeCrafters-style practical tasks with automated workflow and test SHA verification (Feature 10).
+- `Technology`, `Resource`: 3-click anonymous public Resource Hub taxonomy, shared resource citations, and scheduled link checker (Feature 06).
+- `CapstoneProject`, `ProjectMilestone`, `UserMilestoneProgress`: cumulative track-level projects with automated milestone verification via GitHub tasks (Feature 09).
 
 ## Architecture Boundaries
 

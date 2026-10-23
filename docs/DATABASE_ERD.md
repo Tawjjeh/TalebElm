@@ -119,7 +119,7 @@ erDiagram
     USER ||--o{ USER_PROGRESS : "has progress"
     USER ||--o{ USER_EXTERNAL_ACCOUNT : "links"
     USER ||--o{ USER_PROBLEM_COMPLETION : "completes"
-    USER ||--o{ PROJECT_SUBMISSION : "submits"
+    USER ||--o{ USER_MILESTONE_PROGRESS : "tracks milestone"
 
     TRACK ||--o{ MODULE : "contains"
     TRACK ||--o{ TRACK_ENROLLMENT : "enrolled by"
@@ -130,21 +130,23 @@ erDiagram
     MODULE ||--o{ MODULE_PROBLEM : "assigns"
     MODULE ||--o{ USER_PROGRESS : "tracked in"
 
-    LESSON ||--o{ LESSON_RESOURCE : "cites (current)"
-    LESSON ||--o{ LESSON_RESOURCE_LINK : "links to (proposed)"
+    LESSON ||--o{ LESSON_RESOURCE : "cites via (join entity)"
+    RESOURCE ||--o{ LESSON_RESOURCE : "referenced in"
 
     EXAM ||--o{ EXAM_QUESTION : "contains"
     EXAM_QUESTION ||--o{ EXAM_OPTION : "offers"
 
     TECHNOLOGY ||--o{ TECHNOLOGY : "parent of (tree)"
     TECHNOLOGY ||--o{ RESOURCE : "indexes"
-    RESOURCE ||--o{ LESSON_RESOURCE_LINK : "referenced by"
 
     MODULE_PROBLEM ||--o{ USER_PROBLEM_COMPLETION : "verified in"
+    MODULE_PROBLEM }o--o| GITHUB_TASK : "links to (if GitHubTask)"
+
+    GITHUB_TASK ||--o{ TASK_VERSION : "versioned by"
+    GITHUB_TASK ||--o{ PROJECT_MILESTONE : "verifies"
 
     CAPSTONE_PROJECT ||--o{ PROJECT_MILESTONE : "defines"
-    CAPSTONE_PROJECT ||--o{ PROJECT_SUBMISSION : "receives"
-    PROJECT_MILESTONE ||--o{ PROJECT_SUBMISSION : "scopes"
+    PROJECT_MILESTONE ||--o{ USER_MILESTONE_PROGRESS : "tracks"
 
     USER {
         Guid Id PK
@@ -215,21 +217,42 @@ erDiagram
         Guid UserId FK
         int Platform
         string Handle
+        long ExternalUserId "nullable, numeric GitHub ID"
         int VerificationStatus
-        string VerificationChallengeToken
-        DateTimeOffset ChallengeExpiresAt
-        DateTimeOffset VerifiedAt
+        string VerificationChallengeToken "nullable, 128-bit"
+        DateTimeOffset ChallengeExpiresAt "nullable"
+        DateTimeOffset VerifiedAt "nullable"
     }
 
     MODULE_PROBLEM {
         Guid Id PK
         Guid ModuleId FK
-        int Platform
-        string ExternalId
+        int Kind "ProblemKind: Codeforces=1, GitHubTask=2"
+        string ExternalId "nullable, e.g. 4A"
+        int DifficultyRating "nullable, cached"
+        Guid GitHubTaskId FK "nullable"
         string Title
         string Url
         int Order
         bool IsRequired
+    }
+
+    GITHUB_TASK {
+        Guid Id PK
+        string Title
+        string Description
+        string TemplateRepoFullName
+        Guid CurrentVersionId FK
+    }
+
+    TASK_VERSION {
+        Guid Id PK
+        Guid TaskId FK
+        int VersionNumber
+        string OfficialCommitSha
+        string WorkflowBlobSha
+        string TestsTreeSha
+        bool IsActive
     }
 
     USER_PROBLEM_COMPLETION {
@@ -237,9 +260,9 @@ erDiagram
         Guid UserId FK
         Guid ModuleProblemId FK
         DateTimeOffset CompletedAt
-        string ExternalSubmissionId
-        string SubmissionUrl
-        int ReviewStatus
+        string ExternalSubmissionId "nullable"
+        string VerifiedHeadCommitSha "nullable"
+        Guid TaskVersionId FK "nullable"
     }
 
     TECHNOLOGY {
@@ -247,29 +270,33 @@ erDiagram
         Guid ParentId FK "nullable"
         string Name
         string Slug
-        string Description
+        string Description "nullable"
         int Kind
         int Order
     }
 
     RESOURCE {
         Guid Id PK
-        Guid TechnologyId FK
+        Guid TechnologyId FK "nullable"
         string Title
         int Kind
-        string Url
-        string Citation
+        string Url "nullable"
+        string Citation "nullable"
         string Language
         int Level
         bool IsPaid
         int Status
+        int ConsecutiveFailureCount
+        DateTimeOffset LastCheckedAt "nullable"
         Guid CreatedByUserId FK "nullable"
     }
 
-    LESSON_RESOURCE_LINK {
+    LESSON_RESOURCE {
+        Guid Id PK
         Guid LessonId FK
         Guid ResourceId FK
         int Order
+        string Note "nullable"
     }
 
     CAPSTONE_PROJECT {
@@ -277,32 +304,27 @@ erDiagram
         Guid TrackId FK
         string Title
         string Description
-        string RubricUrl
-        bool IsCumulative
+        string StarterTemplateRepo
     }
 
     PROJECT_MILESTONE {
         Guid Id PK
         Guid ProjectId FK
+        Guid TaskId FK
         Guid ModuleId FK "nullable"
         string Title
         string Instructions
         int Order
     }
 
-    PROJECT_SUBMISSION {
+    USER_MILESTONE_PROGRESS {
         Guid Id PK
         Guid UserId FK
-        Guid ProjectId FK
-        Guid MilestoneId FK "nullable"
-        string RepositoryUrl
-        string DemoUrl
-        string Notes
-        int Status
-        string ReviewNotes
-        DateTimeOffset SubmittedAt
-        DateTimeOffset ReviewedAt
-        Guid ReviewedByUserId FK "nullable"
+        Guid MilestoneId FK
+        bool IsCompleted
+        DateTimeOffset CompletedAt "nullable"
+        string RepositoryUrl "nullable"
+        string HeadCommitSha "nullable"
     }
 ```
 

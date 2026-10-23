@@ -37,10 +37,10 @@ The platform exposes a JSON HTTP API backed by a strictly layered domain model, 
 | --- | --- |
 | **Content hierarchy** | Ordered `Track → Module → Lesson` content model with sequencing constraints and restricted delete semantics |
 | **Assessment engine** | Module-level exam model and read contract; multiple-choice question storage and server-side grading are planned |
-| **Verified problems** | Dual-gated progression requiring Codeforces-verified problem solving (via challenge verification) and practical GitHub tasks; planned |
+| **Verified problems** | Dual-gated progression requiring Codeforces-verified problem solving (via profile token verification) and automated GitHub tasks (workflow & test SHA verification); planned |
 | **Public Resource Hub** | 3-click anonymous public directory indexing curated learning resources across languages, frameworks, and topics; planned |
 | **Learner progression** | Per-learner, per-module progress persistence (`UNIQUE(UserId, ModuleId)`) with dual-gated sticky forward unlock rules (exam pass AND problem completion); planned |
-| **Capstone projects** | Portfolio project and cumulative milestones at track conclusion with mentor review lifecycle; planned |
+| **Capstone projects** | Cumulative track portfolio project split into ordered milestones verified automatically via GitHub tasks; planned |
 | **Identity foundation** | User profiles with `Student`/`Instructor`/`Admin` roles (`Student` default), password hashing, and unique identity indexes |
 | **Operational health** | Health-check endpoint and centralized domain-exception → HTTP status mapping |
 | **Extensibility** | Persistence contracts for enrollment (`TrackEnrollment`) and lesson resources (`LessonResource`); their workflows and endpoints are planned, as are question banks (`ExamQuestion`/`ExamOption`) — see `docs/FEATURE_INDEX.md` |
