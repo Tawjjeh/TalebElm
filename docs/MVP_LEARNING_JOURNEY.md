@@ -17,7 +17,7 @@ TalebElm helps a learner study software development through an ordered Track. Th
 ## Core Rules
 
 - The first Module becomes available when enrollment is created.
-- A passing score is `score >= Exam.PassThreshold` on a `0–100` scale (`PassThreshold` is `1–100`; the DB check currently allows `0`, tracked by #326).
+- A passing score is `score >= Exam.PassThreshold` on a `0–100` scale (`PassThreshold` is `1–100`, enforced by validation and by the database check).
 - The score is always computed on the server from server-side answer keys; a client-supplied score is ignored.
 - Each submission overwrites `UserProgress.Score` with the latest score (latest-wins), but `PassedExam`, once `true`, is never cleared by a later failed retake (sticky pass). Retries are unlimited with no cooldown in the MVP, and no per-attempt history is stored.
 - A Module MAY have no Exam; such a Module never sets `PassedExam` and is progressed only by the explicit unlock rule.

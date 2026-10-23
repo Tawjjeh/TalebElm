@@ -13,7 +13,7 @@ Attach an exam to a Module and grade the learner's answers against its pass thre
 | Exam | Id | `Guid` | No | PK, inherited from `BaseEntity` |
 | Exam | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
 | Exam | Title | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
-| Exam | PassThreshold | `int` | No | `1–100` in the same `0–100` score scale; application validation exists. The DB check currently allows `0–100` and is being tightened by #326. |
+| Exam | PassThreshold | `int` | No | `1–100` in the same `0–100` score scale; enforced by application validation and by the `CK_Exams_PassThreshold_Range` database check. |
 | Exam | ModuleId | `Guid` | No | FK → `Module.Id`; `UNIQUE(ModuleId)` — at most one exam per Module (a Module MAY have no Exam) |
 
 ### Relationships
@@ -29,7 +29,7 @@ public interface IExamRepository : IRepository<Exam> { }
 ### EF Core Notes
 
 - `ExamConfiguration` maps `Exam.Module` one-to-one (`HasOne/WithOne` on `ModuleId`) with `DeleteBehavior.Restrict` and a unique index on `ModuleId`.
-- Field rules: `Title` required, max length 150; `PassThreshold` is validated as `1–100` in Application. The database check currently allows `0` (#326).
+- Field rules: `Title` required, max length 150; `PassThreshold` is validated as `1–100` in Application, and the database check `CK_Exams_PassThreshold_Range` enforces the same range.
 
 ### Questions and answer keys
 

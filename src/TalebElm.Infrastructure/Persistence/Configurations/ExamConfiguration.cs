@@ -25,7 +25,7 @@ public class ExamConfiguration : IEntityTypeConfiguration<Exam>
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("CK_Exams_Title_NotEmpty", "length(trim(Title)) > 0");
-            t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 0 AND PassThreshold <= 100");
+            t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 1 AND PassThreshold <= 100");
         });
     }
 }

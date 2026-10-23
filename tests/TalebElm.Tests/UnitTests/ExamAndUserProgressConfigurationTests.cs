@@ -66,4 +66,31 @@ public class ExamAndUserProgressConfigurationTests : SqliteTestBase
         // Assert
         await Assert.ThrowsAsync<DbUpdateException>(async () => await SaveChangesAsync());
     }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(100, true)]
+    [InlineData(0, false)]
+    [InlineData(101, false)]
+    public async Task SaveExam_ShouldEnforcePassThresholdRangeAtDatabase(int passThreshold, bool accepted)
+    {
+        // Arrange: straight through the DbContext, so only the check constraint applies.
+        var track = new Track { Id = Guid.NewGuid(), Name = "Backend", Description = "Desc" };
+        var module = new Module { Id = Guid.NewGuid(), Title = "C# Advanced", Order = 1, TrackId = track.Id };
+        DbContext.Tracks.Add(track);
+        DbContext.Modules.Add(module);
+        await SaveChangesAsync();
+
+        DbContext.Exams.Add(new Exam { Id = Guid.NewGuid(), Title = "C# Exam", PassThreshold = passThreshold, ModuleId = module.Id });
+
+        // Act & Assert
+        if (accepted)
+        {
+            await SaveChangesAsync();
+        }
+        else
+        {
+            await Assert.ThrowsAsync<DbUpdateException>(async () => await SaveChangesAsync());
+        }
+    }
 }
