@@ -84,7 +84,7 @@ flowchart TD
 
 | Invariant Trigger | Condition | Transactional Action |
 |---|---|---|
-| Exam Submission | Score $\ge$ threshold | Sets `PassedExam = true`. If all required problems were already completed, unlocks next Module. |
+| Exam Submission | Score ≥ threshold | Sets `PassedExam = true`. If all required problems were already completed, unlocks next Module. |
 | Problem Verification | All required problems verified | Sets `CompletedRequiredProblems = true`. If exam was already passed, unlocks next Module. |
 | Single Transaction | Atomic commit | Row creation/update of current module and unlock of next module committed in one `UnitOfWork` commit. |
 
@@ -218,6 +218,6 @@ flowchart LR
 | Locked content, incomplete prerequisites, cross-learner access | `403 Forbidden` | P-2, P-4, J-2 |
 | Missing / invalid / expired token | `401 Unauthorized` | U-6 |
 | Delete with dependents | `409 Conflict`, nothing deleted; archive instead | C-6 |
-| Codeforces / GitHub API rate limit | `429 Too Many Requests` (per-user throttle) | X-3, D-J |
-| External provider downtime / network failure | `503 Service Unavailable` (fail-safe; 0 state changed) | X-6, D-J |
-| Tampered GitHub task test suite / workflow SHA mismatch | `400 Bad Request` (`IntegrityShaMismatch`) | D-D |
+| Codeforces / GitHub API rate limit | `429 Too Many Requests` (per-user throttle) | X-3, Decision 31 |
+| External provider downtime / network failure | `503 Service Unavailable` (fail-safe; 0 state changed) | X-6, Decision 31 |
+| Tampered GitHub task test suite / workflow SHA mismatch | `400 Bad Request` (`IntegrityShaMismatch`) | Decision 35 |

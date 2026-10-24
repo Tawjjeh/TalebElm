@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Attach an exam to a Module and grade the learner's answers against its pass threshold. A passing result is intended to update that learner's progress and unlock the next Module; question storage and answer grading are not implemented yet.
+Attach an exam to a Module and grade the learner's answers against its pass threshold. A passing result is intended to update that learner's progress and satisfy the exam gate for the next Module (which is governed by Decision 32); question storage and answer grading are not implemented yet.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 

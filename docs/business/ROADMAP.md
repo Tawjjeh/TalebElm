@@ -8,23 +8,17 @@
 ## Roadmap Overview
 
 ```mermaid
-gantt
-    title TalebElm Phased Roadmap
-    dateFormat  YYYY-MM
-    section Core Track Flow
-    Phase 0 Foundations           :done,    p0, 2026-10, 1M
-    Phase 1 Identity               :active,  p1, after p0, 1M
-    Phase 2 Core Learning Flow     :         p2, after p1, 2M
-    Phase 3 Verified Problems      :         p3, after p2, 2M
-    Phase 5 Capstone Projects      :         p5, after p3, 1M
-    section Independent Track
-    Phase 4 Resource Hub (Read-only):active, p4, 2026-10, 2M
-    Phase 4 Admin & Community      :         p4b, after p4, 2M
+flowchart TD
+    P0["Phase 0 Foundations"] --> P1["Phase 1 Identity"]
+    P1 --> P2["Phase 2 Core Learning Flow"]
+    P2 --> P3["Phase 3 Verified Problems"]
+    P2 --> P4["Phase 4A Resource Hub (read-only)"]
+    P3 --> P5["Phase 5 Capstone Projects"]
+    P4 --> P4B["Phase 4B Admin Authoring"]
 ```
 
-> **Parallel Execution:** Phase 4's read-only Resource Hub has **zero dependencies** on Phases 1–3 and runs in parallel to attract visitors, community contributors, and public visibility early.
-
----
+> Phase 4A runs in parallel with Phases 1 to 3 and has zero direct dependency.
+Phase 0 includes the DI baseline, content guards, validation errors, cancellation tokens, migration-chain tests, and API wiring. Phase 3 includes the `CompletedRequiredProblems` migration and the `ProgressResponse` counts.
 
 ## Phase 0: Foundations & Architecture Baseline
 
@@ -34,14 +28,14 @@ gantt
   - Consolidate Dependency Injection registrations across `AddApplication()`, `AddInfrastructure()`, and `Program.cs` (Issue #274).
   - Add a comprehensive full-graph DI resolution test (`DependencyResolutionTests`) ensuring all services, repositories, validators, and `IUnitOfWork` resolve without runtime exceptions.
   - Wire placeholder API controllers (`TracksController`, `ModulesController`, `LessonsController`, `ExamsController`) to call existing application services rather than throwing `NotImplementedException`.
-  - Fix PassThreshold constraint in database from `0–100` to `1–100` to eliminate bypass vulnerability (Issue #326).
-  - Standardize error handling and ProblemDetails mapping (Issues #321, #322).
+  - Fix PassThreshold constraint in database from `0–100` to `1–100` to eliminate bypass vulnerability (#326 resolved).
+  - Standardize error handling and ProblemDetails mapping (#321 and `ValidationException` -> field-keyed errors).
 - **Dependencies:** None.
 - **Exit Criteria:**
   - `dotnet run --project src/TalebElm.Api` boots cleanly with no DI configuration warnings or exceptions.
   - Full-graph DI integration test passes in Release and Debug modes.
   - Existing endpoints return valid JSON or correct HTTP status codes instead of `501 Not Implemented`.
-  - Issue #326 closed with migration and test.
+  - Issue  with migration and test.
 - **Issue Areas:** `architecture`, `layer:infrastructure`, `layer:application`, `layer:api`, `database`.
 
 ---
@@ -114,7 +108,7 @@ gantt
 ## Phase 4: Public Resource Hub
 
 - **Status:** Target (Read-only Hub) / Target (Admin Authoring) / Proposed (Community Submissions)
-- **Goal:** Provide a public, anonymous, highly curated index of programming resources organized in a 3-click hierarchy (`Language` $\to$ `Framework/Technology` $\to$ `Topic` $\to$ `Resources`), sharing one unified resource model with Lessons.
+- **Goal:** Provide a public, anonymous, highly curated index of programming resources organized in a 3-click hierarchy (`Language` → `Framework/Technology` → `Topic` → `Resources`), sharing one unified resource model with Lessons.
 - **Scope:**
   - **Phase 4A (Read-only Public Hub - Target):**
     - `Technology` hierarchical self-referencing tree entity (`ParentId`, `Slug`, `Name`, `Description`, `Kind`, `Order`).
@@ -129,7 +123,7 @@ gantt
     - Community submissions running automated safety checks (HTTPS, domain blocklist, reachability probe) before entering an admin approval queue.
 - **Dependencies:** Phase 0 (for 4A read-only). Phase 1 (for 4B/4C authoring). Can proceed in parallel with Phases 1–3.
 - **Exit Criteria:**
-  - Visitors can browse from Language to Topic in $\le$ 3 clicks and search/filter resources without logging in.
+  - Visitors can browse from Language to Topic in ≤ 3 clicks and search/filter resources without logging in.
   - Admin can curate and publish resources.
   - Lesson resources and Hub resources share one underlying `Resource` entity.
   - Broken links are automatically detected and hidden from public views.

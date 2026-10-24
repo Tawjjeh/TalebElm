@@ -71,3 +71,6 @@ The database currently enforces required `Title` (max 200), optional `Citation` 
 - A URL resource is rejected with `400` when its URL is missing, relative, or not `http`/`https`.
 - Deleting a Lesson follows an explicit resource-delete rule.
 - Tests cover no resources, multiple ordered resources, URL resources, and citation-only resources.
+
+## Shared Resource update (Target)
+Lesson resources share a `Resource` entity per Decision 25, using a two-step non-destructive migration. See `docs/features/06-resource-hub.md` and `docs/features/10-automated-task-verification.md`.

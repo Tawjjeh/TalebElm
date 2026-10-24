@@ -40,7 +40,7 @@ Stores a learner's linked profile on an external platform and tracks its ownersh
 | `Handle` | `string` | No | Platform username / handle. Max length **64**, non-blank. `UNIQUE(Platform, Handle)` for verified accounts. | Target |
 | `ExternalUserId` | `long?` | Yes | Numeric user id (used by GitHub). Nullable for Codeforces. | Target |
 | `VerificationStatus` | `AccountVerificationStatus` | No | Enum: `PendingChallenge = 1`, `Verified = 2`, `Failed = 3`. | Target |
-| `VerificationToken` | `string?` | Yes | Cryptographically random single-use token ($\ge 128$ bits hex string). Max length **64**. | Target |
+| `VerificationToken` | `string?` | Yes | Cryptographically random single-use token (≥128 bits hex string). Max length **64**. | Target |
 | `TokenExpiresAt` | `DateTimeOffset?` | Yes | 15 minutes from generation. | Target |
 | `VerifiedAt` | `DateTimeOffset?` | Yes | Timestamp when ownership was successfully verified. | Target |
 
@@ -216,3 +216,6 @@ public interface IModuleProblemService
 - [ ] External API downtime returns `503 Service Unavailable` with zero alteration of learner state.
 - [ ] Completing all required problems triggers module unlock in the same transaction if the exam was already passed.
 - [ ] Zero manual human review or checklist intervention is required at any step.
+
+## Decision 33 and 34 update
+One row per `(UserId, Platform)`. Filtered unique indexes apply to verified handles. `CompletedRequiredProblems` on `UserProgress` is sticky. `user.status` paging stops when every required problem is matched, and per-handle caching lasts 60 seconds.
