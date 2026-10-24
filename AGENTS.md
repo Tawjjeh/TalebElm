@@ -21,6 +21,8 @@ memory) before editing.
   change in the open-decisions table.
 - Auto-generated knowledge is never assumed to be live: feature docs are specs,
   not proof of implementation. Check the code and tests.
+- Never trust a client-supplied score, return `IsCorrect`, use a `DbContext` in Application,
+  hit real external APIs in tests, commit secrets or `*.db` files, or push to main.
 
 ## Code boundaries
 
@@ -37,7 +39,9 @@ memory) before editing.
 
 - Build: `dotnet build TalebElm.slnx`
 - Test: `dotnet test TalebElm.slnx`
-- Docs: `python3 scripts/check-docs.py` (after the script is added)
+- Docs: `python3 scripts/check-docs.py`
+- Coding standards: `docs/development/coding-standards.md`
+- Definition of done: `docs/development/definition-of-done.md`
 - EF Core uses SQLite for development and integration tests.
 
 ## Conventions
@@ -57,6 +61,10 @@ memory) before editing.
 - End: write or update the Arabic explanation in `[private-workspace]/learn/NNN-<topic>.ar.md`
   for code changes; update `[private-workspace]/progress.md` and `[private-workspace]/handoff/claude-handoff.md`
   for a phase close; keep them local.
+## Unlock and external services
+
+Unlock follows Decision 32 (`docs/business/BUSINESS_RULES.md` P-2): a Module unlocks its successor only when `examGate` and `problemGate` hold and the next Module exists. External clients are Application interfaces with fakes in tests; new async methods accept `CancellationToken`.
+
 - Report in the form:
   `Changed: ...`
   `Verified: ...`
