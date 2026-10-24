@@ -31,7 +31,7 @@ Learning software engineering today is broken in two distinct ways:
 
 | Dimension | Video Platforms (Udemy, Coursera) | Roadmap Sites (roadmap.sh) | TalebElm |
 |---|---|---|---|
-| **Learning Structure** | Video playlists, often unstructured or outdated | High-level topic trees with no inline study flow | Strictly ordered Tracks $\to$ Modules $\to$ Lessons |
+| **Learning Structure** | Video playlists, often unstructured or outdated | High-level topic trees with no inline study flow | Strictly ordered Tracks → Modules → Lessons |
 | **Verification of Work** | Self-reported or basic quiz | None (purely informational) | External automated verification (Codeforces API + GitHub tasks) |
 | **Progression Gating** | Unrestricted skipping | No gating | Sticky progression: pass exam **and** complete problems to unlock |
 | **Reference Material** | Scattered in video descriptions | Generic external links | Public 3-click Resource Hub sharing the underlying resource model |
@@ -69,7 +69,7 @@ Learning software engineering today is broken in two distinct ways:
 ### Pillar 3: Resource Hub (Public & Anonymous)
 
 - **Public Access:** A well-organized index of learning references across languages, frameworks, and tools. Read access is 100% anonymous; no account or login is required (`Target`).
-- **Three-Click Rule:** A visitor can reach any specific topic (e.g., "Spring Boot $\to$ Dependency Injection") in at most 3 clicks via a self-referencing `Technology` tree (`Target`).
+- **Three-Click Rule:** A visitor can reach any specific topic (e.g., "Spring Boot → Dependency Injection") in at most 3 clicks via a self-referencing `Technology` tree (`Target`).
 - **Unified Resource Model:** Hub resources and Lesson references share one underlying `Resource` entity (`Target`). `LessonResource` becomes a join table, populated via a two-step non-destructive migration.
 - **Automated Quality & Link Health:** Scheduled background link checker probes URLs and marks resources `Broken` after 3 consecutive failures, hiding them from public listings until resolved (`Target`).
 
@@ -104,7 +104,7 @@ To maintain high development velocity and architectural focus, the following are
 |---|---|---|
 | **Content Authoring Bottleneck** | Slow release of new Tracks due to the effort of authoring lessons, exams, and curating problem sets. | Focus initial tracks on backend core (.NET). Use open-source community contributions with clear Markdown authoring templates and admin review. |
 | **Dead External Links** | Third-party tutorials, docs, or repositories move or go offline. | Hub topics support multiple fallback sources. Scheduled automated background link checker (`Target`). |
-| **Learner Gating Frustration** | Hard problem sets or strict exams cause learners to abandon the platform. | Calibrate initial problem difficulty: Module 1 problems must be Codeforces rating $\le 800$, rising gradually. Admin manual-unlock support override exists for stuck learners (`Target`). |
+| **Learner Gating Frustration** | Hard problem sets or strict exams cause learners to abandon the platform. | Calibrate initial problem difficulty: Module 1 problems must be Codeforces rating ≤800, rising gradually. Admin manual-unlock support override exists for stuck learners (`Target`). |
 | **Codeforces Dependency & Rate Limits** | Public Codeforces API may experience downtime or enforce rate limits (~1 req / 2s). | Verify all specifics against official docs (`codeforces.com/apiHelp`). Implement 60s per-user debouncing, in-memory caching, and fail-safe 503 responses that alter zero learner state (`Target`). |
 | **Beginner Difficulty Mismatch** | Competitive programming problems can overwhelm novice programmers with math riddles. | Curate problem sets strictly focused on language fundamentals (loops, conditionals, basic data structures) with soft validator warnings during authoring (`Target`). |
 
@@ -117,3 +117,7 @@ To maintain high development velocity and architectural focus, the following are
 3. **Resource Hub Reach:** Monthly unique anonymous visitors and search-to-resource click-through rates.
 4. **Time-to-Second-Module:** Median time for a new learner to complete Module 1 (indicates healthy onboarding difficulty).
 5. **Contributor Velocity:** Number of merged community pull requests adhering to Clean Architecture standards.
+
+## Decision 35 and 36 updates
+- Framework tasks are verified job-level in GitHub Actions.
+- Completions are sticky even if the template version changes.

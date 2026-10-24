@@ -62,3 +62,6 @@ TalebElm helps a learner study software development through an ordered Track. Th
 ## Explicitly Out of This Learning-Flow MVP
 
 Scheduling, attendance, payments, in-browser IDE compiler, and contest hosting are separate product concerns. Keep them out of Track enrollment and `UserProgress` until product requirements define how they connect.
+
+## Decision 32 updates
+Module progression uses sticky `PassedExam` and `CompletedRequiredProblems`; the next Module unlocks only when both gates pass (or only when the existing gate exists).

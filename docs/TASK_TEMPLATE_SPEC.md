@@ -135,3 +135,6 @@ flowchart TD
 4. **Produce Release Tag:** Commit, tag as `v1.0.0`, and push.
 5. **Extract SHAs:** Run `git hash-object .github/workflows/test.yml` and `git rev-parse HEAD:tests`.
 6. **Register Task in TalebElm:** Admin inserts the `GitHubTask` and `TaskVersion` record with the extracted SHAs and template repository name.
+
+## Decision 35 alignment
+Use `UserProblemCompletion` terminology and `TaskVersionStatus`. Job-level GitHub verification requires all jobs for plain tasks and the named job for milestones. Templates must avoid mutable root build files or include them in the integrity set.

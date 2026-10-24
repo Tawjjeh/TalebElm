@@ -180,3 +180,6 @@ public interface IGitHubClient
 - [ ] Verification fails with `400 Bad Request` if the latest GitHub Actions workflow run failed.
 - [ ] Verification succeeds automatically when tests pass on the default branch and SHAs match, requiring zero manual human intervention.
 - [ ] Successful task completion triggers module unlock evaluation inside the same `UnitOfWork` transaction.
+
+## Decision 35 update
+`TaskVersionStatus` replaces `IsActive`/`CurrentVersionId`. `VerifyRepositoryAsync` lives in `ITaskVerificationService`; callers record the outcome. Replace `POST /api/tasks/{id}/verify` with `POST /api/module-problems/{moduleProblemId}/verify`, while keeping the milestone verify route.

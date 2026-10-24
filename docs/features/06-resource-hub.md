@@ -9,17 +9,17 @@
 The **Resource Hub** is a public, community-curated directory of software engineering learning references:
 
 - **Anonymous Public Access:** Anyone can browse and search the Hub without creating an account or logging in (`Target`).
-- **Three-Click Discovery:** A visitor can reach any topic's resources in $\le$ 3 clicks:
+- **Three-Click Discovery:** A visitor can reach any topic's resources in ≤ 3 clicks:
   1. Language / Ecosystem (e.g., C#, Python, Java, JavaScript)
   2. Framework / Technology (e.g., ASP.NET Core, EF Core, Spring Boot, React)
-  3. Topic $\to$ Curated Resources (e.g., Dependency Injection, LINQ, Middleware)
+  3. Topic → Curated Resources (e.g., Dependency Injection, LINQ, Middleware)
 - **Shared Resource Model:** One unified `Resource` entity serves both the Resource Hub and Lesson references. `LessonResource` becomes a join entity linking lessons to shared resources (`Target`).
 - **Two-Step Non-Destructive Migration:** In Phase 4, `Resource` is added and populated from existing `LessonResource` records. In a subsequent migration, duplicated columns on `LessonResource` are retired.
 - **Search & Pagination:** Public read endpoints support pagination, keyword title search, and filtering by language (Arabic, English), difficulty level, format kind, and free vs. paid.
 - **Curated Quality & Link Health:**
   - MVP authoring is Admin-only.
   - Future community submissions execute automated safety checks first (HTTPS enforcement, URL normalization, domain blocklist, reachability probe) before entering an admin approval queue.
-  - A scheduled background link-checker marks a Resource `Broken` after $N$ consecutive connection failures, hiding it from public lists until repaired.
+  - A scheduled background link-checker marks a Resource `Broken` after N consecutive connection failures, hiding it from public lists until repaired.
 
 ---
 
@@ -27,7 +27,7 @@ The **Resource Hub** is a public, community-curated directory of software engine
 
 ### 2.1 Entity: Technology (Target)
 
-Represents a hierarchical node in the classification tree (Language $\to$ Framework $\to$ Topic). Modeled as a self-referencing tree structure.
+Represents a hierarchical node in the classification tree (Language → Framework → Topic). Modeled as a self-referencing tree structure.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
@@ -57,7 +57,7 @@ Represents a specific curated learning source attached to a topic node or cited 
 | `Level` | `ResourceLevel` | No | Enum: `Beginner = 1`, `Intermediate = 2`, `Advanced = 3`. | Target |
 | `IsPaid` | `bool` | No | `false` = Free, `true` = Paid. | Target |
 | `Status` | `ResourceStatus` | No | Enum: `Approved = 1`, `PendingApproval = 2`, `Rejected = 3`, `Broken = 4`. | Target |
-| `ConsecutiveFailureCount` | `int` | No | Count of failed automated health checks (marks `Broken` at threshold $\ge 3$). Default 0. | Target |
+| `ConsecutiveFailureCount` | `int` | No | Count of failed automated health checks (marks `Broken` at threshold ≥3). Default 0. | Target |
 | `LastCheckedAt` | `DateTimeOffset?` | Yes | Timestamp of last link-health check. | Target |
 | `CreatedByUserId` | `Guid?` | Yes | Optional FK to `User.Id` (who authored/submitted it). Null for seeds. Delete behavior: `SetNull`. | Target |
 
@@ -166,7 +166,10 @@ public record PagedResult<T>(
 ## 6. Acceptance Criteria
 
 - [ ] Anonymous public access to all browse, search, and pagination endpoints.
-- [ ] Topic navigation reachable in $\le$ 3 clicks via self-referencing `Technology` hierarchy.
+- [ ] Topic navigation reachable in ≤ 3 clicks via self-referencing `Technology` hierarchy.
 - [ ] Shared `Resource` model serves both Hub topics and lesson citations.
 - [ ] Public reads strictly filter for `Status == ResourceStatus.Approved`.
 - [ ] Background link checker flags broken resources and hides them from public views.
+
+## Decision 36 update
+Hub routing uses slug paths, for example `GET /api/hub/technologies/csharp/aspnet-core`. Admin routes use `/api/admin/hub/...`: `POST /api/admin/hub/resources`, `PUT /api/admin/hub/resources/{id}`, `PUT /api/admin/hub/resources/{id}/status`, `DELETE /api/admin/hub/resources/{id}`. Link checking uses HEAD, retries GET for 405/403/501, and applies SSRF, redirect, timeout, and per-host spacing rules. Broken resources return to Approved after a successful check.

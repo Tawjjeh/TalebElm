@@ -65,3 +65,15 @@ TalebElm/
 - Tests may reference the layers they verify; production projects must not reference Tests.
 
 See [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for the full list of documents, [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the workflow, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for layer conventions.
+
+## Documentation and tooling (Implemented)
+
+- `docs/` with the public index and ADR template
+- `scripts/check-docs.py`
+- `AGENTS.md`
+
+## External-service additions (Target)
+
+- `src/TalebElm.Application/Services/Abstraction/ICodeforcesClient.cs`
+- `src/TalebElm.Application/Services/Abstraction/IGitHubClient.cs`
+- `src/TalebElm.Infrastructure/Services/*Client.cs`

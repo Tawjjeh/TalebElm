@@ -168,7 +168,7 @@ dotnet test TalebElm.slnx --configuration Release
 | `Security & Vulnerability Scan` (`security-scan.yml`) | PR, weekly schedule, manual dispatch | Dependency-review (fails on high/critical) + full-tree NuGet transitive audit |
 | `PR Validation` (`pr-validation.yml`) | PR opened / edited / synchronized | Enforces conventional-commit titles; requires `Closes #NNN` linkage for `feat:` / `fix:` |
 | `Pull Request Labeler` (`labeler.yml` + `labeler.yml` rules) | PR events | Path-based automatic labeling |
-| `Auto Assign Reviewers` (`auto-assign.yml`) | PR opened / ready for review | Round-robin reviewer rotation |
+| `Pull Request Reviewer Assignment` (manual) | PR opened | Maintainers assign reviewers and issue assignees manually; comment on the issue to ask for it |
 
 Conventional-commit types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `ci`, `build`, `perf`, `style` (optional scope, e.g. `fix(auth): hash passwords`).
 
