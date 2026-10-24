@@ -62,3 +62,6 @@ To ensure the platform can cover hosting costs, database persistence, continuous
 ## 4. Next Steps
 
 No financial instruments or monetization features will be introduced during Phases 0 through 4 of the roadmap. Maintainers will evaluate these options alongside the community once the platform reaches meaningful learner adoption.
+
+## Decision 36a updates
+Capstone completion stays separate from certificates; certificates are out of scope in the MVP.

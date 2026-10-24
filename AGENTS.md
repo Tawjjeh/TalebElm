@@ -10,7 +10,6 @@ memory) before editing.
 
 ## Operating rules
 
-- Read `.local/STATE.md` first when it exists, then this file.
 - Read `docs/README.md`, `docs/FEATURE_INDEX.md`, `docs/OPEN_DECISIONS.md`, and
   `docs/business/BUSINESS_RULES.md` before changing behavior.
 - Prefer the smallest, reversible change. Open a topic branch; do not commit to
@@ -50,14 +49,13 @@ memory) before editing.
 - Zero manual gating: learner progression is verified by the server, not by
   humans.
 - Existing progress markers (`Implemented` / `Target` / `Proposed`) stay accurate.
-- `.local/` is private owner and AI workspace. Never commit, push, expose, or
-  link it in public docs.
+- The private owner workspace is never committed, pushed, exposed, or linked in public docs.
 
 ## AI assistant session protocol
 
-- Start: read `.local/STATE.md` (if present), then this file.
-- End: write or update the Arabic explanation in `.local/learn/NNN-<topic>.ar.md`
-  for code changes; update `.local/progress.md` and `.local/handoff/claude-handoff.md`
+- Start: read the private workspace state file (if present), then this file.
+- End: write or update the Arabic explanation in `[private-workspace]/learn/NNN-<topic>.ar.md`
+  for code changes; update `[private-workspace]/progress.md` and `[private-workspace]/handoff/claude-handoff.md`
   for a phase close; keep them local.
 - Report in the form:
   `Changed: ...`

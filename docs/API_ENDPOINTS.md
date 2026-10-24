@@ -114,3 +114,9 @@ Student-facing reads should also return a Track's Modules and Lessons only to an
 ## 4. Out of Scope for the Core Learning Flow
 
 Scheduling, attendance, and payments are not part of the current Track → Module → Lesson → Exam → Progress flow.
+
+## Decisions 35 and 36 route updates
+- Verification: `POST /api/module-problems/{moduleProblemId}/verify`.
+- GitHub OAuth: `POST /api/users/me/external-accounts/github/start`, `GET /api/auth/github/callback`.
+- Resource Hub admin: `POST /api/admin/hub/resources`, `PUT /api/admin/hub/resources/{id}`, `PUT /api/admin/hub/resources/{id}/status`, `DELETE /api/admin/hub/resources/{id}`.
+- Hub public: `GET /api/hub/technologies/csharp/aspnet-core` style slug paths in addition to `GET /api/hub/topics/{id}/resources`.

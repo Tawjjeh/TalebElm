@@ -135,3 +135,6 @@ public interface IUserService
 | `ValidationException` | Missing/invalid name, email, or password fields (planned) |
 | `ConflictException` | Duplicate email on registration (planned; unique index already rejects it) |
 | `NotImplementedException` | Remaining placeholder auth/user controller actions and service methods |
+
+## Related external accounts and problems
+External account lifecycle is specified under Decision 33 and Feature 07.

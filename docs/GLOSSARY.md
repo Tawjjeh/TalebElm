@@ -18,3 +18,10 @@ Terms used consistently across TalebElm code and docs.
 | Implemented / Target / Proposed | Documentation status markers. See `docs/FEATURE_INDEX.md`. |
 | Zero manual gating | Every progression step is verified by the server, never by a human. |
 | Dual-gated unlock | A Module unlocks when both required exam and required practice problems are complete. |
+
+| TaskVersion | Immutable Git commit/tree SHA values used for task integrity. |
+| Technology | Hierarchical node in the Resource Hub tree. |
+| Resource | Unified citation used by lessons and the Resource Hub. |
+| ModuleProblem | Practice problem or framework task attached to a Module. |
+| Verified handle | Codeforces handle owned via the single-use token. |
+| Sticky completion | Once true, never reverted. |

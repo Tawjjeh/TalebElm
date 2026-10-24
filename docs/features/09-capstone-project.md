@@ -76,7 +76,7 @@ sequenceDiagram
     Platform-->>Learner: List of ordered milestones & current completion state
     Note over Learner: Learner implements milestone requirements and pushes to GitHub default branch
     Learner->>Platform: POST /api/tracks/{trackId}/project/milestones/{id}/verify (RepoName)
-    Platform->>GH: Execute Automated GitHub Task Verification (D-D algorithm)
+    Platform->>GH: Execute Automated GitHub Task Verification Decision 35 algorithm
     GH-->>Platform: Workflow Success & SHA Integrity Verified
     Platform->>Platform: Set UserMilestoneProgress.IsCompleted = true
     Platform->>Platform: If next milestone exists, unlock it
@@ -104,3 +104,6 @@ sequenceDiagram
 - [ ] Milestone completion is 100% automated via the linked `GitHubTask` verification pipeline (CodeCrafters-style).
 - [ ] No manual review or approval from an admin or mentor is required to unlock subsequent milestones or complete the track.
 - [ ] Track completion is derived automatically when all Track Modules are passed and all Capstone Milestones are verified.
+
+## Decision 36a update
+`CapstoneProject` has one `GitHubTask` (`TaskId`), one template, one workflow, and one tests tree containing all milestone tests. `ProjectMilestone` drops `TaskId` and gains `WorkflowJobName`; final Module does not gate the capstone. Track completion is derived. Remove certificate wording from capstone completion descriptions.

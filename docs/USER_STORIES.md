@@ -82,7 +82,7 @@ As a Student, I want to complete practical framework tasks with fully automated 
 
 ### L10. Browse the Public Resource Hub
 As any learner or visitor, I want to find high-quality learning resources without logging in.
-- I can browse Language $\to$ Framework $\to$ Topic in $\le$ 3 clicks.
+- I can browse Language → Framework → Topic in ≤ 3 clicks.
 - I can filter resources by human language (Arabic, English), difficulty level, format kind, and free vs. paid.
 - Feature: [06-resource-hub.md](features/06-resource-hub.md)
 
@@ -133,3 +133,10 @@ As an admin, I want to define cumulative capstone projects with automated milest
 ## Out of Scope
 
 Scheduling, attendance, live streaming, in-browser IDE sandbox, and automated contest hosting.
+
+## Added stories
+- Learner: one handle per user per platform; one user per verified handle.
+- Admin: manual unlock and verified-handle reset as auditable support actions.
+
+## Out of scope
+Payments, certificates, and exam attempt history.

@@ -179,3 +179,6 @@ public interface ILessonService
 | `NotFoundException` | Track / Module / Lesson lookup by ID returns `null` |
 | `ValidationException` | Missing required fields, duplicate `Order` values (planned) |
 | `NotImplementedException` | Remaining placeholder controller actions and unimplemented use cases |
+
+## Related external resources
+Practice problems are configured per Module per Feature 07; external task verification is specified per Decision 35.

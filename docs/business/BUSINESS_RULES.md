@@ -88,40 +88,40 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | ID | Rule | Status |
 |---|---|---|
 | P-1 | Exactly one `UserProgress` row per (`UserId`, `ModuleId`), enforced by unique index. | Implemented |
-| P-2 | Unlock is forward-only, sticky, and **dual-gated**: a Module unlocks its successor only when **both** hold: the Module exam is passed (if Module has an exam) AND every problem marked `IsRequired` is completed (if Module has problems). A Module with only one uses only that one. A Module with neither uses explicit admin unlock. Optional problems never block. Both flags are sticky. The unlock check runs after BOTH events inside one `UnitOfWork` transaction. | Target (D-E) |
+| P-2 | Unlock is forward-only, sticky, and gated by Decision 32. `UserProgress` uses sticky `PassedExam` and `CompletedRequiredProblems` (stored, default false). `examGate = !hasExam || PassedExam`; `problemGate = !hasReq || CompletedRequiredProblems`. The next Module unlocks only when `(hasExam || hasReq)` and both gates and a next Module exist. A Module with neither exam nor required problems is unlocked only by Admin manual unlock. Adding a required problem later never re-locks anyone. The check runs after both events inside one UnitOfWork transaction, which commits even when nothing unlocks. | Target (Phase 3) |
 | P-3 | An `Admin` may manually unlock any Module for a learner (row created if missing, `Score`/`PassedExam`/`CompletedRequiredProblems` untouched) as an auditable support action. | Target |
 | P-4 | Locked content returns `403 Forbidden` (exists but not allowed), never `404`. One learner never sees or changes another's progress (`403` on cross-access). | Target (API) |
-| P-5 | Track completion is derived automatically, not stored: all Modules in the Track have `PassedExam = true` and `CompletedRequiredProblems = true`, plus all capstone `ProjectMilestone`s verified. No completion record exists in the MVP. | Target (D-G) |
+| P-5 | Track completion is derived automatically, not stored: all Modules in the Track have `PassedExam = true` and `CompletedRequiredProblems = true`, plus all capstone `ProjectMilestone`s verified. No completion record exists in the MVP. | Target (Decision 27) |
 
 ## 7. Public Resource Hub
 
 | ID | Rule | Status |
 |---|---|---|
 | R-1 | Read access to the Resource Hub is 100% public and anonymous; no authentication or bearer token is accepted or required for browsing and search. | Target |
-| R-2 | The taxonomy follows a strict 3-click maximum hierarchy: Language $\to$ Framework/Technology $\to$ Topic $\to$ Resources. Nodes are modeled as self-referencing `Technology` trees. | Target |
+| R-2 | The taxonomy follows a strict 3-click maximum hierarchy: Language → Framework/Technology → Topic → Resources. Nodes are modeled as self-referencing `Technology` trees. | Target |
 | R-3 | Resources must have a non-blank `Title` (max 200), ISO language code, difficulty `Level`, `Kind`, and cost flag (`IsPaid`). At least one of `Url` (absolute `http`/`https`) or `Citation` (max 500) must be present. | Target |
 | R-4 | Public anonymous queries only return resources with `Status = Approved`. Resources created by admin default to `Approved`; future community submissions start `PendingApproval`. | Target |
-| R-5 | Lesson resources and Hub resources share one underlying `Resource` entity. `LessonResource` is a join entity (`LessonId`, `ResourceId`, `Order`, `Note`), migrated in a two-step non-destructive sequence. | Target (D-H) |
-| R-6 | Scheduled background link checker probes URLs periodically; marks `Status = ResourceStatus.Broken` after 3 consecutive failures, hiding from public lists until repaired. | Target (D-H) |
+| R-5 | Lesson resources and Hub resources share one underlying `Resource` entity. `LessonResource` is a join entity (`LessonId`, `ResourceId`, `Order`, `Note`), migrated in a two-step non-destructive sequence. | Target (Decision 25/26) |
+| R-6 | Scheduled background link checker probes URLs periodically; marks `Status = ResourceStatus.Broken` after 3 consecutive failures, hiding from public lists until repaired. | Target (Decision 25/26) |
 
 ## 8. External practice problems & automated verification
 
 | ID | Rule | Status |
 |---|---|---|
-| X-1 | Practice problems support `ProblemKind`: `CodeforcesProblem` (algorithmic fundamentals) and `GitHubTask` (practical framework tasks), verified 100% automatically via `IProblemVerifier`. | Target (D-A) |
-| X-2 | Codeforces handle ownership is verified via a 128-bit single-use token placed into profile field (`firstName` or `organization`) returned by public `user.info`. Verified handle is unique per user (`UNIQUE(Platform, Handle)`). | Target (D-B) |
-| X-3 | Codeforces solve verification queries public `user.status` for `verdict == OK`, matching `contestId` and problem `index`. All-time accepted solves count. Solves are never self-reported. Cooldown is 60s per user. | Target (D-C) |
-| X-4 | Automated GitHub tasks (CodeCrafters-style): learner links GitHub via OAuth (numeric ID stored), generates repo from official template, pushes to default branch. Platform verifies repo owner, template provenance, Actions workflow success, and blob/tree SHAs against `TaskVersion`. Zero manual gating. | Target (D-D) |
-| X-5 | Problem difficulty calibration: `ModuleProblem` caches Codeforces rating. First Module problems must be rated $\le 800$, rising gradually. Content guideline and soft validator warning. | Target (D-F) |
-| X-6 | External service outages (Codeforces or GitHub down/throttled) return a fail-safe 503 response and alter NO learner state. | Target (D-J) |
+| X-1 | Practice problems support `ProblemKind`: `CodeforcesProblem` (algorithmic fundamentals) and `GitHubTask` (practical framework tasks), verified 100% automatically via `IProblemVerifier`. | Target (Decision 21) |
+| X-2 | Codeforces handle ownership is verified via a 128-bit single-use token placed into profile field (`firstName` or `organization`) returned by public `user.info`. Verified handle is unique per user (`UNIQUE(Platform, Handle)`). | Target (Decision 22) |
+| X-3 | Codeforces solve verification queries public `user.status` for `verdict == OK`, matching `contestId` and problem `index`. All-time accepted solves count. Solves are never self-reported. Cooldown is 60s per user. | Target (Decision 29) |
+| X-4 | Automated GitHub tasks (CodeCrafters-style): learner links GitHub via OAuth (numeric ID stored), generates repo from official template, pushes to default branch. Platform verifies repo owner, template provenance, Actions workflow success, and blob/tree SHAs against `TaskVersion`. Zero manual gating. | Target (Decision 24/35) |
+| X-5 | Problem difficulty calibration: `ModuleProblem` caches Codeforces rating. First Module problems must be rated ≤800, rising gradually. Content guideline and soft validator warning. | Target (Decision 28) |
+| X-6 | External service outages (Codeforces or GitHub down/throttled) return a fail-safe 503 response and alter NO learner state. | Target (Decision 31) |
 
 ## 9. Cumulative capstone projects
 
 | ID | Rule | Status |
 |---|---|---|
-| J-1 | A Track concludes with a single cumulative portfolio project built progressively across ordered `ProjectMilestone`s. | Target (D-G) |
-| J-2 | Each milestone references a `GitHubTask` and is verified by the exact same automated GitHub task pipeline (CodeCrafters-style). Zero manual gating. | Target (D-G) |
-| J-3 | Track completion is derived automatically when all Track Modules are passed and all Capstone Milestones are verified. Supplementary peer or mentor feedback is optional and non-blocking. | Target (D-G) |
+| J-1 | A Track concludes with a single cumulative portfolio project built progressively across ordered `ProjectMilestone`s. | Target (Decision 27) |
+| J-2 | Each milestone references a `GitHubTask` and is verified by the exact same automated GitHub task pipeline (CodeCrafters-style). Zero manual gating. | Target (Decision 27) |
+| J-3 | Track completion is derived automatically when all Track Modules are passed and all Capstone Milestones are verified. Supplementary peer or mentor feedback is optional and non-blocking. | Target (Decision 27) |
 
 ## 10. Invariants enforcement map
 

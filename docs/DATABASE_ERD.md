@@ -328,3 +328,11 @@ erDiagram
     }
 ```
 
+
+## Decision 32–36 Proposed additions
+- `UserProgress.CompletedRequiredProblems`, sticky boolean, default false.
+- Filtered unique indexes for external accounts (`Verified` only).
+- `ModuleProblem.GitHubTaskId` nullable with CHECK by Kind.
+- `TaskVersionStatus` enum (Active/Deprecated/Retired) and filtered unique Active version.
+- Capstone: `CapstoneProject.TaskId` unique, `ProjectMilestone.WorkflowJobName` unique per project.
+- Hub: two filtered unique indexes per nullable parent for slug and order.

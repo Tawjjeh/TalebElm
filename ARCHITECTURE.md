@@ -177,3 +177,11 @@ Domain rules participate at every step; no layer bypasses its adjacent boundary.
 | Behavioral verification | Tests |
 
 For normative conventions — service and repository patterns, DTO naming, EF Core constraint catalog, validation, controller standards, and current implementation status — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md).
+
+## External services
+
+TalebElm calls external services only through interfaces in Application, with typed HttpClient implementations in Infrastructure and business rules in Application services. Every asynchronous method accepts a CancellationToken. Background jobs are hosted services in Api that only call Application services (Decision 30).
+
+## CancellationToken
+
+New code must pass `HttpContext.RequestAborted` through the stack. Existing code migrates under the cancellation-token issue.
