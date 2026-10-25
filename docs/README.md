@@ -31,7 +31,7 @@
 | Product and business | [business/PRODUCT_VISION.md](business/PRODUCT_VISION.md), [business/BUSINESS_RULES.md](business/BUSINESS_RULES.md), [business/WORKFLOWS.md](business/WORKFLOWS.md), [business/ROADMAP.md](business/ROADMAP.md), [business/SUSTAINABILITY.md](business/SUSTAINABILITY.md) |
 | Data | [DATABASE_ERD.md](DATABASE_ERD.md) |
 | API | [API_ENDPOINTS.md](API_ENDPOINTS.md) |
-| Developer setup | [LOCAL_SETUP.md](LOCAL_SETUP.md), [development/coding-standards.md](development/coding-standards.md), [development/definition-of-done.md](development/definition-of-done.md) |
+| Developer setup | [LOCAL_SETUP.md](LOCAL_SETUP.md), [development/getting-started.md](development/getting-started.md), [development/coding-standards.md](development/coding-standards.md), [development/definition-of-done.md](development/definition-of-done.md), [development/testing.md](development/testing.md) |
 | Decisions and ADRs | [OPEN_DECISIONS.md](OPEN_DECISIONS.md), [decisions/README.md](decisions/README.md), [decisions/0000-adr-template.md](decisions/0000-adr-template.md) |
 | Glossary | [GLOSSARY.md](GLOSSARY.md) |
 | Tracks / issues | [USER_STORIES.md](USER_STORIES.md), [TASK_TEMPLATE_SPEC.md](TASK_TEMPLATE_SPEC.md), [GITHUB_LABELS.md](GITHUB_LABELS.md) |
@@ -80,6 +80,8 @@
 - [`decisions/README.md`](decisions/README.md)
 - [`development/coding-standards.md`](development/coding-standards.md)
 - [`development/definition-of-done.md`](development/definition-of-done.md)
+- [`development/getting-started.md`](development/getting-started.md)
+- [`development/testing.md`](development/testing.md)
 - [`features/01-auth-identity.md`](features/01-auth-identity.md)
 - [`features/02-tracks-content.md`](features/02-tracks-content.md)
 - [`features/03-lessons-and-learning-resources.md`](features/03-lessons-and-learning-resources.md)

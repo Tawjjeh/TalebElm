@@ -47,9 +47,9 @@ The layers and contracts are present, but the full learning journey is not wired
 
 | Area | Current state |
 |---|---|
-| Domain | User, Track, Module, Lesson, LessonResource, Exam, TrackEnrollment, and UserProgress entities exist. ExamQuestion/ExamOption do not. |
+| Domain | `User`, `Track`, `Module`, `Lesson`, `LessonResource`, `Exam`, `ExamQuestion`, `ExamOption`, `TrackEnrollment`, and `UserProgress` entities exist (PR #246 added `ExamQuestion`/`ExamOption`). |
 | Application | DTOs and service interfaces/implementations exist for User, Track, Module, Lesson, Exam, progress, and password hashing. Track create/list, Module/Lesson reads, and Exam get-by-id are implemented; the remaining use cases are placeholders. |
-| Infrastructure | SQLite registration, configurations, migrations, repositories for all current entities, and UnitOfWork exist. Registration is split between `AddApplication` and `Program.cs` (tracked by #274). |
+| Infrastructure | SQLite registration, configurations, migrations (including `ExamQuestion`/`ExamOption` configurations from PR #246), repositories for all current entities, and UnitOfWork exist. Registration is split between `AddApplication` and `Program.cs` (tracked by #274). |
 | API | Controllers are mostly placeholders. `Program.cs` registers infrastructure, `IUnitOfWork`, Application services, and the exception middleware; feature controllers do not yet delegate to service interfaces. There is no enrollment endpoint or authentication setup. |
 | Tests | SQLite-backed repository/configuration tests, service tests, validator tests, controller tests, and migration guards exist. The full register → enroll → study → exam → unlock journey is not implemented, so it is not tested end to end. |
 

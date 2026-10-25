@@ -50,6 +50,68 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.ExamOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExamQuestionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamQuestionId");
+
+                    b.ToTable("ExamOptions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ExamOptions_Text_NotEmpty", "length(trim(\"Text\")) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ExamQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("ExamQuestions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ExamQuestions_Points_Positive", "\"Points\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -318,6 +380,28 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.ExamOption", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.ExamQuestion", "ExamQuestion")
+                        .WithMany("Options")
+                        .HasForeignKey("ExamQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ExamQuestion");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ExamQuestion", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Exam", "Exam")
+                        .WithMany("Questions")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
@@ -387,6 +471,16 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ExamQuestion", b =>
+                {
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Module", b =>

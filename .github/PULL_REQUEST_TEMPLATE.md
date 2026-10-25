@@ -1,41 +1,40 @@
----
-name: Pull Request
-about: Submit a pull request to TalebElm
-title: ""
-labels: ""
-assignees: ""
----
+## Summary
 
-Thank you for submitting a pull request to TalebElm! We appreciate your help.
+<!--
+Briefly explain what changed and why.
+For 'feat:' or 'fix:' PRs, issue linkage is required by CI:
+Closes #123
+-->
 
-## Link your pull request to an issue
+## Traceability
 
-If this pull request closes one or more issues, please mention them below.
-Write "Closes" followed by the issue number.
+- Related Issue: <!-- e.g., Closes #123 or Relates to #123 -->
+- Business Rule(s): <!-- e.g., BR-TRACK-01, P-2 in docs/business/BUSINESS_RULES.md (or None) -->
+- Open Decision(s): <!-- e.g., Decision 32, Decision 37 in docs/OPEN_DECISIONS.md (or None) -->
+- Layer(s) Modified: <!-- Domain / Application / Infrastructure / Api / Tests / Docs -->
 
-For example: `Closes #12`
+## Verification Checklist
 
-**Related issue:** (for example: Closes #4)
+Please verify and check all that apply:
 
-## What did you add?
+- [ ] **Build:** `dotnet build TalebElm.slnx` passes with 0 errors and 0 warnings.
+- [ ] **Tests:** `dotnet test TalebElm.slnx` passes; new/updated tests cover the change and fail without it.
+- [ ] **Docs:** `python3 scripts/check-docs.py` passes (required if any markdown/docs were modified).
+- [ ] **Clean Architecture:** Domain depends on nothing; Application depends only on domain abstractions and `IUnitOfWork` (never direct `DbContext`); Infrastructure contains no business logic.
+- [ ] **Domain Invariants:** Never trust client-supplied scores; learner DTOs never expose `IsCorrect`; server-side gating is strictly enforced.
+- [ ] **Security & Hygiene:** No secrets, tokens, connection strings, credentials, or `*.db` files are included.
+- [ ] **Scope:** The PR is small, reversible, and focused on a single vertical slice (~200 lines target).
 
-Please describe briefly what this pull request adds or changes.
+## Risk and Rollback
 
-...
+<!--
+What could go wrong with this change?
+How is failure detected?
+How can it be safely reversed or rolled back?
+-->
 
-## Checklist
+## Evidence / Reviewer Notes
 
-Please check the boxes that apply by putting an x between the brackets.
-
-- [ ] The code builds without errors. I ran `dotnet build TalebElm.slnx`.
-- [ ] I followed the standard naming and folder conventions used in the project.
-- [ ] I have added or updated tests to cover my changes.
-- [ ] My changes follow the Clean Architecture principles described in `ARCHITECTURE.md`.
-
-## Notes for the reviewer (optional)
-
-Is there anything the reviewer should know? Write it here, if anything.
-
-...
-
-Thanks again for contributing. We will review your pull request soon.
+<!--
+Paste a snippet of test output or any operational notes the reviewer should know.
+-->

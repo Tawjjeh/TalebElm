@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/Tawjjeh/TalebElm/security
+    about: Report security vulnerabilities privately; do not open a public issue.
+  - name: Documentation index
+    url: https://github.com/Tawjjeh/TalebElm/blob/main/docs/README.md
+    about: Start here for architecture, domain boundaries, business rules, and getting started.
+  - name: Questions and discussions
+    url: https://github.com/Tawjjeh/TalebElm/discussions
+    about: Ask questions, share ideas, or discuss proposals with the community.

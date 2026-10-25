@@ -1,0 +1,54 @@
+name: Task Claim
+description: Claim an open task or issue to work on in TalebElm.
+title: "[Task Claim]: <Task Number> - <Task Name>"
+labels:
+  - "good first issue"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for wanting to contribute to TalebElm! We are happy you are here.
+        Before claiming, please review `CONTRIBUTING.md` and check that no one else is currently assigned.
+  - type: input
+    id: task-number
+    attributes:
+      label: Task / Issue Number
+      placeholder: "#123"
+    validations:
+      required: true
+  - type: input
+    id: task-name
+    attributes:
+      label: Task Name / Summary
+      placeholder: "Implement Module unlock business rule"
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Target layer
+      options:
+        - Domain
+        - Application
+        - Infrastructure
+        - Api
+        - Tests
+        - Documentation
+        - Cross-cutting
+    validations:
+      required: true
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Proposed implementation approach (optional)
+      description: Briefly describe how you plan to tackle this task or any initial questions you have.
+      placeholder: "I plan to add the validator in Application and test it with xUnit..."
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have read `CONTRIBUTING.md` and `ARCHITECTURE.md`.
+          required: true
+        - label: I will keep my pull request focused, small (~200 lines target), and include tests.
+          required: true
