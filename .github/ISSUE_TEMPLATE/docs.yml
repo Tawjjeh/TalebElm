@@ -1,0 +1,37 @@
+name: Documentation
+description: Report errors, missing sections, or improvements in project documentation.
+title: "[Docs]: "
+labels:
+  - "documentation"
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: File or section path that needs work.
+      placeholder: "docs/business/BUSINESS_RULES.md §Track or docs/ARCHITECTURE.md"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is inaccurate, outdated, missing, or unclear?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed change
+      description: Describe the corrected text, structure, or links to add/update.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: The change will be verified with `python3 scripts/check-docs.py`.
+          required: true
+        - label: No private notes or sensitive references are included.
+          required: true

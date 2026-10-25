@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new capability, workflow, or architectural improvement.
+title: "[Feature]: "
+labels:
+  - "enhancement"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TalebElm follows Clean Architecture (Domain → Application → Infrastructure → Api) and strict domain rules.
+        Features must respect zero manual gating and server-side verification.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this solve for the learner, admin, or developer?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, endpoints, or data models from a user/system perspective.
+    validations:
+      required: true
+  - type: checkboxes
+    id: layers
+    attributes:
+      label: Target layers affected
+      options:
+        - label: Domain (Entities, Enums, Exceptions, Domain Interfaces)
+        - label: Application (Services, DTOs, Business Rules, Validators)
+        - label: Infrastructure (EF Core Entities, Repositories, Migrations)
+        - label: Api (Controllers, Middleware, Dependency Injection)
+        - label: Tests (Unit & Integration tests)
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider and why were they rejected?
+  - type: input
+    id: decision-link
+    attributes:
+      label: Related Decisions / Rules
+      description: "Optional. Link relevant decisions in docs/OPEN_DECISIONS.md or rules in docs/business/BUSINESS_RULES.md"
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and open PRs to avoid duplication.
+          required: true
+        - label: This proposed change aligns with Clean Architecture principles described in `ARCHITECTURE.md`.
+          required: true

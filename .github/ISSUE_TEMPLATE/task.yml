@@ -1,0 +1,56 @@
+name: Engineering task
+description: A scoped engineering, refactoring, or infrastructure implementation task.
+title: "[Task]: "
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Rationale
+      description: Why is this task needed? Link the relevant business requirement, open decision, or tech debt item.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Primary layer
+      options:
+        - Domain
+        - Application
+        - Infrastructure
+        - Api
+        - Tests
+        - Cross-cutting / Tooling
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & Boundaries
+      description: What is included in this task? What is explicitly out of scope?
+      placeholder: |
+        - In scope:
+        - Out of scope:
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+        - [ ] Covered by unit/integration tests
+    validations:
+      required: true
+  - type: textarea
+    id: testing-notes
+    attributes:
+      label: Testing verification
+      description: How should the author and reviewer verify this implementation?
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies or Blockers
+      description: "Link blocking issues or PRs. Use 'None' if ready to start."
+    validations:
+      required: true

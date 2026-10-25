@@ -1,0 +1,71 @@
+name: Bug report
+description: Report unexpected behavior, test failures, or defects in TalebElm.
+title: "[Bug]: "
+labels:
+  - "bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug in TalebElm!
+        **Important:** Do not include passwords, JWT secrets, database connection strings, or personal data.
+        For sensitive security vulnerabilities, please report privately via GitHub Security Advisories.
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Affected layer
+      options:
+        - Domain (Entities, Enums, Rules)
+        - Application (Services, DTOs, Validators)
+        - Infrastructure (EF Core, Repositories, Migrations)
+        - Api (Controllers, Middleware, Endpoints)
+        - Testing (Unit / Integration Tests)
+        - Documentation / Scripts
+        - Unsure / Multiple
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: .NET SDK version, OS, or test runner.
+      placeholder: ".NET 10.0.x / Linux / SQLite"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior vs what you expected according to the business rules.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `dotnet test ...` or send request `POST /api/...`
+        2. Provide payload: ...
+        3. Observe error: ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Stack trace
+      description: Paste relevant terminal logs or exceptions (redact any sensitive info).
+      render: text
+  - type: input
+    id: business-rule
+    attributes:
+      label: Related Business Rule or Decision ID
+      description: "Optional. For example: BR-TRACK-01, P-2 (Decision 32), etc."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to ensure this is not a duplicate.
+          required: true
+        - label: I verified that no secrets, credentials, or sensitive data are included.
+          required: true
