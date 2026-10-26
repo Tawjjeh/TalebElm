@@ -15,10 +15,14 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssemblyContaining<CreateTrackRequestValidator>();
 
+        services.AddScoped<ITrackService, TrackService>();
         services.AddScoped<IModuleService, ModuleService>();
         services.AddScoped<ILessonService, LessonService>();
+        services.AddScoped<IExamService, ExamService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserProgressService, UserProgressService>();
+        services.AddScoped<ITrackEnrollmentService, TrackEnrollmentService>();
 
-        // NOTE (#274): remaining service and repository registrations land here.
         return services;
     }
 }
