@@ -65,13 +65,15 @@ DomainException (base)
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
 | Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
-### Validation error payload (target contract)
+### Validation error payload (implemented)
 
-The current middleware returns a single `detail` string. The target contract adds field-specific errors so clients can attach each message to its input field:
+The middleware returns an RFC 7807 problem-details envelope with field-specific errors so clients can attach each message to its input field:
 
 ```json
 {
-  "error": "Validation failed.",
+  "status": 400,
+  "title": "One or more validation errors occurred.",
+  "detail": "One or more validation errors occurred.",
   "errors": {
     "name": ["'Name' must not be empty."],
     "capacity": ["'Capacity' must be greater than '0'."]
@@ -79,9 +81,10 @@ The current middleware returns a single `detail` string. The target contract add
 }
 ```
 
-- Keys in `errors` are the failing property names in camelCase; each value is an array of messages, because one field can fail more than one rule.
-- The top-level `error` string stays present for logging and generic display; failures that are not tied to a specific field are reported there only.
-- Services currently throw FluentValidation's `ValidationException` (for example `TrackService.CreateAsync`), whose `ValidationFailure` items already carry `PropertyName` and `ErrorMessage`. The middleware must map those into the `errors` object above. `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `error` only, until it is extended to carry per-field errors.
+- Keys in `errors` are failing property names converted to camelCase (including nested segments, e.g. `lesson.title`); each value is an array of messages, supporting multiple rule violations per property.
+- Failures without a property name fall back to the top-level `detail` string rather than generating an empty key in `errors`.
+- FluentValidation's `ValidationException` (thrown by application services) is mapped to this structured shape.
+- `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `detail` only without the `errors` map.
 
 ### Registration (implemented)
 
