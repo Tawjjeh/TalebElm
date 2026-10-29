@@ -332,6 +332,62 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserExternalAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalNumericId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Handle")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TokenExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VerificationToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Platform", "ExternalNumericId")
+                        .IsUnique()
+                        .HasFilter("ExternalNumericId IS NOT NULL");
+
+                    b.HasIndex("Platform", "Handle")
+                        .IsUnique()
+                        .HasFilter("Status = 1");
+
+                    b.HasIndex("UserId", "Platform")
+                        .IsUnique();
+
+                    b.ToTable("UserExternalAccounts", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserExternalAccounts_Handle_NotEmpty", "length(trim(Handle)) > 0");
+                        });
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -452,6 +508,15 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Track");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserExternalAccount", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>

@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 
@@ -33,4 +33,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Track> Tracks => Set<Track>();
     public DbSet<TrackEnrollment> TrackEnrollments => Set<TrackEnrollment>();
     public DbSet<LessonResource> LessonResources => Set<LessonResource>();
+    public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
 }
