@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using FluentValidation.Results;
 using Moq;
 using TalebElm.Application.DTOs;
@@ -150,5 +150,59 @@ public class TrackServiceTests
         _unitOfWork.Verify(
             u => u.SaveChangesAsync(),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_With25SeededTracks_Page2ReturnsExpectedSliceAndTotal()
+    {
+        var allTracks = Enumerable.Range(1, 25)
+            .Select(i => new Track
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Track {i}",
+                Description = $"Description {i}",
+                Status = TrackStatus.Published
+            })
+            .ToList();
+
+        var page2Slice = allTracks.Skip(5).Take(5).ToList();
+
+        _unitOfWork
+            .Setup(u => u.Tracks.GetPagedAsync(2, 5, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((page2Slice, 25));
+
+        var result = await _sut.GetPagedAsync(page: 2, pageSize: 5);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Page);
+        Assert.Equal(5, result.PageSize);
+        Assert.Equal(25, result.TotalCount);
+        Assert.Equal(5, result.Items.Count);
+        Assert.Equal(page2Slice[0].Id, result.Items[0].Id);
+        Assert.Equal(page2Slice[0].Name, result.Items[0].Name);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetPagedAsync_WhenPageLessThan1_ThrowsValidationException(int invalidPage)
+    {
+        var ex = await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ValidationException>(
+            () => _sut.GetPagedAsync(page: invalidPage, pageSize: 20));
+
+        Assert.Equal("Page must be greater than or equal to 1.", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(101)]
+    [InlineData(500)]
+    public async Task GetPagedAsync_WhenPageSizeOutOfRange_ThrowsValidationException(int invalidPageSize)
+    {
+        var ex = await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ValidationException>(
+            () => _sut.GetPagedAsync(page: 1, pageSize: invalidPageSize));
+
+        Assert.Equal("PageSize must be between 1 and 100.", ex.Message);
     }
 }

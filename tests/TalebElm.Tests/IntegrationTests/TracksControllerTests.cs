@@ -1,16 +1,49 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
 using TalebElm.Api.Controllers;
 using TalebElm.Api.Middlewares;
+using TalebElm.Application.DTOs;
+using TalebElm.Application.Services.Abstraction;
 using DomainNotImplemented = TalebElm.Domain.Exceptions.NotImplementedException;
 
 namespace TalebElm.Tests.IntegrationTests;
 
 public class TracksControllerTests
 {
+    private readonly Mock<ITrackService> _trackService = new();
+
     [Fact]
-    public void Get_ThrowsDomainNotImplementedException()
+    public async Task Get_ReturnsOkWithPagedTracksResponse()
     {
-        var exception = Assert.Throws<DomainNotImplemented>(() => new TracksController().Get());
+        var expectedResponse = new PagedTracksResponse(
+            [new TrackResponse(Guid.NewGuid(), "Backend .NET", "Description", 1)],
+            Page: 1,
+            PageSize: 20,
+            TotalCount: 1);
+
+        _trackService
+            .Setup(s => s.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        var controller = new TracksController(_trackService.Object);
+
+        var actionResult = await controller.Get(1, 20);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        var result = Assert.IsType<PagedTracksResponse>(okResult.Value);
+        Assert.Equal(expectedResponse.Page, result.Page);
+        Assert.Equal(expectedResponse.PageSize, result.PageSize);
+        Assert.Equal(expectedResponse.TotalCount, result.TotalCount);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public void Post_ThrowsDomainNotImplementedException()
+    {
+        var controller = new TracksController(_trackService.Object);
+
+        var exception = Assert.Throws<DomainNotImplemented>(() => controller.Post());
 
         Assert.Contains("not implemented", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

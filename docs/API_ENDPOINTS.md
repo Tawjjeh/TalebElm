@@ -10,7 +10,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/auth/login` | Declared, no request/response DTO, throws domain `NotImplementedException`. |
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
-| GET | `/api/tracks` | `TrackService` list exists, but is not wired to the controller; throws domain `NotImplementedException`. |
+| GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
 | POST | `/api/tracks` | `TrackService` create exists, but the action has no request parameter and is not wired; throws domain `NotImplementedException`. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
