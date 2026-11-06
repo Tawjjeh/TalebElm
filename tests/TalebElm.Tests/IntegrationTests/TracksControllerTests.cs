@@ -43,7 +43,8 @@ public class TracksControllerTests
     {
         var controller = new TracksController(_trackService.Object);
 
-        var exception = Assert.Throws<DomainNotImplemented>(() => controller.Post());
+        var exception = Assert.Throws<DomainNotImplemented>(
+            () => controller.Post(new CreateTrackRequest("Backend .NET", "Description")));
 
         Assert.Contains("not implemented", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
