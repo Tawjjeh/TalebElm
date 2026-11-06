@@ -2,25 +2,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using TalebElm.Domain.Entities;
-using TalebElm.Infrastructure.Persistence;
+using TalebElm.Tests.Infrastructure;
 
 namespace TalebElm.Tests.UnitTests;
 
-public class UserExternalAccountConfigurationTests
+public class UserExternalAccountConfigurationTests : SqliteTestBase
 {
-    private static AppDbContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        return new AppDbContext(options);
-    }
-
     [Fact]
     public void UserExternalAccount_PrimaryKey_ShouldBeId()
     {
-        using var context = CreateContext();
+        var context = DbContext;
         var entityType = context.Model.FindEntityType(typeof(UserExternalAccount));
 
         Assert.NotNull(entityType);
@@ -33,7 +24,7 @@ public class UserExternalAccountConfigurationTests
     [Fact]
     public void UserExternalAccount_Properties_ShouldHaveConfiguredLengthsAndNullability()
     {
-        using var context = CreateContext();
+        var context = DbContext;
         var entityType = context.Model.FindEntityType(typeof(UserExternalAccount));
 
         Assert.NotNull(entityType);
@@ -57,7 +48,7 @@ public class UserExternalAccountConfigurationTests
     [Fact]
     public void UserExternalAccount_ForeignKeyToUser_ShouldUseRestrictDelete()
     {
-        using var context = CreateContext();
+        var context = DbContext;
         var entityType = context.Model.FindEntityType(typeof(UserExternalAccount));
 
         Assert.NotNull(entityType);
@@ -75,7 +66,7 @@ public class UserExternalAccountConfigurationTests
     [Fact]
     public void UserExternalAccount_Indexes_ShouldBeConfiguredWithDecision33Rules()
     {
-        using var context = CreateContext();
+        var context = DbContext;
         var entityType = context.Model.FindEntityType(typeof(UserExternalAccount));
 
         Assert.NotNull(entityType);
@@ -118,7 +109,7 @@ public class UserExternalAccountConfigurationTests
     [Fact]
     public void UserExternalAccount_CheckConstraint_ShouldExistOnHandle()
     {
-        using var context = CreateContext();
+        var context = DbContext;
         var designTimeModel = context.GetService<IDesignTimeModel>().Model;
         var entityType = designTimeModel.FindEntityType(typeof(UserExternalAccount));
 
