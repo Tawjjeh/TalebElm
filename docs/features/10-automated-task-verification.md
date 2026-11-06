@@ -153,10 +153,27 @@ public record TaskVerificationResultResponse(
 ```csharp
 public interface IGitHubClient
 {
-    Task<GitHubUserResponse> GetAuthenticatedUserAsync(string accessToken);
-    Task<GitHubRepositoryResponse?> GetRepositoryAsync(string owner, string repo);
-    Task<GitHubWorkflowRunResponse?> GetLatestWorkflowRunAsync(string owner, string repo, string defaultBranch);
-    Task<GitHubTreeResponse?> GetTreeAsync(string owner, string repo, string commitSha);
+    // null only when GitHub says the repository does not exist; outages throw
+    // ExternalServiceUnavailableException (503) so a failure never looks like "not found".
+    Task<GitHubRepository?> GetRepositoryAsync(string owner, string repo, CancellationToken cancellationToken = default);
+
+    // Latest run for this workflow on this branch, regardless of status. Callers require
+    // Status == "completed" and Conclusion == "success"; queued/in-progress is not a failure.
+    Task<GitHubWorkflowRun?> GetLatestWorkflowRunAsync(
+        string owner,
+        string repo,
+        string workflow,
+        string branch,
+        CancellationToken cancellationToken = default);
+
+    // Recursive by default so nested files are returned. Truncated == true means the tree is
+    // incomplete: a missing path is not proof of absence, so callers fail closed.
+    Task<GitHubGitTree?> GetGitTreeAsync(
+        string owner,
+        string repo,
+        string treeSha,
+        bool recursive = true,
+        CancellationToken cancellationToken = default);
 }
 ```
 

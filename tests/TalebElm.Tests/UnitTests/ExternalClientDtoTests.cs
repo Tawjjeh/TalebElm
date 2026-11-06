@@ -31,6 +31,9 @@ public class ExternalClientDtoTests
         Assert.Equal(45, submission.PassedTestCount);
         Assert.Equal(1700000000, submission.CreationTimeSeconds);
         Assert.Equal("Taxi", submission.Problem.Name);
+
+        var pendingSubmission = new CodeforcesSubmission(123457, 158, problem, null, 0, 1700000100);
+        Assert.Null(pendingSubmission.Verdict);
     }
 
     [Fact]
@@ -48,13 +51,17 @@ public class ExternalClientDtoTests
         Assert.False(repo.Fork);
         Assert.Equal("main", repo.DefaultBranch);
 
-        var run = new GitHubWorkflowRun(3001, "Test Workflow", "a1b2c3d4e5", "completed", "success", "test.yml");
+        var run = new GitHubWorkflowRun(3001, "Test Workflow", "a1b2c3d4e5", "completed", "success", 987654321);
         Assert.Equal(3001, run.Id);
         Assert.Equal("Test Workflow", run.Name);
         Assert.Equal("a1b2c3d4e5", run.HeadSha);
         Assert.Equal("completed", run.Status);
         Assert.Equal("success", run.Conclusion);
-        Assert.Equal("test.yml", run.WorkflowId);
+        Assert.Equal(987654321, run.WorkflowId);
+
+        var pendingRun = new GitHubWorkflowRun(3002, null, "f6e5d4c3b2", "in_progress", null, 987654321);
+        Assert.Null(pendingRun.Name);
+        Assert.Null(pendingRun.Conclusion);
 
         var treeItem = new GitHubTreeItem("tests/UnitTest.cs", "100644", "blob", "blobsha123", 1024, "https://api.github.com/blob");
         Assert.Equal("tests/UnitTest.cs", treeItem.Path);
