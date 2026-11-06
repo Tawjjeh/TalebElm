@@ -25,7 +25,7 @@ Let a learner choose a software-learning Track, then study its Modules and Lesso
 | Lesson | CreatedAt | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC |
 | Lesson | Title | `string` | No | Initialized `string.Empty`; required, max length **150**, non-blank check |
 | Lesson | Content | `string` | No | Initialized `string.Empty`; required, free text (no max length) |
-| Lesson | LessonType | `LessonType` | Planned | Existing enum should become an entity field for content rendering and validation |
+| Lesson | LessonType | `LessonType` | No | Enum: `Text=1`, `Video=2`, `Exercise=3`; new lessons must default to `Text` |
 | Lesson | Order | `int` | No | Position within Module (`>= 1`); `UNIQUE(ModuleId, Order)` — no two Lessons share an `Order` in one Module |
 | Lesson | ModuleId | `Guid` | No | FK → `Module.Id` with `DeleteBehavior.Restrict` |
 
@@ -34,7 +34,7 @@ Let a learner choose a software-learning Track, then study its Modules and Lesso
 | Enum | Values |
 |---|---|
 | `TrackStatus` | `Draft = 0`, `Published = 1`, `Archived = 2` |
-| `LessonType` | `Text = 0`, `Video = 1`, `Exercise = 2` |
+| `LessonType` | `Text = 1`, `Video = 2`, `Exercise = 3` |
 
 > `LessonType` enum exists in code but `Lesson` entity does not yet have a `LessonType` property. Treat the field above as the intended MVP contract and keep implementation notes explicit until the entity is updated.
 
