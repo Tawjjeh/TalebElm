@@ -93,4 +93,14 @@ public class ExamAndUserProgressConfigurationTests : SqliteTestBase
             await Assert.ThrowsAsync<DbUpdateException>(async () => await SaveChangesAsync());
         }
     }
+
+    [Fact]
+    public void Model_ShouldConfigureCompletedRequiredProblemsWithDefaultValueFalse()
+    {
+        var entityType = DbContext.Model.FindEntityType(typeof(UserProgress));
+        var property = entityType?.FindProperty(nameof(UserProgress.CompletedRequiredProblems));
+
+        Assert.NotNull(property);
+        Assert.Equal(false, property.GetDefaultValue());
+    }
 }
