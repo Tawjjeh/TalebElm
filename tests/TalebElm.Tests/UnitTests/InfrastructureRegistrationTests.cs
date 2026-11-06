@@ -71,4 +71,31 @@ public class InfrastructureRegistrationTests
         Assert.Equal("Microsoft.EntityFrameworkCore.Sqlite", context.Database.ProviderName);
         Assert.Equal(connectionString, context.Database.GetConnectionString());
     }
+
+    [Fact]
+    public void AddInfrastructure_RegistersUnitOfWorkAndAllRepositories()
+    {
+        // Arrange
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:TalebElm"] = "Data Source=:memory:"
+        });
+        var services = new ServiceCollection();
+
+        // Act
+        services.AddInfrastructure(configuration);
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        // Assert
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.IUnitOfWork>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.ITrackRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.IModuleRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.ILessonRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.ILessonResourceRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.IExamRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.IUserRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.IUserProgressRepository>());
+        Assert.NotNull(scope.ServiceProvider.GetService<TalebElm.Domain.Interfaces.ITrackEnrollmentRepository>());
+    }
 }

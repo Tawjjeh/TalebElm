@@ -25,7 +25,7 @@ public class ApplicationRegistrationTests
     }
 
     [Fact]
-    public void AddApplication_RegistersModuleAndLessonServices()
+    public void AddApplication_RegistersAllApplicationServices()
     {
         var services = new ServiceCollection();
         services.AddApplication();
@@ -34,7 +34,12 @@ public class ApplicationRegistrationTests
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
+        Assert.NotNull(scope.ServiceProvider.GetService<ITrackService>());
         Assert.NotNull(scope.ServiceProvider.GetService<IModuleService>());
         Assert.NotNull(scope.ServiceProvider.GetService<ILessonService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IExamService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IUserService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<IUserProgressService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<ITrackEnrollmentService>());
     }
 }
