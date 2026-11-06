@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors remain target behavior.
+Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors are implemented.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 

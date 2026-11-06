@@ -90,6 +90,24 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task FluentValidation_NestedPropertyName_UsesCamelCaseSegments()
+    {
+        var failures = new[]
+        {
+            new ValidationFailure("Lesson.Title", "'Title' is required.")
+        };
+        var exception = new FluentValidationException(failures);
+
+        var (statusCode, _, doc) = await InvokeMiddlewareWithAsync(exception);
+
+        Assert.Equal(400, statusCode);
+        var errors = doc.RootElement.GetProperty("errors");
+        var titleErrors = errors.GetProperty("lesson.title").EnumerateArray().Select(e => e.GetString()).ToArray();
+        Assert.Single(titleErrors);
+        Assert.Equal("'Title' is required.", titleErrors[0]);
+    }
+
+    [Fact]
     public async Task FluentValidation_EmptyPropertyName_FallsBackToTopLevelDetail()
     {
         var failures = new[]
