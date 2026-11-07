@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
@@ -17,9 +17,9 @@ public class ExamRepository(AppDbContext context) : IExamRepository
         return await context.Set<Exam>().AsNoTracking().ToListAsync();
     }
 
-    public async Task<Exam?> GetByIdAsync(Guid id)
+    public async Task<Exam?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.Set<Exam>().FindAsync(id);
+        return await context.Set<Exam>().FindAsync(id, ct);
     }
 
     public async Task<Exam?> GetByModuleIdAsync(Guid moduleId)

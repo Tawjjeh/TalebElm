@@ -17,9 +17,9 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
         return await context.UserProgresses.AsNoTracking().ToListAsync();
     }
 
-    public async Task<UserProgress?> GetByIdAsync(Guid id)
+    public async Task<UserProgress?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.UserProgresses.FirstOrDefaultAsync(up => up.Id == id);
+        return await context.UserProgresses.FirstOrDefaultAsync(up => up.Id == id, ct);
     }
 
     public async Task<UserProgress?> GetByUserAndModuleAsync(Guid userId, Guid moduleId)

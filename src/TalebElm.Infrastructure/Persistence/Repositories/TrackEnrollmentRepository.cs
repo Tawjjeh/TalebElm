@@ -16,9 +16,9 @@ public class TrackEnrollmentRepository(AppDbContext context) : ITrackEnrollmentR
         return await context.TrackEnrollments.ToListAsync();
     }
 
-    public async Task<TrackEnrollment?> GetByIdAsync(Guid id)
+    public async Task<TrackEnrollment?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await context.TrackEnrollments
-            .FindAsync(id);
+            .FindAsync(id,ct);
     }
 }

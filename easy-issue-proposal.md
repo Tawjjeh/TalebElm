@@ -1,110 +1,122 @@
-# Pass CancellationToken through the exam read path
+# Proposed Easy Issue: `CreateExamRequestValidator` must require a non-empty `ModuleId`
 
 ## Summary
 
-`ExamService.GetByIdAsync` and `IExamRepository` perform database reads without accepting a
-`CancellationToken`, so an aborted HTTP request still finishes its database queries. The project
-coding standard requires every new async stack to propagate `CancellationToken` from the controller
-down to EF Core, and the maintainers have been fixing this path-by-path: Module (#432), Lesson
-(#433), UserProgress (#434), User (#435) and Track enrollment (#436) issues exist, but no issue
-covers the Exam read path. This issue fills exactly that gap with the same small, well-trodden
-change.
+`CreateExamRequestValidator` validates only `Title` and `PassThreshold`. The parent-id
+rule that every sibling validator enforces — "the owning entity id must be non-empty" —
+is missing for exams. The result: `CreateExamRequest(Guid ModuleId, ...)` accepts
+`Guid.Empty` as a parent, and any exam-creation flow downstream (issue #273 / API
+wiring #255) will report it as a service-level 404 "Module ... not found" instead of a
+clean 400 with the standard error-code message. The fix is one three-line
+`RuleFor(x => x.ModuleId).NotEmpty().WithMessage("Exam.ModuleId.Required")` plus a
+unit test — the same shape the repo already accepted for the Module and Lesson
+validators.
 
 ## Current Behavior
 
-- `src/TalebElm.Application/Services/Concrete/ExamService.cs` — `GetByIdAsync(Guid id)` (line 16)
-  takes no token and calls `unitOfWork.Exams.GetByIdAsync(id)` without one.
-- `src/TalebElm.Application/Services/Abstraction/IExamService.cs` — `GetByIdAsync(Guid id)`
-  declares no token parameter.
-- `src/TalebElm.Domain/Interfaces/IRepository.cs` — `GetByIdAsync(Guid id)` has no token
-  parameter (line 7).
-- `src/TalebElm.Domain/Interfaces/IExamRepository.cs` — `GetByModuleIdAsync(Guid moduleId)` has
-  no token parameter (line 7).
-- `src/TalebElm.Infrastructure/Persistence/Repositories/ExamRepository.cs` — `GetByIdAsync`
-  (line 20) and `GetByModuleIdAsync` (line 25) pass no token to EF Core
-  (`FindAsync(id)`, `FirstOrDefaultAsync(...)`).
-- `src/TalebElm.Domain/Interfaces/IUnitOfWork.cs` and
-  `src/TalebElm.Infrastructure/Persistence/Repositories/UnitOfWork.cs` — `SaveChangesAsync()`
-  (line 13 / line 46) has no token parameter.
+`src/TalebElm.Application/Validators/CreateExamRequestValidator.cs:8-15`:
 
-Aborting a request cannot stop this work; the queries and any later save run to completion.
+```csharp
+public CreateExamRequestValidator()
+{
+    RuleFor(x => x.Title)
+        .NotEmpty().WithMessage("Exam.Title.Required");
+
+    RuleFor(x => x.PassThreshold)
+        .InclusiveBetween(1, 100).WithMessage("Exam.PassThreshold.Invalid");
+}
+```
+
+- `CreateExamRequest` is declared as `CreateExamRequest(Guid ModuleId, string Title,
+  int PassThreshold)` (`src/TalebElm.Application/DTOs/CreateExamRequest.cs:9`), so a
+  client can omit `ModuleId` from the JSON body and get `Guid.Empty`.
+- `ExamService.CreateAsync` is still a placeholder that throws the domain 501, so
+  today the bad payload dies at 501 too; but once exam creation is wired (#255,
+  #273), `Guid.Empty` flows all the way to the parent lookup and surfaces as
+  `NotFoundException` → 404, when the API contract for client-side shape errors is
+  `400` + field-keyed `errors` through the validation middleware.
+- There is no `UpdateExamRequest` in the codebase, so only this one validator is
+  affected.
 
 ## Expected Behavior
 
-The token flows through the whole exam read path. When the caller aborts, EF Core stops the
-database work via `ct`. No behavior changes: adding the parameter is purely additive because it
-defaults to `CancellationToken.None`.
+- `CreateExamRequest` with `ModuleId == Guid.Empty` fails validation with the
+  error-code message `Exam.ModuleId.Required`.
+- The failure flows through `ExceptionHandlingMiddleware` (#249) as `400` with the
+  field-keyed `errors` object, exactly like the other validator failures.
+- A valid, non-empty `ModuleId` is unaffected — existence checking of the parent
+  remains the service's job (404), not the validator's.
 
-## Proposed Scope
+## Scope
 
-- Add `CancellationToken ct = default` to `IExamService.GetByIdAsync` and pass it through
-  `ExamService.GetByIdAsync` to `unitOfWork.Exams.GetByIdAsync(id, ct)`.
-- Add `CancellationToken ct = default` to `IRepository<T>.GetByIdAsync`,
-  `IExamRepository.GetByModuleIdAsync` and `IUnitOfWork.SaveChangesAsync`.
-- Implementations under `src/TalebElm.Infrastructure/Persistence/Repositories/` that implement
-  `IRepository<T>` take the same optional parameter and forward it to EF Core
-  (`FindAsync(id, ct)`, `FirstOrDefaultAsync(..., ct)`); `UnitOfWork.SaveChangesAsync(ct)` passes
-  `ct` to `_context.SaveChangesAsync(ct)`. Repositories not used here (`ExamRepository.GetAllAsync`
-  sibling methods, etc.) appear only because of the shared interface signature, as PR #453 did for
-  enrollment.
-- Update test doubles and callers so they compile (the optional parameter keeps existing callers
-  valid, but mocks asserting arguments may need updating, mirroring
-  `tests/TalebElm.Tests/UnitTests/ExamServiceTests.cs` and `ExamRepositoryTests.cs`).
-- Do not touch any controller or endpoint. This is the Application/Domain/Infrastructure slice
-  only, like the sibling issues.
+- Add one rule to `CreateExamRequestValidator` consistent with the sibling pattern:
+  `RuleFor(x => x.ModuleId).NotEmpty().WithMessage("Exam.ModuleId.Required");`
+- Add unit tests in `tests/TalebElm.Tests/UnitTests/CreateExamRequestValidatorTests.cs`
+  asserting the exact message key for `Guid.Empty` and a pass case for a real GUID.
 
-Follow the pattern of Decision 39 and the sibling issues above: one token per path, default value
-`CancellationToken.None`, no behavior change.
+Out of scope: anything in `ExamService` DI registration, PUT/DELETE exam endpoints,
+and question-level rules (they live with #273 / the ExamService issue by decision in
+#272).
 
 ## Acceptance Criteria
 
-- [ ] `IExamService.GetByIdAsync`, the repositories in the exam path, and
-      `IUnitOfWork.SaveChangesAsync` accept `CancellationToken` and forward it to every async call
-      they make.
-- [ ] An added unit test proves the token received by the service reaches the repository call (or
-      the existing tests are updated to verify forwarding where mocking infrastructure allows).
-- [ ] `dotnet build TalebElm.slnx` and `dotnet test TalebElm.slnx` pass with no behavior change.
+- [ ] `CreateExamRequest` with `Guid.Empty` `ModuleId` fails with `Exam.ModuleId.Required`.
+- [ ] Unit tests assert the exact failure message key (error-code style, per sibling validators).
+- [ ] A non-empty `ModuleId` passes the validator.
+- [ ] `dotnet build TalebElm.slnx` and `dotnet test TalebElm.slnx` stay green.
 
-## Verification
+## Verification (how a beginner confirms)
 
-- `dotnet build TalebElm.slnx` and `dotnet test TalebElm.slnx`.
-- Filtered example used by the sibling enrollment PR:
-  `dotnet test TalebElm.slnx --filter FullyQualifiedName~ExamServiceTests`.
-- Manual check: grep for `ExamService.cs`, `ExamRepository.cs`, `IUnitOfWork.cs` and confirm no
-  `await` call in the exam read path drops the token.
+1. Open the repo, run `dotnet test TalebElm.slnx` — baseline green.
+2. Write/inspect the new unit test: instantiate the validator, call
+   `ValidateAsync(new CreateExamRequest(Guid.Empty, "demo", 50))`, assert
+   `IsValid == false` and the error message equals `Exam.ModuleId.Required`.
+3. Run tests again — green with the new test.
+4. Optional UI check: after implementing, tracing the validator in the debugger or
+   adding a middleware-level test shows a `400` (not 404/501) path once exam wiring
+   lands.
 
 ## Repository Evidence
 
-- Relevant files:
-  - `src/TalebElm.Application/Services/Abstraction/IExamService.cs`
-  - `src/TalebElm.Application/Services/Concrete/ExamService.cs`
-  - `src/TalebElm.Domain/Interfaces/IRepository.cs`, `IExamRepository.cs`, `IUnitOfWork.cs`
-  - `src/TalebElm.Infrastructure/Persistence/Repositories/ExamRepository.cs`, `UnitOfWork.cs`
-- Relevant classes/methods: `ExamService.GetByIdAsync`, `ExamRepository.GetByIdAsync`,
-  `ExamRepository.GetByModuleIdAsync`, `IRepository<T>.GetByIdAsync`, `IUnitOfWork.SaveChangesAsync`
-- Existing project convention to follow: `docs/development/coding-standards.md` §8
-  ("New code must propagate CancellationToken through the entire call stack"); sibling issues
-  #432–#436 (same change per read path) and open PR #453 for the enrollment path; tests live in
-  `tests/TalebElm.Tests/UnitTests/` (`ExamServiceTests.cs`, `ExamRepositoryTests.cs`).
+- DTO shape: `src/TalebElm.Application/DTOs/CreateExamRequest.cs:9` —
+  `CreateExamRequest(Guid ModuleId, string Title, int PassThreshold)`.
+- Missing rule: `src/TalebElm.Application/Validators/CreateExamRequestValidator.cs:8-15`.
+- Sibling convention to copy:
+  - `CreateModuleRequestValidator.cs:22-23` → `.NotEmpty().WithMessage("Module.TrackId.Required")`
+  - `CreateLessonRequestValidator.cs:14-15` → `.NotEmpty().WithMessage("Lesson.ModuleId.Required")`
+- Persistence contract: `ExamConfiguration` maps a required FK on `ModuleId` with a
+  unique index (`src/TalebElm.Infrastructure/Configurations/ExamConfiguration.cs`),
+  so an empty parent id can never be legitimate.
+- Error-code message style: "Use error codes as messages so tests and clients can
+  rely on them" (comment in `CreateModuleRequestValidator.cs:10`); middleware maps
+  `ValidationException` → 400 (`docs/features/08-health-and-error-handling.md`).
 
 ## Difficulty
 
-Beginner
+Truly Easy. One rule + one test file in an already-tested spot (the test file for
+this validator class already exists in `tests/TalebElm.Tests/UnitTests` — extend it).
 
 ## Estimated Effort
 
-About 1 hour: a handful of small signature changes plus an updated test — very similar in size to
-the sibling read-path issues.
+~30–45 minutes including tests.
 
 ## Duplicate Check
 
-GitHub API access was available (the repository `Tawjjeh/TalebElm` is public; 106 open issues,
-23 open PRs at the time of searching). I searched for duplicates with the queries
-`repo:Tawjjeh/TalebElm is:open CancellationToken` and
-`repo:Tawjjeh/TalebElm is:open CancellationToken exam`:
+- `#421` — "Exam title max length in `CreateExamRequestValidator`": different rule
+  (Title length vs parent-id NotEmpty) in the same file. Mentioned here so the two
+  issues don't churn the same lines; either order works.
+- `#272` (closed) — added the Module/Lesson validators; its `CreateExamRequest` row
+  lists only Title / PassThreshold / questions rules, so `ModuleId` was intentionally
+  out of that slice and no issue was opened for it.
+- `#302` / `#301` (closed, unmerged PRs) — same rule table as #272; both abandon the
+  implementation, and neither adds an exam `ModuleId` rule.
+- `#193` (closed) — EF mapping of the exam FK, not request validation.
+- `#273` / `#255` — exam service/API wiring; per #272's split, shape validation
+  belongs in the validator, not the service issue.
+- GitHub lexical search (`repo:Tawjjeh/TalebElm exam ModuleId required`,
+  `CreateExamRequestValidator`, `ProgressController`) returned no other open issue
+  or PR covering this rule.
 
-- Issues #432 (Module), #433 (Lesson), #434 (progress), #435 (user), #436 (enrollment) cover the
-  other read paths — none mention the Exam read path.
-- Open PR #453 covers enrollment, PR #459 covers the progress path; neither touches the Exam path.
-- No open issue claims the exam read path; I did not find a possible duplicate. (Searches are
-  lexical, so a very differently-worded issue could still exist; the closest matches are listed.)
+## Labels (suggested)
+
+`good first issue` · `help wanted` · `layer:application` · `validation` · `feature:exams`

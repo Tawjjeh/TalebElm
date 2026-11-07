@@ -18,9 +18,9 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
         return await context.Tracks.AsNoTracking().ToListAsync();
     }
 
-    public async Task<Track?> GetByIdAsync(Guid id)
+    public async Task<Track?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id);
+        return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 
     public async Task<(IReadOnlyList<Track> Items, int TotalCount)> GetPagedAsync(
@@ -42,7 +42,7 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
-            
+
         return (items, totalCount);
     }
 }
