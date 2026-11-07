@@ -143,7 +143,7 @@ erDiagram
     MODULE_PROBLEM }o--o| GITHUB_TASK : "links to (if GitHubTask)"
 
     GITHUB_TASK ||--o{ TASK_VERSION : "versioned by"
-    GITHUB_TASK ||--o{ PROJECT_MILESTONE : "verifies"
+    GITHUB_TASK ||--o| CAPSTONE_PROJECT : "used by"
 
     CAPSTONE_PROJECT ||--o{ PROJECT_MILESTONE : "defines"
     PROJECT_MILESTONE ||--o{ USER_MILESTONE_PROGRESS : "tracks"
@@ -242,7 +242,6 @@ erDiagram
         string Title
         string Description
         string TemplateRepoFullName
-        Guid CurrentVersionId FK
     }
 
     TASK_VERSION {
@@ -252,7 +251,7 @@ erDiagram
         string OfficialCommitSha
         string WorkflowBlobSha
         string TestsTreeSha
-        bool IsActive
+        int Status "TaskVersionStatus"
     }
 
     USER_PROBLEM_COMPLETION {
@@ -304,13 +303,13 @@ erDiagram
         Guid TrackId FK
         string Title
         string Description
-        string StarterTemplateRepo
+        Guid TaskId FK
     }
 
     PROJECT_MILESTONE {
         Guid Id PK
         Guid ProjectId FK
-        Guid TaskId FK
+        string WorkflowJobName
         Guid ModuleId FK "nullable"
         string Title
         string Instructions
