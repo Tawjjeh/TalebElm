@@ -20,6 +20,23 @@ dotnet test TalebElm.slnx
 
 ---
 
+## Finding work
+
+Issues are grouped by the MVP milestones described in [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md):
+
+- **M0 Foundations** — the build, validation, and API baseline.
+- **M1 Identity** — registration, login, JWT, and user access.
+- **M2 Learning flow** — tracks, lessons, exams, grading, and progression.
+- **M3 Verified problems** — Codeforces and GitHub task verification.
+- **M4 Public Resource Hub (read-only)** — anonymous browse and filters.
+- **After MVP** — capstone projects and Hub authoring.
+
+Start with a `good first issue` if you are new. They are small, self-contained, and safe to change. `help wanted` marks accepted work that is ready for a contributor. Comment on the issue with what you plan to change, then open a pull request when the build and tests pass. You do not need to wait for an assignment.
+
+The label catalog is in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md). Every issue has one `layer:` label and one or two component labels so you can find work in the part of the codebase you want to learn.
+
+---
+
 ## 2. Contribution workflow
 
 TalebElm uses a **fork-based workflow**. All changes land via pull request against `main`; direct pushes to `main` are not accepted.
