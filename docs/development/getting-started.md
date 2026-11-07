@@ -34,7 +34,7 @@ Verify the server is running:
 curl http://localhost:5000/api/health
 ```
 
-Expected response: `{"status":"healthy"}` (or similar).
+Expected response: `healthy` (text/plain).
 
 ---
 
