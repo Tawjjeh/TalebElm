@@ -12,6 +12,11 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
         return await context.Modules.FirstOrDefaultAsync(m => m.Id == id);
     }
 
+    public async Task<Module?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await context.Modules.FirstOrDefaultAsync(m => m.Id == id, ct);
+    }
+
     public async Task<IReadOnlyList<Module>> GetAllAsync()
     {
         return await context.Modules.AsNoTracking().ToListAsync();
@@ -22,9 +27,9 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
         await context.Modules.AddAsync(entity);
     }
 
-    public async Task<IReadOnlyList<Module>> GetByTrackIdAsync(Guid trackId)
+    public async Task<IReadOnlyList<Module>> GetByTrackIdAsync(Guid trackId, CancellationToken ct = default)
     {
         return await context.Modules.Where(m => m.TrackId == trackId)
-            .OrderBy(m => m.Order).AsNoTracking().ToListAsync();
+            .OrderBy(m => m.Order).AsNoTracking().ToListAsync(ct);
     }
 }
