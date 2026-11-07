@@ -10,8 +10,8 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/auth/login` | Declared, no request/response DTO, throws domain `NotImplementedException`. |
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
-| GET | `/api/tracks` | `TrackService` list exists, but is not wired to the controller; throws domain `NotImplementedException`. |
-| POST | `/api/tracks` | `TrackService` create exists, but the action has no request parameter and is not wired; throws domain `NotImplementedException`. |
+| GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
+| POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
@@ -34,7 +34,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 |---|---|---|---|---|
 | POST | `/api/auth/register` | Registration request with name, email, password | User/profile response and auth result | 201, 400, 409 |
 | POST | `/api/auth/login` | Login request | Token response | 200, 400, 401 |
-| GET | `/api/tracks` | None | Published Track summaries | 200 |
+| GET | `/api/tracks` | Query params: `page` (default 1), `pageSize` (default 20, max 100) | `PagedTracksResponse` with published Track summaries | 200, 400 |
 | GET | `/api/tracks/{trackId}` | None | Track detail with ordered Modules | 200, 404 |
 | POST | `/api/tracks/{trackId}/enrollment` | None; Student comes from auth | Enrollment response | 201, 401, 404, 409 |
 
