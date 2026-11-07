@@ -69,6 +69,7 @@ public interface ILessonRepository : IRepository<Lesson> { }
 |---|---|---|
 | `CreateTrackRequest` | Input | `string Name`, `string Description` |
 | `TrackResponse` | Output | `Guid Id`, `string Name`, `string Description`, `int Status` |
+| `PagedTracksResponse` | Output | `IReadOnlyList<TrackResponse> Items`, `int Page`, `int PageSize`, `int TotalCount` |
 | `CreateModuleRequest` | Input | `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
 | `UpdateModuleRequest` | Input | `string Title`, `string? Summary`, `int Order`, `Guid TrackId` |
 | `ModuleResponse` | Output | `Guid Id`, `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
@@ -88,6 +89,10 @@ public interface ITrackService
 {
     Task<IReadOnlyList<TrackResponse>> GetAllAsync();
     Task<TrackResponse> CreateAsync(CreateTrackRequest request);
+    Task<PagedTracksResponse> GetPagedAsync(
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IModuleService
@@ -141,7 +146,7 @@ public interface ILessonService
 
 | HTTP Method | Route | Request DTO | Response DTO | Status Codes |
 |---|---|---|---|---|
-| `GET` | `/api/tracks` | — | `TrackResponse[]` (planned) | Service exists; controller throws domain `NotImplementedException` |
+| `GET` | `/api/tracks` | Query params: `page` (default 1), `pageSize` (default 20, max 100) | `PagedTracksResponse` | `200`, `400` |
 | `POST` | `/api/tracks` | `CreateTrackRequest` (planned) | `TrackResponse` (planned) | Service exists; controller action has no body and throws |
 | `GET` | `/api/tracks/{id}` | — | `TrackResponse` (planned) | Planned: `200`, `404` |
 | `PUT` | `/api/tracks/{id}` | `UpdateTrackRequest` (planned) | `TrackResponse` (planned) | Planned: `200`, `400`, `404` |
