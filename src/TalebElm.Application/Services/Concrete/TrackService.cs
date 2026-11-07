@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Entities;
@@ -50,5 +50,25 @@ public class TrackService(
             track.Name,
             track.Description,
             (int)track.Status);
+    }
+
+    public async Task<PagedTracksResponse> GetPagedAsync(
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1)
+            throw new TalebElm.Domain.Exceptions.ValidationException("Page must be greater than or equal to 1.");
+
+        if (pageSize < 1 || pageSize > 100)
+            throw new TalebElm.Domain.Exceptions.ValidationException("PageSize must be between 1 and 100.");
+
+        var (tracks, totalCount) = await unitOfWork.Tracks.GetPagedAsync(page, pageSize, publishedOnly: true, cancellationToken);
+
+        var items = tracks
+            .Select(t => new TrackResponse(t.Id, t.Name, t.Description, (int)t.Status))
+            .ToList();
+
+        return new PagedTracksResponse(items, page, pageSize, totalCount);
     }
 }
