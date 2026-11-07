@@ -12,9 +12,11 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
         await context.UserProgresses.AddAsync(entity);
     }
 
-    public async Task<IReadOnlyList<UserProgress>> GetAllAsync()
+    public Task<IReadOnlyList<UserProgress>> GetAllAsync() => GetAllAsync(CancellationToken.None);
+
+    public async Task<IReadOnlyList<UserProgress>> GetAllAsync(CancellationToken ct = default)
     {
-        return await context.UserProgresses.AsNoTracking().ToListAsync();
+        return await context.UserProgresses.AsNoTracking().ToListAsync(ct);
     }
 
     public async Task<UserProgress?> GetByIdAsync(Guid id)
@@ -27,12 +29,12 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
         return await context.UserProgresses.FirstOrDefaultAsync(up => up.UserId == userId && up.ModuleId == moduleId);
     }
 
-    public async Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId)
+    public async Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default)
     {
         return await context.UserProgresses
             .Where(up => up.UserId == userId && up.Module.TrackId == trackId)
             .OrderBy(up => up.Module.Order)
             .AsNoTracking()
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 }
