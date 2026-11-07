@@ -112,9 +112,55 @@ Student-facing reads should also return a Track's Modules and Lessons only to an
 - Use GUID route identifiers and JSON DTOs.
 - Return 400 for invalid input, 401 for missing/invalid authentication, 403 for forbidden actions, 404 for unknown resources, and 409 for duplicate enrollment or exam-per-module conflicts.
 - Keep controllers thin: bind HTTP input, call an Application service interface, and translate the result to HTTP. Do not put repository or progression logic in controllers.
-- `ExceptionHandlingMiddleware` is registered and maps `NotFoundException` to 404 and FluentValidation failures to 400 as a problem+json `detail` string. Unique and foreign-key violations from the database (a duplicate that raced past a pre-check, or a blocked dependent delete) become `ConflictException` in `UnitOfWork.SaveChangesAsync` and so return 409. Other database failures stay 500. A field-keyed `errors` object is target work (#321). See [08](features/08-health-and-error-handling.md).
-- Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
 
+### Global Exception Handling
+
+- `ExceptionHandlingMiddleware` is registered globally and returns `application/problem+json`.
+- Preserve the existing Problem Details response envelope with `status`, `title`, and `detail`.
+- Map `NotFoundException` to 404 and validation exceptions to 400.
+- FluentValidation `ValidationException` must return an additional `errors` object keyed by camelCase property names.
+- Each property maps to an array of validation messages. Multiple failures for the same property must be grouped together, and duplicate messages must be removed.
+- Failures with an empty or whitespace-only `PropertyName` must be reported through the top-level `detail` instead of creating an empty key.
+- When no unassigned messages exist, `detail` uses a generic validation message.
+- Domain `TalebElm.Domain.Exceptions.ValidationException` must retain its existing single-detail behavior and must not be converted into a field-level `errors` object.
+- Never expose internal exception details in HTTP 500 responses.
+
+Example FluentValidation response:
+
+```json
+{
+  "status": 400,
+  "title": "One or more validation errors occurred.",
+  "detail": "One or more validation errors occurred.",
+  "errors": {
+    "email": [
+      "Email is required.",
+      "Email is invalid."
+    ],
+    "password": [
+      "Password must contain at least 8 characters."
+    ]
+  }
+}
+```
+
+Domain validation response:
+
+```json
+{
+  "status": 400,
+  "title": "A business rule was violated.",
+  "detail": "A business rule was violated."
+}
+```
+
+- Unique and foreign-key violations from the database (a duplicate that raced past a pre-check, or a blocked dependent delete) become `ConflictException` in `UnitOfWork.SaveChangesAsync` and return 409.
+- Other database failures return 500.
+- See [Health Check & Error Handling](features/08-health-and-error-handling.md) for the detailed exception mapping and validation response contract.
+
+### API Design Rules
+
+- Do not document a planned route as implemented until its controller, service wiring, and behavior tests are present.
 ## 4. Out of Scope for the Core Learning Flow
 
 Scheduling, attendance, and payments are not part of the current Track → Module → Lesson → Exam → Progress flow.

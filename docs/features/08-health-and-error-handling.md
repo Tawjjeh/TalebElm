@@ -2,7 +2,11 @@
 
 ## 1. MVP Scope & Objective
 
-Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors remain target behavior.
+Expose a lightweight health endpoint so callers can confirm the API process responds.
+
+Global exception middleware is registered and maps domain and FluentValidation exceptions to `application/problem+json`.
+
+FluentValidation exceptions return structured field-level validation errors, allowing API clients to associate validation messages with their corresponding request properties.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
@@ -16,7 +20,7 @@ Expose a lightweight health endpoint so callers can confirm the API process resp
 
 ### Domain Exception Hierarchy
 
-This feature _consumes_ the domain exception hierarchy rather than defining entities:
+This feature consumes the domain exception hierarchy rather than defining entities:
 
 ```text
 DomainException (base)
@@ -40,11 +44,11 @@ DomainException (base)
 
 ### Endpoints Table
 
-| HTTP Method | Route         | Request DTO | Response DTO         | Status Codes |
-| ----------- | ------------- | ----------- | -------------------- | ------------ |
-| `GET`       | `/api/health` | —           | `"healthy"` (string) | `200 OK`     |
+| HTTP Method | Route | Request DTO | Response DTO | Status Codes |
+|---|---|---|---|---|
+| `GET` | `/api/health` | — | `"healthy"` (string) | `200 OK` |
 
-### Health check scope
+### Health Check Scope
 
 - The current `/api/health` endpoint checks only that the API process can receive a request and return a response.
 - It does not currently verify database connectivity, cache availability, message brokers, SMTP providers, object storage, or any third-party identity/auth service.
@@ -53,37 +57,55 @@ DomainException (base)
 
 ### Exception Handling Middleware
 
-`ExceptionHandlingMiddleware` currently returns `application/problem+json` with `status`, `title`, and `detail` (the detail is suppressed for `500`):
+`ExceptionHandlingMiddleware` returns `application/problem+json` with `status`, `title`, and `detail`.
 
-| Exception Type                     | HTTP Status | Current Title                                                        |
-| ---------------------------------- | ----------- | -------------------------------------------------------------------- |
-| `NotFoundException`                | `404`       | `The requested resource was not found.`                              |
-| Domain `ValidationException`       | `400`       | `A business rule was violated.`                                      |
-| FluentValidation `ValidationException` | `400`   | `One or more validation errors occurred.`                            |
-| `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.` (also raised by `UnitOfWork.SaveChangesAsync` for unique and foreign-key violations) |
-| `DomainException`                  | `400`       | `The request could not be processed.`                                |
-| `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
-| Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
+For unhandled HTTP 500 responses, internal exception details are not exposed to clients.
 
-### Validation error payload (target contract)
+| Exception Type | HTTP Status | Response Title |
+|---|---|---|
+| `NotFoundException` | `404` | `The requested resource was not found.` |
+| Domain `ValidationException` | `400` | `A business rule was violated.` |
+| FluentValidation `ValidationException` | `400` | `One or more validation errors occurred.` |
+| `ConflictException` | `409` | `A conflicting state or duplicate resource was detected.` (also raised by `UnitOfWork.SaveChangesAsync` for unique and foreign-key violations) |
+| `DomainException` | `400` | `The request could not be processed.` |
+| `NotImplementedException` (Domain) | `501` | `The requested capability is not implemented yet.` |
+| Unhandled `Exception` | `500` | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
-The current middleware returns a single `detail` string. The target contract adds field-specific errors so clients can attach each message to its input field:
+### Validation Error Payload
+
+The middleware returns field-specific validation errors for FluentValidation exceptions while preserving the existing Problem Details response envelope.
+
+Example response:
 
 ```json
 {
-  "error": "Validation failed.",
+  "status": 400,
+  "title": "One or more validation errors occurred.",
+  "detail": "One or more validation errors occurred.",
   "errors": {
-    "name": ["'Name' must not be empty."],
-    "capacity": ["'Capacity' must be greater than '0'."]
+    "name": [
+      "'Name' must not be empty."
+    ],
+    "capacity": [
+      "'Capacity' must be greater than '0'."
+    ]
   }
 }
 ```
 
-- Keys in `errors` are the failing property names in camelCase; each value is an array of messages, because one field can fail more than one rule.
-- The top-level `error` string stays present for logging and generic display; failures that are not tied to a specific field are reported there only.
-- Services currently throw FluentValidation's `ValidationException` (for example `TrackService.CreateAsync`), whose `ValidationFailure` items already carry `PropertyName` and `ErrorMessage`. The middleware must map those into the `errors` object above. `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `error` only, until it is extended to carry per-field errors.
+Validation response rules:
 
-### Registration (implemented)
+- The response uses the `application/problem+json` content type.
+- The `status`, `title`, and `detail` properties preserve the existing Problem Details envelope.
+- Keys in `errors` use camelCase property names.
+- Each field maps to an array of validation messages, allowing multiple failures for the same field.
+- Multiple failures for the same property are grouped together, with duplicate messages removed.
+- Failures with an empty or whitespace-only `PropertyName` are reported through the top-level `detail` instead of creating an invalid field key.
+- If there are no unassigned messages, `detail` uses a generic validation message.
+- Domain `TalebElm.Domain.Exceptions.ValidationException` responses retain their existing single-detail behavior and do not include the field-level `errors` object.
+- Unhandled HTTP 500 responses must not expose internal exception details.
+
+### Registration (Implemented)
 
 ```csharp
 // In Program.cs, before app.MapControllers():
@@ -93,14 +115,21 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 ### Input Validation
 
 - No validation required for the health endpoint.
+- FluentValidation handles request-level validation in other API features.
+- The global exception middleware converts FluentValidation failures into structured field-level responses.
 
 ## 5. Domain Exceptions
 
-| Exception                 | When Thrown                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `NotFoundException`       | User lookup by ID returns null                                                                          |
-| `ConflictException`       | Duplicate entity, unique constraint violation, or conflicting state (e.g. duplicate enrollment or exam) |
-| `ValidationException`     | Invalid request fields, invalid credentials shape, or other business-rule validation                    |
-| `NotImplementedException` | Remaining placeholder controller actions and unimplemented capabilities                                |
+| Exception | When Thrown |
+|---|---|
+| `NotFoundException` | User lookup by ID returns null |
+| `ConflictException` | Duplicate entity, unique constraint violation, or conflicting state (e.g. duplicate enrollment or exam) |
+| `ValidationException` | Invalid request fields, invalid credentials shape, or other business-rule validation |
+| `NotImplementedException` | Remaining placeholder controller actions and unimplemented capabilities |
 
-This feature's middleware _handles_ all domain exceptions thrown by other features. See the mapping table above.
+This feature's middleware handles all domain exceptions thrown by other features. See the mapping table above.
+
+Domain validation exceptions remain separate from FluentValidation exceptions:
+
+- Domain `ValidationException` represents business-rule violations and returns a single `detail` message.
+- FluentValidation `ValidationException` represents request validation failures and returns an `errors` object grouped by camelCase property names.
