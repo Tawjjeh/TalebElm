@@ -29,7 +29,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Add a comprehensive full-graph DI resolution test (`DependencyResolutionTests`) ensuring all services, repositories, validators, and `IUnitOfWork` resolve without runtime exceptions.
   - Wire placeholder API controllers (`TracksController`, `ModulesController`, `LessonsController`, `ExamsController`) to call existing application services rather than throwing `NotImplementedException`.
   - Fix PassThreshold constraint in database from `0–100` to `1–100` to eliminate bypass vulnerability (#326 resolved).
-  - Standardize error handling and ProblemDetails mapping (#321 and `ValidationException` -> field-keyed errors).
+  - Standardize error handling and ProblemDetails mapping (#321 resolved: FluentValidation failures return field-keyed `errors`; domain `ValidationException` keeps a single `detail`).
 - **Dependencies:** None.
 - **Exit Criteria:**
   - `dotnet run --project src/TalebElm.Api` boots cleanly with no DI configuration warnings or exceptions.
