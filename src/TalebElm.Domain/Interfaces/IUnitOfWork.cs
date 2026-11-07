@@ -10,5 +10,5 @@ public interface IUnitOfWork
     IUserProgressRepository UserProgresses { get; }
     ITrackEnrollmentRepository TrackEnrollments { get; }
     ILessonResourceRepository LessonResources { get; }
-    Task<int> SaveChangesAsync();
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
