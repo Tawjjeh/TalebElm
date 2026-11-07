@@ -80,7 +80,7 @@ preferred for new code. These standards extend `ARCHITECTURE.md`.
 - All input validation uses **FluentValidation 12**.
 - Validators live in `Application/Validators/` and are registered by `AddApplication()`.
 - Validate at the Application boundary; controllers may also use `[ApiController]` model binding for basic binding errors.
-- Field-keyed `400` error responses (target: issue #321) will expose individual field errors; until that lands, validation failures return a single `detail` string.
+- Field-keyed `400` error responses are implemented (#321): FluentValidation failures return an `errors` object keyed by camelCase property name with an array of messages per field, while `TalebElm.Domain.Exceptions.ValidationException` keeps the single-`detail` shape.
 
 ---
 
