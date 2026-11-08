@@ -11,6 +11,7 @@ public class UserProgressEntityTests
 
         Assert.False(progress.IsUnlocked);
         Assert.False(progress.PassedExam);
+        Assert.False(progress.CompletedRequiredProblems);
         Assert.Equal(0, progress.Score);
         Assert.Equal(Guid.Empty, progress.UserId);
         Assert.Equal(Guid.Empty, progress.ModuleId);

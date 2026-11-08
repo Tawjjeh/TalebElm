@@ -5,6 +5,27 @@
 
 ---
 
+## MVP boundary
+
+The first MVP is one complete learner journey:
+
+> register or log in → browse and enroll in a published Track → study its Lessons → submit a server-graded Exam → complete the required practice problems → unlock the next Module.
+
+The public, read-only Resource Hub ships in the same MVP because it has no dependency on the learning flow. Everything else waits.
+
+| Milestone | Scope | Done when |
+|---|---|---|
+| **M0 Foundations** | DI baseline, validation errors, content guards, cancellation tokens, logging, API wiring, CI health | The API starts cleanly, returns real responses, and the build, tests, and blank-database migration check are green. |
+| **M1 Identity** | Registration, login, JWT, `StudentOnly` / `AdminOnly`, users API, login throttling | A learner can register, log in, and reach a protected route; 401/403/409 behave correctly. |
+| **M2 Learning flow** | Tracks, Modules, Lessons, Exams, Progress, server-side grading, sticky unlocking, lesson type and authoring fields | The full study loop works and a pass unlocks only the next Module. |
+| **M3 Verified problems** | External accounts, Codeforces verification, GitHub task verification, completion persistence, dual-gate unlock | Required problems are verified without human review and the problem gate blocks or unlocks correctly. |
+| **M4 Public Resource Hub (read-only)** | Technology tree, resources, filters, anonymous browse, seed content | A visitor can browse and filter resources without logging in. |
+| **After MVP** | Capstone projects, Hub authoring and moderation, link health, shared `Resource` migration | Deferred until the learner MVP is complete. |
+
+The milestone names above are the GitHub milestones. Every open issue belongs to exactly one of them.
+
+---
+
 ## Roadmap Overview
 
 ```mermaid
@@ -29,13 +50,13 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Add a comprehensive full-graph DI resolution test (`DependencyResolutionTests`) ensuring all services, repositories, validators, and `IUnitOfWork` resolve without runtime exceptions.
   - Wire placeholder API controllers (`TracksController`, `ModulesController`, `LessonsController`, `ExamsController`) to call existing application services rather than throwing `NotImplementedException`.
   - Fix PassThreshold constraint in database from `0–100` to `1–100` to eliminate bypass vulnerability (#326 resolved).
-  - Standardize error handling and ProblemDetails mapping (#321 and `ValidationException` -> field-keyed errors).
+  - Standardize error handling and ProblemDetails mapping (#321 resolved: FluentValidation failures return field-keyed `errors`; domain `ValidationException` keeps a single `detail`).
 - **Dependencies:** None.
 - **Exit Criteria:**
   - `dotnet run --project src/TalebElm.Api` boots cleanly with no DI configuration warnings or exceptions.
   - Full-graph DI integration test passes in Release and Debug modes.
   - Existing endpoints return valid JSON or correct HTTP status codes instead of `501 Not Implemented`.
-  - Issue  with migration and test.
+  - `BlankDatabaseMigrationTests` stays green, proving a blank database reaches the latest schema.
 - **Issue Areas:** `architecture`, `layer:infrastructure`, `layer:application`, `layer:api`, `database`.
 
 ---

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
 
@@ -10,6 +10,9 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
     {
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => new { x.UserId, x.ModuleId }).IsUnique();
+
+        builder.Property(x => x.CompletedRequiredProblems)
+            .HasDefaultValue(false);
 
         builder.HasOne(x => x.User)
             .WithMany()

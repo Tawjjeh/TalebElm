@@ -1,28 +1,134 @@
+
 name: .NET CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup .NET 10
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Restore dependencies
-      run: dotnet restore TalebElm.slnx
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Build
-      run: dotnet build TalebElm.slnx --no-restore
+      - name: Restore dependencies
+        run: dotnet restore TalebElm.slnx
 
-    - name: Test
-      run: dotnet test TalebElm.slnx --no-build --verbosity normal
+      - name: Build
+        run: dotnet build TalebElm.slnx --no-restore
+
+      - name: Start API for OpenAPI validation
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__TalebElm: "Data Source=talebelm-ci.db"
+        shell: bash
+        run: |
+          set -e
+
+          dotnet run \
+            --project src/TalebElm.Api/TalebElm.Api.csproj \
+            --no-build \
+            --no-restore \
+            --urls http://127.0.0.1:5236 \
+            > api.log 2>&1 &
+
+          echo $! > /tmp/talebelm-api.pid
+
+      - name: Validate OpenAPI document
+        shell: bash
+        run: |
+          set -e
+
+          # Always stop the API process when this step exits.
+          trap 'if [ -f /tmp/talebelm-api.pid ]; then kill "$(cat /tmp/talebelm-api.pid)" 2>/dev/null || true; fi' EXIT
+
+          # Wait for the API to become ready and generate the document.
+          for i in {1..30}; do
+            if curl --fail --silent \
+              http://127.0.0.1:5236/swagger/v1/swagger.json \
+              -o openapi.json; then
+              break
+            fi
+
+            # Stop waiting early if the API process has exited.
+            if [ -f /tmp/talebelm-api.pid ] &&
+              ! kill -0 "$(cat /tmp/talebelm-api.pid)" 2>/dev/null; then
+              break
+            fi
+
+            sleep 2
+          done
+
+          # Show application logs if OpenAPI generation failed.
+          if [ ! -s openapi.json ]; then
+            echo "ERROR: OpenAPI document could not be generated."
+            echo "API logs:"
+            cat api.log
+            exit 1
+          fi
+
+          # Validate the generated OpenAPI document.
+          python3 - <<'PY'
+          import json
+          import sys
+
+          with open("openapi.json", encoding="utf-8") as file:
+              document = json.load(file)
+
+          assert document.get("openapi"), "OpenAPI version is missing"
+          assert isinstance(document.get("paths"), dict), "OpenAPI paths are missing"
+          assert document["paths"], "OpenAPI paths are empty"
+
+          components = document.get("components")
+          assert isinstance(components, dict), "OpenAPI components are missing"
+
+          security_schemes = components.get("securitySchemes", {})
+          assert "Bearer" in security_schemes, "JWT Bearer scheme is missing"
+
+          # Check that operation IDs are unique when provided.
+          operation_ids = []
+          for path, path_item in document["paths"].items():
+              if not isinstance(path_item, dict):
+                  continue
+
+              for method, operation in path_item.items():
+                  if method.lower() not in {
+                      "get", "post", "put", "patch", "delete",
+                      "options", "head", "trace"
+                  }:
+                      continue
+
+                  if not isinstance(operation, dict):
+                      continue
+
+                  operation_id = operation.get("operationId")
+                  if operation_id:
+                      operation_ids.append(operation_id)
+
+          duplicates = sorted({
+              operation_id
+              for operation_id in operation_ids
+              if operation_ids.count(operation_id) > 1
+          })
+
+          assert not duplicates, (
+              f"Duplicate OpenAPI operation IDs found: {duplicates}"
+          )
+
+          print("OpenAPI document validated successfully.")
+          print(f"OpenAPI version: {document['openapi']}")
+          print(f"Paths found: {len(document['paths'])}")
+          print("JWT Bearer security scheme found.")
+          PY
+
+      - name: Test
+        run: dotnet test TalebElm.slnx --no-build --verbosity normal
