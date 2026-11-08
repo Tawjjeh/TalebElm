@@ -1,3 +1,4 @@
+
 namespace TalebElm.Domain.Entities;
 
 public class UserProblemCompletion : BaseEntity
@@ -6,15 +7,19 @@ public class UserProblemCompletion : BaseEntity
 
     public Guid ModuleProblemId { get; private set; }
 
-    public string ExternalSubmissionId { get; private set; } = null!;
+    public string? ExternalSubmissionId { get; private set; }
 
     public DateTime VerifiedAtUtc { get; private set; }
 
     public string? DetailsJson { get; private set; }
 
+    // GitHub verification fields
+    public string? VerifiedHeadCommitSha { get; private set; }
+
+    public Guid? TaskVersionId { get; private set; }
+
     public ModuleProblem ModuleProblem { get; private set; } = null!;
 
-    // Required by EF Core
     private UserProblemCompletion()
     {
     }
@@ -22,14 +27,18 @@ public class UserProblemCompletion : BaseEntity
     public UserProblemCompletion(
         Guid userId,
         Guid moduleProblemId,
-        string externalSubmissionId,
         DateTime verifiedAtUtc,
-        string? detailsJson = null)
+        string? externalSubmissionId = null,
+        string? detailsJson = null,
+        string? verifiedHeadCommitSha = null,
+        Guid? taskVersionId = null)
     {
         UserId = userId;
         ModuleProblemId = moduleProblemId;
-        ExternalSubmissionId = externalSubmissionId;
         VerifiedAtUtc = verifiedAtUtc;
+        ExternalSubmissionId = externalSubmissionId;
         DetailsJson = detailsJson;
+        VerifiedHeadCommitSha = verifiedHeadCommitSha;
+        TaskVersionId = taskVersionId;
     }
 }
