@@ -85,16 +85,13 @@ public class TrackRepositoryTests : SqliteTestBase
         await SaveChangesAsync();
         ClearTracker();
 
-        // Act - Page 1 with pageSize 2 (published only)
         var (page1Items, totalCount) = await _repository.GetPagedAsync(page: 1, pageSize: 2, publishedOnly: true);
 
-        // Assert - Only 3 published tracks total (t1, t3, t4)
         Assert.Equal(3, totalCount);
         Assert.Equal(2, page1Items.Count);
         Assert.Equal(t1.Id, page1Items[0].Id);
         Assert.Equal(t3.Id, page1Items[1].Id);
 
-        // Act - Page 2 with pageSize 2
         var (page2Items, _) = await _repository.GetPagedAsync(page: 2, pageSize: 2, publishedOnly: true);
 
         Assert.Single(page2Items);
