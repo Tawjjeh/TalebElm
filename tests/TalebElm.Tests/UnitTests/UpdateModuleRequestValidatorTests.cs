@@ -45,6 +45,15 @@ public class UpdateModuleRequestValidatorTests
     }
 
     [Fact]
+    public void Summary_Empty_HasError()
+    {
+        var request = ValidRequest() with { Summary = "" };
+        var result = _validator.TestValidate(request);
+        result.ShouldHaveValidationErrorFor(x => x.Summary)
+            .WithErrorMessage("Module.Summary.Required");
+    }
+
+    [Fact]
     public void Summary_TooLong_HasError()
     {
         var request = ValidRequest() with { Summary = new string('a', 501) };
