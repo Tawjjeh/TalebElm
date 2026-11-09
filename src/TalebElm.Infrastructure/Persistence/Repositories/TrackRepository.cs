@@ -18,7 +18,7 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
         return await context.Tracks.AsNoTracking().ToListAsync();
     }
 
-    public async Task<Track?> GetByIdAsync(Guid id)
+    public async Task<Track?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id);
     }

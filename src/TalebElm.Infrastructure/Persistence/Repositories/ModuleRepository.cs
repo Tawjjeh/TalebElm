@@ -7,9 +7,9 @@ namespace TalebElm.Infrastructure.Repositories;
 
 public class ModuleRepository(AppDbContext context) : IModuleRepository
 {
-    public async Task<Module?> GetByIdAsync(Guid id)
+    public async Task<Module?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.Modules.FirstOrDefaultAsync(m => m.Id == id);
+        return await context.Modules.FirstOrDefaultAsync(m => m.Id == id, ct);
     }
 
     public async Task<IReadOnlyList<Module>> GetAllAsync()
@@ -22,9 +22,12 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
         await context.Modules.AddAsync(entity);
     }
 
-    public async Task<IReadOnlyList<Module>> GetByTrackIdAsync(Guid trackId)
+    public async Task<IReadOnlyList<Module>> GetByTrackIdAsync(Guid trackId, CancellationToken ct = default)
     {
-        return await context.Modules.Where(m => m.TrackId == trackId)
-            .OrderBy(m => m.Order).AsNoTracking().ToListAsync();
+        return await context.Modules
+            .Where(m => m.TrackId == trackId)
+            .OrderBy(m => m.Order)
+            .AsNoTracking()
+            .ToListAsync(ct);
     }
 }

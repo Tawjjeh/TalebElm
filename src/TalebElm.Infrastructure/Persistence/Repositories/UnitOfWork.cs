@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,10 +13,10 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
     private readonly ILogger<UnitOfWork> _logger;
-    
-    public IUserRepository Users { get; } 
 
-    public ITrackRepository Tracks { get; } 
+    public IUserRepository Users { get; }
+
+    public ITrackRepository Tracks { get; }
 
     public IModuleRepository Modules { get; }
 
@@ -43,11 +43,11 @@ public class UnitOfWork : IUnitOfWork
 
     }
 
-    public async Task<int> SaveChangesAsync()
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         try
         {
-            return await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync(ct);
         }
         catch (DbUpdateException ex) when (ConflictMessage(ex) is { } message)
         {

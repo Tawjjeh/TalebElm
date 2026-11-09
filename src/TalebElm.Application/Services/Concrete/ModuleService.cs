@@ -1,4 +1,4 @@
-﻿using TalebElm.Application.DTOs;
+using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
@@ -7,14 +7,14 @@ namespace TalebElm.Application.Services.Concrete;
 
 public class ModuleService(IUnitOfWork unitOfWork) : IModuleService
 {
-    public async Task<IReadOnlyList<ModuleResponse>> GetByTrackAsync(Guid trackId)
+    public async Task<IReadOnlyList<ModuleResponse>> GetByTrackAsync(Guid trackId, CancellationToken ct = default)
     {
-        if (await unitOfWork.Tracks.GetByIdAsync(trackId) is null)
+        if (await unitOfWork.Tracks.GetByIdAsync(trackId, ct) is null)
         {
             throw new NotFoundException($"Track with id '{trackId}' was not found.");
         }
 
-        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId);
+        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId, ct);
 
         return modules
             .OrderBy(module => module.Order)
@@ -27,9 +27,9 @@ public class ModuleService(IUnitOfWork unitOfWork) : IModuleService
             .ToList();
     }
 
-    public async Task<ModuleResponse> GetByIdAsync(Guid id)
+    public async Task<ModuleResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var module = await unitOfWork.Modules.GetByIdAsync(id);
+        var module = await unitOfWork.Modules.GetByIdAsync(id, ct);
 
         if (module is null)
         {

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 
@@ -16,7 +16,7 @@ public class LessonResourceRepository(AppDbContext context) : ILessonResourceRep
         return await context.LessonResources.AsNoTracking().ToListAsync();
     }
 
-    public async Task<LessonResource?> GetByIdAsync(Guid id)
+    public async Task<LessonResource?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await context.LessonResources.FirstOrDefaultAsync(r => r.Id == id);
     }
