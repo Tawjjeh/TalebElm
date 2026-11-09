@@ -120,6 +120,20 @@ public class TrackRepositoryTests : SqliteTestBase
         Assert.Equal(3, items.Count);
     }
 
+
+    [Fact]
+    public async Task GetPagedAsync_WhenOffsetExceedsIntMax_ReturnsEmptyListWithoutOverflow()
+    {
+        var track = CreateTrack("Backend");
+        await _repository.AddAsync(track);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var (items, totalCount) = await _repository.GetPagedAsync(page: int.MaxValue, pageSize: 100, publishedOnly: false);
+
+        Assert.Equal(1, totalCount);
+        Assert.Empty(items);
+    }
     private static Track CreateTrack(string name) => new()
     {
         Id = Guid.NewGuid(),
