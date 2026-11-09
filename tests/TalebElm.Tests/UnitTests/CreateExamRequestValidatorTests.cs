@@ -14,6 +14,18 @@ public class CreateExamRequestValidatorTests
         return new CreateExamRequest(Guid.NewGuid(), "Final Exam", 60);
     }
 
+
+    [Fact]
+    public void ModuleId_Empty_HasError()
+    {
+        var request = ValidRequest() with { ModuleId = Guid.Empty };
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.ModuleId)
+            .WithErrorMessage("Exam.ModuleId.Required");
+    }
+
     [Fact]
     public void ValidRequest_HasNoErrors()
     {

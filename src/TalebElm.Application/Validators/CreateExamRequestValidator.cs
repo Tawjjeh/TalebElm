@@ -7,6 +7,9 @@ public class CreateExamRequestValidator : AbstractValidator<CreateExamRequest>
 {
     public CreateExamRequestValidator()
     {
+        RuleFor(x => x.ModuleId)
+             .NotEmpty().WithMessage("Exam.ModuleId.Required");
+
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Exam.Title.Required");
 
