@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
 
-namespace TalebElm.Infrastructure.Persistence;
+namespace TalebElm.Infrastructure.Persistence.Configurations;
 
 public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
 {
