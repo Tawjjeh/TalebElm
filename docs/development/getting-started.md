@@ -34,7 +34,7 @@ Verify the server is running:
 curl http://localhost:5000/api/health
 ```
 
-Expected response: `{"status":"healthy"}` (or similar).
+Expected response: `healthy` (text/plain).
 
 When the API runs in the `Development` environment, Swagger UI is available at `/swagger` and the OpenAPI document at `/swagger/v1/swagger.json`. These endpoints are not exposed in other environments.
 
