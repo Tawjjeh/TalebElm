@@ -1,4 +1,4 @@
-﻿using TalebElm.Application.DTOs;
+using TalebElm.Application.DTOs;
 
 namespace TalebElm.Application.Services.Abstraction;
 
@@ -6,5 +6,5 @@ public interface IExamService
 {
     Task<ExamResponse> CreateAsync(CreateExamRequest request);
     Task<ExamResponse> GetByIdAsync(Guid id);
-    Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request);
+    Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamRequest request, CancellationToken ct = default);
 }   
