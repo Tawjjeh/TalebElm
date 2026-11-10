@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 
@@ -20,5 +21,28 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
     public async Task<Track?> GetByIdAsync(Guid id)
     {
         return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id);
+    }
+
+    public async Task<(IReadOnlyList<Track> Items, int TotalCount)> GetPagedAsync(
+        int page,
+        int pageSize,
+        bool publishedOnly = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = context.Tracks.AsNoTracking();
+
+        if (publishedOnly)
+            query = query.Where(t => t.Status == TrackStatus.Published);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(t => t.CreatedAt)
+            .ThenBy(t => t.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+            
+        return (items, totalCount);
     }
 }
