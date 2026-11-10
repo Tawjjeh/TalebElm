@@ -28,7 +28,7 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         );
     }
 
-    public async Task<ExamResultResponse> SubmitAsync(Guid learnerId, SubmitExamAnswersRequest request)
+    public async Task<ExamResultResponse> SubmitAsync(Guid learnerId, SubmitExamAnswersRequest request, CancellationToken ct = default)
     {
         if (request.Answers is null)
             throw new ValidationException("Answers are required.");
