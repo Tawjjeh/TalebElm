@@ -62,7 +62,7 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | C-4 | Ordering is strict and contiguous: `UNIQUE(TrackId, Order)` for Modules, `UNIQUE(ModuleId, Order)` for Lessons; `Order ≥ 1`; surviving siblings are re-sequenced to `1, 2, 3, …` in the same `UnitOfWork` transaction on insert/move/delete. | Unique indexes implemented; re-sequencing target (Decision 12) |
 | C-5 | Reordering a `Published` Track after learners started requires product approval. Progress rows are keyed by `ModuleId`, never by `Order`, so renames of positions never orphan history. | Target |
 | C-6 | Deletes never cascade learner data: `Track` with Modules/enrollments/progress, `Module` with Lessons/Exam/progress, `Lesson` with resources are blocked with `409 Conflict`. FKs use `DeleteBehavior.Restrict` (configured for Module→Track, Lesson→Module, Exam→Module, UserProgress→User/Module, TrackEnrollment→User/Track, LessonResource→Lesson). | Implemented (Restrict FKs, 409 via `UnitOfWork`) |
-| C-7 | `LessonType` (`Text`, `Video`, `Exercise`) exists as an enum but is **not** a `Lesson` property today. Until Decision 13 lands, content kind must not be inferred from anywhere else. | Implemented (as absence) |
+| C-7 | Each `Lesson` has a `LessonType` (`Text`, `Video`, `Exercise`) stored as a column on `Lesson`, defaulting to `Text`. Values are 1-based: `Text = 1`, `Video = 2`, `Exercise = 3`. Content kind is read from this column, not inferred from `LessonResource` attachments. | Target (Decision 13) |
 
 ## 4. Enrollment
 
