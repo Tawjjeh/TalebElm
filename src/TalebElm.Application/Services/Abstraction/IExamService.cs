@@ -6,5 +6,5 @@ public interface IExamService
 {
     Task<ExamResponse> CreateAsync(CreateExamRequest request);
     Task<ExamResponse> GetByIdAsync(Guid id);
-    Task<ExamResultResponse> SubmitAsync(Guid learnerId, SubmitExamAnswersRequest request, CancellationToken ct = default);
+    Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default);
 }   
