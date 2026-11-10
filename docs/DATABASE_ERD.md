@@ -242,7 +242,6 @@ erDiagram
         string Title
         string Description
         string TemplateRepoFullName
-        Guid CurrentVersionId FK
     }
 
     TASK_VERSION {
@@ -252,7 +251,7 @@ erDiagram
         string OfficialCommitSha
         string WorkflowBlobSha
         string TestsTreeSha
-        bool IsActive
+        bool Status
     }
 
     USER_PROBLEM_COMPLETION {
@@ -304,15 +303,15 @@ erDiagram
         Guid TrackId FK
         string Title
         string Description
-        string StarterTemplateRepo
+        string TaskId
     }
 
     PROJECT_MILESTONE {
         Guid Id PK
         Guid ProjectId FK
-        Guid TaskId FK
         Guid ModuleId FK "nullable"
         string Title
+        string WorkflowJobName
         string Instructions
         int Order
     }
