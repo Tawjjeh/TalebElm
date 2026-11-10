@@ -28,7 +28,7 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         );
     }
 
-    public async Task<ExamResultResponse> SubmitAsync(SubmitExamAnswersRequest request)
+    public async Task<ExamResultResponse> SubmitAsync(Guid learnerId, SubmitExamAnswersRequest request)
     {
         if (request.Answers is null)
             throw new ValidationException("Answers are required.");
@@ -57,20 +57,30 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         {
             var answer = answerByQuestion[question.Id];
 
-            var selected = question.Options.FirstOrDefault(o => o.Id == answer.OptionId) ?? throw new ValidationException($"Option {answer.OptionId} does not belong to question {question.Id}.");
+            var selected = question.Options.FirstOrDefault(o => o.Id == answer.OptionId) ??
+                throw new ValidationException($"Option {answer.OptionId} does not belong to question {question.Id}.");
 
             totalPoints += question.Points;
             if (selected.IsCorrect)
                 earnedPoints += question.Points;
         }
 
-        if (totalPoints <= 0)
-            throw new ValidationException("Exam has no scorable questions.");
-
-        var score = (int)Math.Round(
+        var score = totalPoints <= 0 ? 0 : (int)Math.Round(
             100m * earnedPoints / totalPoints,
             MidpointRounding.AwayFromZero);
 
-        return new ExamResultResponse(exam.Id, exam.HasPassed(score), score);
+        // Update progress for this learner and this exam's module.
+        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(learnerId, exam.ModuleId)
+            ?? throw new NotFoundException($"Progress for learner {learnerId} was not found.");
+
+        var passed = exam.HasPassed(score);
+
+        // Didn't assign direct, because in case of retake
+        progress.Score = Math.Max(progress.Score, score);
+        progress.PassedExam |= passed;
+
+        await unitOfWork.SaveChangesAsync();
+
+        return new ExamResultResponse(exam.Id, passed, score);
     }
 }
