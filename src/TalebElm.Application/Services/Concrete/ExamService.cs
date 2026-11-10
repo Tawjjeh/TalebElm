@@ -28,8 +28,49 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         );
     }
 
-    public Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request)
+    public async Task<ExamResultResponse> SubmitAsync(SubmitExamAnswersRequest request)
     {
-        throw new NotImplementedException("Submitting an exam is not implemented yet.");
+        if (request.Answers is null)
+            throw new ValidationException("Answers are required.");
+        var exam = await unitOfWork.Exams.GetByIdAsync(request.ExamId) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
+        var questionIds = exam.Questions.Select(q => q.Id).ToHashSet();
+
+        // Checks each answer belongs to the exam and not duplicated
+        var answerByQuestion = new Dictionary<Guid, SubmittedAnswer>(request.Answers.Count);
+        foreach (var answer in request.Answers)
+        {
+            if (!questionIds.Contains(answer.QuestionId))
+                throw new ValidationException($"Question {answer.QuestionId} is not part of this exam.");
+
+            if (!answerByQuestion.TryAdd(answer.QuestionId, answer))
+                throw new ValidationException($"Question {answer.QuestionId} was answered more than once.");
+        }
+
+        if (answerByQuestion.Count != questionIds.Count)
+            throw new ValidationException("Every question in the exam must be answered exactly once.");
+
+        // Validate options and score.
+        var earnedPoints = 0;
+        var totalPoints = 0;
+
+        foreach (var question in exam.Questions)
+        {
+            var answer = answerByQuestion[question.Id];
+
+            var selected = question.Options.FirstOrDefault(o => o.Id == answer.OptionId) ?? throw new ValidationException($"Option {answer.OptionId} does not belong to question {question.Id}.");
+
+            totalPoints += question.Points;
+            if (selected.IsCorrect)
+                earnedPoints += question.Points;
+        }
+
+        if (totalPoints <= 0)
+            throw new ValidationException("Exam has no scorable questions.");
+
+        var score = (int)Math.Round(
+            100m * earnedPoints / totalPoints,
+            MidpointRounding.AwayFromZero);
+
+        return new ExamResultResponse(exam.Id, exam.HasPassed(score), score);
     }
 }
