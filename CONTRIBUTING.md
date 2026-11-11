@@ -31,7 +31,7 @@ Issues are grouped by the MVP milestones described in [`docs/business/ROADMAP.md
 - **M4 Public Resource Hub (read-only)** — anonymous browse and filters.
 - **After MVP** — capstone projects and Hub authoring.
 
-Start with a `good first issue` if you are new. They are small, self-contained, and safe to change. `help wanted` marks accepted work that is ready for a contributor. Comment on the issue with what you plan to change, then open a pull request when the build and tests pass. You do not need to wait for an assignment.
+Start with a `good first issue` if you are new. They are small, self-contained, and safe to change. `help wanted` marks accepted work that is ready for a contributor. Comment on the issue with what you plan to change and wait for a go-ahead reply there before you start, so your work can be placed alongside everything already in flight. A label on its own is not a green light; once you have the go-ahead, open a pull request when the build and tests pass.
 
 The label catalog is in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md). Every issue has one `layer:` label and one or two component labels so you can find work in the part of the codebase you want to learn.
 

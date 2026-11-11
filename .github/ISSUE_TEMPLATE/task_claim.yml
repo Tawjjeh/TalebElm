@@ -9,6 +9,7 @@ body:
       value: |
         Thank you for wanting to contribute to TalebElm! We are happy you are here.
         Before claiming, please review `CONTRIBUTING.md` and check that no one else is currently assigned.
+        Opening this claim does not start the work; wait for a go-ahead reply on the issue first.
   - type: input
     id: task-number
     attributes:
