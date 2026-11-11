@@ -1,5 +1,6 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TalebElm.Domain.Entities;
 
 
@@ -20,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entityBuilder.HasKey(nameof(BaseEntity.Id));
 
             entityBuilder.Property(nameof(BaseEntity.CreatedAt))
+                .HasConversion(new DateTimeOffsetToStringConverter())
                 .IsRequired();
         }
     }

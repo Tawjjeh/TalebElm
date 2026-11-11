@@ -32,19 +32,65 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/problem+json";
 
+        if (exception is FluentValidation.ValidationException fvEx)
+        {
+            var fieldErrors = fvEx.Errors
+                .Where(e => !string.IsNullOrWhiteSpace(e.PropertyName))
+                .GroupBy(e => ToCamelCase(e.PropertyName))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            var topLevelMessages = fvEx.Errors
+                .Where(e => string.IsNullOrWhiteSpace(e.PropertyName))
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            var detail = topLevelMessages.Count > 0
+                ? string.Join(" ", topLevelMessages)
+                : title;
+
+            var problem = new Dictionary<string, object?>
+            {
+                ["status"] = (int)statusCode,
+                ["title"] = title,
+                ["detail"] = detail
+            };
+
+            if (fieldErrors.Count > 0)
+            {
+                problem["errors"] = fieldErrors;
+            }
+
+            return context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+        }
+
         // Never leak internal details for unhandled failures.
-        var detail = statusCode == HttpStatusCode.InternalServerError
+        var standardDetail = statusCode == HttpStatusCode.InternalServerError
             ? title
             : exception.Message;
 
-        var problem = new
+        var standardProblem = new
         {
             status = (int)statusCode,
             title,
-            detail
+            detail = standardDetail
         };
 
-        return context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+        return context.Response.WriteAsync(JsonSerializer.Serialize(standardProblem));
+    }
+
+    private static string ToCamelCase(string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(propertyName))
+            return propertyName;
+
+        var parts = propertyName.Split('.');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            parts[i] = JsonNamingPolicy.CamelCase.ConvertName(parts[i]);
+        }
+        return string.Join('.', parts);
     }
 
     private static (HttpStatusCode StatusCode, string Title) Map(Exception exception)
