@@ -27,6 +27,8 @@ Issues are grouped by the MVP milestones described in [`docs/business/ROADMAP.md
 - **M0 Foundations** — the build, validation, and API baseline.
 - **M1 Identity** — registration, login, JWT, and user access.
 - **M2 Learning flow** — tracks, lessons, exams, grading, and progression.
+- **M3 Codeforces problems** — external accounts, Codeforces verification, and the problem gate.
+- **M3b GitHub tasks** — GitHub OAuth, task versions, integrity checks, and task authoring. Starts after M3.
 - **M3 Codeforces problems** — verified algorithmic practice.
 - **M3b GitHub tasks** — automated repository tasks.
 - **M4 Public Resource Hub (read-only)** — anonymous browse and filters.
