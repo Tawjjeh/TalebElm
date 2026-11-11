@@ -1,26 +1,24 @@
 name: Task Claim
-description: Claim an open task or issue to work on in TalebElm.
-title: "[Task Claim]: <Task Number> - <Task Name>"
-labels:
-  - "good first issue"
+description: Ask to take an open issue in TalebElm.
+title: "[Task Claim]: <Issue Number> - <Issue Name>"
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for wanting to contribute to TalebElm! We are happy you are here.
-        Before claiming, please review `CONTRIBUTING.md` and check that no one else is currently assigned.
-        Opening this claim does not start the work; wait for a go-ahead reply on the issue first.
+        Thanks for offering to take this on.
+        This form is a request, not an assignment. Comment on the issue itself with your plan, wait for a go-ahead reply, and only then start. `CONTRIBUTING.md` explains the whole process.
+        Please check that nobody else is already assigned to the issue.
   - type: input
     id: task-number
     attributes:
-      label: Task / Issue Number
+      label: Issue Number
       placeholder: "#123"
     validations:
       required: true
   - type: input
     id: task-name
     attributes:
-      label: Task Name / Summary
+      label: Issue Name / Summary
       placeholder: "Implement Module unlock business rule"
     validations:
       required: true
@@ -42,7 +40,7 @@ body:
     id: implementation-notes
     attributes:
       label: Proposed implementation approach (optional)
-      description: Briefly describe how you plan to tackle this task or any initial questions you have.
+      description: Briefly describe how you plan to tackle this issue or any initial questions you have.
       placeholder: "I plan to add the validator in Application and test it with xUnit..."
   - type: checkboxes
     id: checklist
@@ -50,6 +48,8 @@ body:
       label: Confirmation
       options:
         - label: I have read `CONTRIBUTING.md` and `ARCHITECTURE.md`.
+          required: true
+        - label: I understand that work starts only after a go-ahead reply and an assignment.
           required: true
         - label: I will keep my pull request focused, small (~200 lines target), and include tests.
           required: true
