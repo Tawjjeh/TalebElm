@@ -1,4 +1,4 @@
-name: Auto-assign reviewers and owners
+name: Auto-assign reviewer
 
 on:
   pull_request_target:
@@ -7,22 +7,22 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  issues: write
 
 jobs:
   assign:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - name: Route reviewers and assignees
+      - name: Assign reviewer via Round-Robin
         uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request;
             const { owner, repo } = context.repo;
 
-            if ((pr.assignees || []).length > 0) {
-              core.info('PR already has assignees; skipping.');
+            // Skip if reviewers are already requested.
+            if ((pr.requested_reviewers || []).length > 0) {
+              core.info('PR already has requested reviewers; skipping.');
               return;
             }
 
@@ -58,69 +58,35 @@ jobs:
               labels.some((l) => l === 'database' || l === 'security') ||
               files.some((f) => dbOrSecurityPatterns.some((rx) => rx.test(f.filename)));
 
-            let assignees = [];
-            let reviewers = [];
+            // Database/Security rotates 1-by-1 between core (Abdulrahman and Abdullah);
+            // everything else rotates 1-by-1 among regular maintainers.
+            const rawPool = isDatabaseOrSecurity ? (cfg.core || []) : (cfg.regular || []);
+            const pool = rawPool.filter((u) => lower(u) !== author && !never.has(lower(u)));
 
-            if (isDatabaseOrSecurity) {
-              // Database and Security PRs route to both core owners (Abdulrahman and Abdullah).
-              const coreOwners = (cfg.core || []).filter((u) => !never.has(lower(u)));
-              assignees = coreOwners;
-              reviewers = coreOwners.filter((u) => lower(u) !== author);
-              core.info(`Database/Security PR #${pr.number}: assignees=[${assignees.join(', ')}], reviewers=[${reviewers.join(', ')}]`);
-            } else {
-              // General PRs: Round-Robin across active maintainers (excluding exempted members and author).
-              const allActive = [...(cfg.core || []), ...(cfg.regular || [])];
-              const seen = new Set();
-              const pool = [];
-              for (const u of allActive) {
-                const key = lower(u);
-                if (!seen.has(key) && key !== author && !never.has(key)) {
-                  seen.add(key);
-                  pool.push(u);
-                }
-              }
-
-              if (pool.length === 0) {
-                core.warning('No eligible maintainers available for assignment.');
-                return;
-              }
-
-              const loads = [];
-              for (const login of pool) {
-                const search = await github.rest.search.issuesAndPullRequests({
-                  q: `repo:${owner}/${repo} is:pr is:open assignee:${login}`,
-                  per_page: 1,
-                });
-                loads.push({ login, count: search.data.total_count });
-              }
-
-              const minCount = Math.min(...loads.map((x) => x.count));
-              const tied = loads.filter((x) => x.count === minCount);
-              const pick = tied[pr.number % tied.length].login;
-
-              assignees = [pick];
-              reviewers = [pick];
-              core.info(`General PR #${pr.number}: selected ${pick} (min open PR load=${minCount})`);
+            if (pool.length === 0) {
+              core.warning('No eligible reviewers available.');
+              return;
             }
 
-            if (reviewers.length > 0) {
-              try {
-                await github.rest.pulls.requestReviewers({
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  reviewers,
-                });
-              } catch (e) {
-                core.warning(`Failed to request reviewers: ${e.message}`);
-              }
-            }
-
-            if (assignees.length > 0) {
-              await github.rest.issues.addAssignees({
-                owner,
-                repo,
-                issue_number: pr.number,
-                assignees,
+            // Pick the maintainer with the fewest currently open review requests, breaking ties by PR number.
+            const loads = [];
+            for (const login of pool) {
+              const search = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} is:pr is:open review-requested:${login}`,
+                per_page: 1,
               });
+              loads.push({ login, count: search.data.total_count });
             }
+
+            const minCount = Math.min(...loads.map((x) => x.count));
+            const tied = loads.filter((x) => x.count === minCount);
+            const pick = tied[pr.number % tied.length].login;
+
+            await github.rest.pulls.requestReviewers({
+              owner,
+              repo,
+              pull_number: pr.number,
+              reviewers: [pick],
+            });
+
+            core.info(`Requested reviewer ${pick} for PR #${pr.number} (sensitive=${isDatabaseOrSecurity}, minLoad=${minCount})`);
