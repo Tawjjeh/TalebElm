@@ -117,6 +117,15 @@ public class TrackRepositoryTests : SqliteTestBase
         Assert.Equal(3, items.Count);
     }
 
+    [Fact]
+    public async Task GetPagedAsync_WhenTokenIsCancelled_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _repository.GetPagedAsync(page: 1, pageSize: 20, publishedOnly: true, cancellationToken: cts.Token));
+    }
 
     [Fact]
     public async Task GetPagedAsync_WhenOffsetExceedsIntMax_ReturnsEmptyListWithoutOverflow()
