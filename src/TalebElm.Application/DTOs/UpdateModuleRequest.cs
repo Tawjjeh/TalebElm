@@ -9,6 +9,6 @@ namespace TalebElm.Application.DTOs;
 /// <param name="TrackId">The identifier of the track the module belongs to.</param>
 public record UpdateModuleRequest(
     string Title,
-    string? Summary,
+    string Summary,
     int Order,
     Guid TrackId);
