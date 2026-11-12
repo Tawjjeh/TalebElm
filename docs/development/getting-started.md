@@ -31,10 +31,10 @@ dotnet run --project src/TalebElm.Api
 Verify the server is running:
 
 ```bash
-curl http://localhost:5000/api/health
+curl http://localhost:5236/api/health
 ```
 
-Expected response: `{"status":"healthy"}` (or similar).
+Expected response: `healthy` (plain text, not JSON).
 
 When the API runs in the `Development` environment, Swagger UI is available at `/swagger` and the OpenAPI document at `/swagger/v1/swagger.json`. These endpoints are not exposed in other environments.
 

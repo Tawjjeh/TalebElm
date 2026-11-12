@@ -62,7 +62,7 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | C-4 | Ordering is strict and contiguous: `UNIQUE(TrackId, Order)` for Modules, `UNIQUE(ModuleId, Order)` for Lessons; `Order ≥ 1`; surviving siblings are re-sequenced to `1, 2, 3, …` in the same `UnitOfWork` transaction on insert/move/delete. | Unique indexes implemented; re-sequencing target (Decision 12) |
 | C-5 | Reordering a `Published` Track after learners started requires product approval. Progress rows are keyed by `ModuleId`, never by `Order`, so renames of positions never orphan history. | Target |
 | C-6 | Deletes never cascade learner data: `Track` with Modules/enrollments/progress, `Module` with Lessons/Exam/progress, `Lesson` with resources are blocked with `409 Conflict`. FKs use `DeleteBehavior.Restrict` (configured for Module→Track, Lesson→Module, Exam→Module, UserProgress→User/Module, TrackEnrollment→User/Track, LessonResource→Lesson). | Implemented (Restrict FKs, 409 via `UnitOfWork`) |
-| C-7 | `LessonType` (`Text`, `Video`, `Exercise`) exists as an enum but is **not** a `Lesson` property today. Until Decision 13 lands, content kind must not be inferred from anywhere else. | Implemented (as absence) |
+| C-7 | Each `Lesson` has a `LessonType` (`Text`, `Video`, `Exercise`) stored as a column on `Lesson`, defaulting to `Text`. Values are 1-based: `Text = 1`, `Video = 2`, `Exercise = 3`. Content kind is read from this column, not inferred from `LessonResource` attachments. | Target (Decision 13) |
 
 ## 4. Enrollment
 
@@ -78,10 +78,10 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | ID | Rule | Status |
 |---|---|---|
 | A-1 | `Score` is an integer `0–100`; `PassThreshold` is `1–100` in the same scale; pass is `score ≥ PassThreshold` (`Exam.HasPassed`). | Predicate, validator and DB check (`CK_Exams_PassThreshold_Range`, `1–100`) implemented |
-| A-2 | Grading is server-side only, from server-side answer keys. `SubmitExamRequest(ExamId, Score)` accepts a client-supplied score and **must not** be used on the trusted path; it will be replaced by selected-answer submission. | Implemented (as prohibition) |
+| A-2 | Grading is server-side only, from server-side answer keys via `SubmitExamAnswersRequest` (`ExamService.SubmitAsync`). Client-supplied scores are rejected and `SubmitExamRequest` has been removed. | Implemented (service) / Target (API controller) |
 | A-3 | At most one Exam per Module, enforced by `UNIQUE(ModuleId)`. A Module may have no Exam; such Modules never set `PassedExam` and progress only by explicit unlock. | Implemented |
-| A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Target (submit behavior) |
-| A-5 | Each exam question (planned `ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Target |
+| A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Implemented (service) / Target (unlock & API) |
+| A-5 | Each exam question (`ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Implemented (entities/service) / Target (create validator & API) |
 
 ## 6. Progress tracking & unlock
 
@@ -127,17 +127,17 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 
 | Invariant | Database | Application |
 |---|---|---|
-| One progress row per learner+Module | `UNIQUE(UserId, ModuleId)` ✅ | Upsert, never duplicate-insert |
+| One progress row per learner+Module | `UNIQUE(UserId, ModuleId)` (Implemented) | Upsert, never duplicate-insert |
 | Dual-gated module unlock | — | Next module unlocked only if exam passed AND required problems completed |
-| One exam per Module | `UNIQUE(ModuleId)` ✅ | Duplicate create → `409` (target) |
-| Case-insensitive unique email | `UNIQUE(Email)` + `NOCASE` ✅ | Identical normalization in register/login (target) |
-| Non-blank identity fields | `CK_Users_*_NotEmpty` ✅ | Register validator → `400` (target) |
-| No silent data loss | `Restrict` FKs ✅ | Blocked delete → `409` (target) |
-| Contiguous sibling order | Unique `(parent, Order)` ✅ | Shift/re-sequence in one transaction (target) |
-| Length bounds | `HasMaxLength` ✅ | Module/Lesson validators; Track validator gaps → `400` (partial) |
-| Server-side grading | — | Submit path ignores client score |
-| Verified handle challenge | `UNIQUE(Platform, Handle)` | Token verification via Codeforces `user.info` profile check |
+| One exam per Module | `UNIQUE(ModuleId)` (Implemented) | Duplicate create → `409` (target) |
+| Case-insensitive unique email | `UNIQUE(Email)` + `NOCASE` (Implemented) | Identical normalization in register/login (target) |
+| Non-blank identity fields | `CK_Users_*_NotEmpty` (Implemented) | Register validator → `400` (target) |
+| No silent data loss | `Restrict` FKs (Implemented) | Blocked delete → `409` (target) |
+| Contiguous sibling order | Unique `(parent, Order)` (Implemented) | Shift/re-sequence in one transaction (target) |
+| Length bounds | `HasMaxLength` (Implemented) | Module/Lesson validators; Track validator gaps → `400` (partial) |
+| Server-side grading | — | Submit path ignores client score (`ExamService.SubmitAsync` implemented) |
+| Verified handle challenge | `UNIQUE(Platform, Handle)` (Implemented) | Token verification via Codeforces `user.info` profile check |
 | Automated task integrity | — | GitHub Actions success AND blob/tree SHA integrity matches |
 | Anonymous Hub access | — | Public read endpoints bypass authorization filter |
 
-✅ Implemented · ⏳ Target (decided, scheduled)
+All rules without "(Implemented)" remain Target unless marked otherwise.

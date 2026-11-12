@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 
@@ -6,27 +6,27 @@ namespace TalebElm.Infrastructure.Persistence.Repositories;
 
 public class LessonResourceRepository(AppDbContext context) : ILessonResourceRepository
 {
-    public async Task AddAsync(LessonResource entity)
+    public async Task AddAsync(LessonResource entity, CancellationToken ct = default)
     {
-        await context.LessonResources.AddAsync(entity);
+        await context.LessonResources.AddAsync(entity, ct);
     }
 
-    public async Task<IReadOnlyList<LessonResource>> GetAllAsync()
+    public async Task<IReadOnlyList<LessonResource>> GetAllAsync(CancellationToken ct = default)
     {
-        return await context.LessonResources.AsNoTracking().ToListAsync();
+        return await context.LessonResources.AsNoTracking().ToListAsync(ct);
     }
 
-    public async Task<LessonResource?> GetByIdAsync(Guid id)
+    public async Task<LessonResource?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.LessonResources.FirstOrDefaultAsync(r => r.Id == id);
+        return await context.LessonResources.FirstOrDefaultAsync(r => r.Id == id, ct);
     }
 
-    public async Task<IReadOnlyList<LessonResource>> GetByLessonIdAsync(Guid lessonId)
+    public async Task<IReadOnlyList<LessonResource>> GetByLessonIdAsync(Guid lessonId, CancellationToken ct = default)
     {
         return await context.LessonResources
             .AsNoTracking()
             .Where(r => r.LessonId == lessonId)
             .OrderBy(r => r.Order)
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 }

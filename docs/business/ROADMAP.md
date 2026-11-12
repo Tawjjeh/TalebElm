@@ -7,22 +7,20 @@
 
 ## MVP boundary
 
-The first MVP is one complete learner journey:
+The MVP is a complete, self-contained backend platform covering the full learner and content-authoring lifecycle:
 
-> register or log in → browse and enroll in a published Track → study its Lessons → submit a server-graded Exam → complete the required practice problems → unlock the next Module.
-
-The public, read-only Resource Hub ships in the same MVP because it has no dependency on the learning flow. Everything else waits.
+> register or log in → browse and enroll in a published Track → study its Lessons → submit a server-graded Exam → complete the required Codeforces and GitHub practice problems → unlock the next Module → complete the Track Capstone project → browse or curate the public Resource Hub.
 
 | Milestone | Scope | Done when |
 |---|---|---|
 | **M0 Foundations** | DI baseline, validation errors, content guards, cancellation tokens, logging, API wiring, CI health | The API starts cleanly, returns real responses, and the build, tests, and blank-database migration check are green. |
 | **M1 Identity** | Registration, login, JWT, `StudentOnly` / `AdminOnly`, users API, login throttling | A learner can register, log in, and reach a protected route; 401/403/409 behave correctly. |
 | **M2 Learning flow** | Tracks, Modules, Lessons, Exams, Progress, server-side grading, sticky unlocking, lesson type and authoring fields | The full study loop works and a pass unlocks only the next Module. |
-| **M3 Verified problems** | External accounts, Codeforces verification, GitHub task verification, completion persistence, dual-gate unlock | Required problems are verified without human review and the problem gate blocks or unlocks correctly. |
-| **M4 Public Resource Hub (read-only)** | Technology tree, resources, filters, anonymous browse, seed content | A visitor can browse and filter resources without logging in. |
-| **After MVP** | Capstone projects, Hub authoring and moderation, link health, shared `Resource` migration | Deferred until the learner MVP is complete. |
+| **M3 Automated Verification** | External accounts, Codeforces handle and solve verification, GitHub OAuth, `GitHubTask` and `TaskVersion` SHA integrity checks, `ModuleProblem`, `UserProblemCompletion`, dual-gate unlock | Required Codeforces problems and GitHub tasks are verified automatically and the dual gate blocks or unlocks correctly. |
+| **M4 Public Resource Hub** | Technology tree, `Resource` persistence and repositories, anonymous browse/search/filters, Admin curation, safe link-health checker with SSRF rules, shared `LessonResource` migration | Visitors browse and filter resources without logging in, broken links are flagged automatically, and Admins curate unified resources. |
+| **M5 Capstone Projects** | `CapstoneProject` and `ProjectMilestone` persistence, milestone verification via GitHub tasks, derived Track completion, learner Capstone endpoints | Learners complete ordered capstone milestones automatically and Track completion derives cleanly with zero manual gating. |
 
-The milestone names above are the GitHub milestones. Every open issue belongs to exactly one of them.
+The milestone names above match the GitHub milestones (`M0` through `M5`). Every open issue belongs to one of these six MVP milestones.
 
 ---
 
@@ -109,7 +107,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
 - **Goal:** Integrate external coding problem platforms (Codeforces) and practical framework tasks (automated GitHub tasks), enforcing zero manual gating and dual-gated progression.
 - **Scope:**
   - `ProblemKind` enum: `CodeforcesProblem` and `GitHubTask`, implemented behind `IProblemVerifier`.
-  - `UserExternalAccount` entity & repository: stores Codeforces handle and GitHub OAuth numeric ID (`ExternalUserId`).
+  - `UserExternalAccount` entity & repository: stores Codeforces handle and GitHub OAuth numeric ID (`ExternalNumericId`).
   - Codeforces handle verification: server issues 128-bit single-use token; learner pastes into Codeforces profile; platform verifies via public `user.info` API.
   - Codeforces solve verification: queries public `user.status` for `verdict == "OK"` matching `contestId` and problem `index`. All-time accepted solves count. Enforces 60s per-user debouncing.
   - Automated GitHub tasks (CodeCrafters-style): official starter template repositories (`Tawjjeh/task-<slug>-template`), GitHub REST API client (`IGitHubClient`), checking repository ownership, template provenance, latest workflow run success, and cryptographic blob/tree SHA matches against `TaskVersion`.
