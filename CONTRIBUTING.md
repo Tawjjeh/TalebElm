@@ -1,6 +1,6 @@
 # Contributing to TalebElm
 
-This guide explains how to set up your environment, claim an issue, open a pull request, and understand how PR reviews and permissions work.
+This guide explains how to set up your environment, claim an issue, open a pull request, and understand how PR reviews work.
 
 ## 1. Prerequisites and baseline check
 
@@ -75,26 +75,21 @@ git push --set-upstream origin feat/track-enrollment-endpoint
 
 6. Open a pull request against `Tawjjeh/TalebElm` `main`, link the issue with `Closes #NNN` if applicable, and make sure `build-and-test` passes.
 
-## 4. Automated PR routing (Reviewers vs. Assignees)
+## 4. Automated PR routing (Reviewers)
 
-When a pull request is opened (and is not a draft), `.github/workflows/auto-assign.yml` reads [`.github/maintainers.json`](.github/maintainers.json) and routes the PR automatically:
-
-- **Reviewers box:** GitHub requests code review from the selected maintainer(s) here.
-- **Assignees box:** The selected reviewer(s) are mirrored into Assignees solely so our PR Governance workflow recognizes them as the designated PR Owner(s) authorized to push fixes and merge that specific PR.
+When a pull request is opened (and is not a draft), `.github/workflows/auto-assign.yml` reads [`.github/maintainers.json`](.github/maintainers.json) and requests one maintainer in the **Reviewers** box. The **Assignees** box is left unused on pull requests.
 
 ### Routing rules
 
-1. **Database and Security PRs:** Any PR touching Database files (`Data`, `Migrations`, `Persistence`, `Configurations`, `Repositories`, `Entities`, `DbContext`, `.sql`) or Security files (`Auth`, `Security`, `Identity`, `Jwt`, `Policies`, `PasswordHasher`, `TokenService`, `OAuth`, `RateLimit`), or carrying `database` or `security` labels, automatically places **both** `abdulrahmanhossam` and `abdulla7mohamed` in Reviewers (excluding the PR author) and assigns both in Assignees.
-2. **General PRs (Round-Robin):** All other PRs rotate evenly across the active maintainers (`abdulrahmanhossam`, `abdulla7mohamed`, `AhmedShaabanAl-Saidi`, `Asma-Elhadiedy`, `Mohammad-Metwally`), picking from those with the fewest currently open assigned PRs.
-3. **Exempted maintainers:** `SarahRefaat19` (Eng. Sara), `Sroor000` (Eng. Sorour), and `Aya-Selim` (Eng. Aya Samir) remain part of the repository team and are excluded from automatic Reviewer and Assignee rotation.
+1. **Database and Security PRs:** Any PR touching Database files (`Data`, `Migrations`, `Persistence`, `Configurations`, `Repositories`, `Entities`, `DbContext`, `.sql`) or Security files (`Auth`, `Security`, `Identity`, `Jwt`, `Policies`, `PasswordHasher`, `TokenService`, `OAuth`, `RateLimit`), or carrying `database` or `security` labels, rotates one reviewer at a time between `abdulrahmanhossam` and `abdulla7mohamed` (selecting whichever has fewer open review requests).
+2. **General PRs (Round-Robin):** All other PRs rotate evenly among the regular maintainers (`AhmedShaabanAl-Saidi`, `Asma-Elhadiedy`, `Mohammad-Metwally`), picking from those with the fewest currently open review requests.
+3. **Exempted maintainers:** `SarahRefaat19` (Eng. Sara), `Sroor000` (Eng. Sorour), and `Aya-Selim` (Eng. Aya Samir) remain part of the repository team and are excluded from automatic review rotation.
 
-## 5. PR governance and permissions
+## 5. Review and merge workflow
 
-`.github/CODEOWNERS` and `.github/workflows/pr-governance.yml` (check name: `PR Governance`) enforce clear ownership boundaries:
-
-- **Code Owner (`abdulrahmanhossam`):** Unrestricted permission to read, edit, push, approve, and merge across all files and all PRs at any time.
-- **Assigned Maintainer on their assigned PR:** Full permission on that PR to push commits, update the branch, approve, and merge (either via GitHub UI or by commenting `/merge` once checks pass).
-- **Unassigned Maintainers on other PRs:** May submit code reviews (`APPROVE` or comments). They are blocked by `PR Governance` from pushing commits to another maintainer's PR branch or merging a PR not assigned to them.
+- The requested reviewer handles reviewing, approving, pushing minor fixes if needed, and merging the pull request (by commenting `/merge` after approving, or via the GitHub UI once `build-and-test` passes).
+- Other maintainers are welcome to review and approve, while merging via `/merge` is reserved for the requested reviewer or `abdulrahmanhossam`.
+- `abdulrahmanhossam` can review and merge any pull request at any time.
 
 ## 6. Reference docs
 
