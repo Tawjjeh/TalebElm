@@ -67,6 +67,17 @@ jobs:
               await say('Some checks are not green yet: ' + notReady.map((c) => c.name).join(', ') + '.');
               return;
             }
+            const combined = await github.rest.repos.getCombinedStatusForRef({ owner, repo, ref: pr.head.sha });
+            const badStatus = combined.data.statuses.filter((s) => ['failure', 'error'].includes(s.state));
+            if (badStatus.length && !isOwner) {
+              await say('Not yet: ' + badStatus.map((s) => `${s.context} (${s.description})`).join('; ') + '.');
+              return;
+            }
+            const fresh = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            if (fresh.data.head.sha !== pr.head.sha) {
+              await say('A new commit landed while I was checking. Comment /merge again once the checks are green.');
+              return;
+            }
             try {
               await github.rest.pulls.merge({
                 owner, repo, pull_number: number, merge_method: 'squash',
