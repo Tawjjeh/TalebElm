@@ -19,7 +19,7 @@ public class UserProgressServiceTests
             new() { UserId = otherId, ModuleId = Guid.NewGuid(), IsUnlocked = true, PassedExam = true, Score = 10 }
         };
         var repository = new Mock<IUserProgressRepository>();
-        repository.Setup(r => r.GetAllAsync()).ReturnsAsync(rows);
+        repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(rows);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
 
@@ -41,7 +41,7 @@ public class UserProgressServiceTests
             new() { UserId = userId, ModuleId = Guid.NewGuid(), IsUnlocked = true, PassedExam = true, Score = 70 }
         };
         var repository = new Mock<IUserProgressRepository>();
-        repository.Setup(r => r.GetByUserAndTrackAsync(userId, trackId)).ReturnsAsync(rows);
+        repository.Setup(r => r.GetByUserAndTrackAsync(userId, trackId, It.IsAny<CancellationToken>())).ReturnsAsync(rows);
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
 
@@ -51,5 +51,47 @@ public class UserProgressServiceTests
 
         Assert.Single(result);
         Assert.True(result[0].PassedExam);
+    }
+
+    [Fact]
+    public async Task GetMyProgressAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var repository = new Mock<IUserProgressRepository>();
+        repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Returns((CancellationToken ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<IReadOnlyList<UserProgress>>(new List<UserProgress>());
+            });
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
+
+        var service = new UserProgressService(unitOfWork.Object);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.GetMyProgressAsync(Guid.NewGuid(), cts.Token));
+    }
+
+    [Fact]
+    public async Task GetByTrackAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var repository = new Mock<IUserProgressRepository>();
+        repository.Setup(r => r.GetByUserAndTrackAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Returns((Guid _, Guid _, CancellationToken ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<IReadOnlyList<UserProgress>>(new List<UserProgress>());
+            });
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
+
+        var service = new UserProgressService(unitOfWork.Object);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.GetByTrackAsync(Guid.NewGuid(), Guid.NewGuid(), cts.Token));
     }
 }

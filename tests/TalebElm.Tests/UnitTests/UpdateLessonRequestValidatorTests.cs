@@ -1,6 +1,7 @@
 using FluentValidation.TestHelper;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Validators;
+using TalebElm.Domain.Enums;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -10,7 +11,29 @@ public class UpdateLessonRequestValidatorTests
 
     private static UpdateLessonRequest ValidRequest()
     {
-        return new UpdateLessonRequest("Intro", Guid.NewGuid(), 1);
+        return new UpdateLessonRequest("Intro", Guid.NewGuid(), 1, "Lesson body", LessonType.Text);
+    }
+
+    [Fact]
+    public void Content_Empty_HasError()
+    {
+        var request = ValidRequest() with { Content = "" };
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Content)
+            .WithErrorMessage("Lesson.Content.Required");
+    }
+
+    [Fact]
+    public void Type_InvalidEnumValue_HasError()
+    {
+        var request = ValidRequest() with { Type = (LessonType)99 };
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Type)
+            .WithErrorMessage("Lesson.Type.Invalid");
     }
 
     [Fact]

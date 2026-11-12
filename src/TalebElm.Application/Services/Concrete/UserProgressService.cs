@@ -13,9 +13,9 @@ public class UserProgressService : IUserProgressService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<ProgressResponse>> GetMyProgressAsync(Guid userId)
+    public async Task<IReadOnlyList<ProgressResponse>> GetMyProgressAsync(Guid userId, CancellationToken ct = default)
     {
-        var progress = await _unitOfWork.UserProgresses.GetAllAsync();
+        var progress = await _unitOfWork.UserProgresses.GetAllAsync(ct);
         return progress
             .Where(p => p.UserId == userId)
             .OrderBy(p => p.Module?.Order ?? int.MaxValue)
@@ -23,9 +23,9 @@ public class UserProgressService : IUserProgressService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<ProgressResponse>> GetByTrackAsync(Guid userId, Guid trackId)
+    public async Task<IReadOnlyList<ProgressResponse>> GetByTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default)
     {
-        var progress = await _unitOfWork.UserProgresses.GetByUserAndTrackAsync(userId, trackId);
+        var progress = await _unitOfWork.UserProgresses.GetByUserAndTrackAsync(userId, trackId, ct);
         return progress
             .Select(p => new ProgressResponse(p.ModuleId, p.IsUnlocked, p.PassedExam, p.Score))
             .ToList();

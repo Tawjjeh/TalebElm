@@ -6,6 +6,7 @@ name: .NET Build & Test (Release)
 # Release configuration (unlike ci.yml's default Debug) validates the exact
 # binaries we would ship.
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
@@ -19,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 

@@ -35,7 +35,7 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | LessonResource | Citation | string | Yes | Author/title/edition/page for a book or other non-URL reference |
 | LessonResource | Order | int | No | Display order within the Lesson |
 
-Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format if it is added to Lesson; the latter describes a cited source. Do not claim `LessonType` is currently stored on Lesson.
+Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format and is stored on Lesson (Decision 13); the latter describes a cited source. Do not claim `LessonType` is currently stored on Lesson; the column is not yet implemented.
 
 ### Application Contract (Implemented)
 

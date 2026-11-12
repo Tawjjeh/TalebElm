@@ -12,6 +12,7 @@ public class UpdateModuleRequestValidator : AbstractValidator<UpdateModuleReques
             .MaximumLength(150).WithMessage("Module.Title.TooLong");
 
         RuleFor(x => x.Summary)
+            .NotEmpty().WithMessage("Module.Summary.Required")
             .MaximumLength(500).WithMessage("Module.Summary.TooLong");
 
         RuleFor(x => x.Order)

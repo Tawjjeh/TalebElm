@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
@@ -7,19 +7,27 @@ namespace TalebElm.Infrastructure.Repositories;
 
 public class ExamRepository(AppDbContext context) : IExamRepository
 {
-    public async Task AddAsync(Exam entity)
+    public async Task AddAsync(Exam entity, CancellationToken ct = default)
     {
-        await context.Set<Exam>().AddAsync(entity);
+        await context.Set<Exam>().AddAsync(entity, ct);
     }
 
-    public async Task<IReadOnlyList<Exam>> GetAllAsync()
+    public async Task<IReadOnlyList<Exam>> GetAllAsync(CancellationToken ct = default)
     {
-        return await context.Set<Exam>().AsNoTracking().ToListAsync();
+        return await context.Set<Exam>().AsNoTracking().ToListAsync(ct);
     }
 
-    public async Task<Exam?> GetByIdAsync(Guid id)
+    public async Task<Exam?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.Set<Exam>().FindAsync(id);
+        return await context.Set<Exam>().FindAsync([id], ct);
+    }
+
+    public async Task<Exam?> GetWithQuestionsAsync(Guid examId)
+    {
+        return await context.Set<Exam>()
+            .Include(e => e.Questions)
+            .ThenInclude(q => q.Options)
+            .FirstOrDefaultAsync(e => e.Id == examId);
     }
 
     public async Task<Exam?> GetByModuleIdAsync(Guid moduleId)

@@ -10,7 +10,7 @@
 Rather than building isolated toy exercises, a Track culminates in a **single comprehensive portfolio project built progressively across the entire Track**:
 
 - **Cumulative Milestones:** The capstone project is partitioned into ordered `ProjectMilestone`s (e.g., Milestone 1: Domain Model, Milestone 2: Persistence & Unit of Work, Milestone 3: Web API & Middlewares, Milestone 4: Docker & CI/CD).
-- **Automated Milestone Verification:** Each milestone references an official `GitHubTask` (detailed in [`10-automated-task-verification.md`](10-automated-task-verification.md)). When a learner completes the requirements of a milestone, tests in their public repository pass and the server verifies completion automatically via the GitHub REST API and SHA integrity checks.
+- **Automated Milestone Verification:** The project references one official `GitHubTask` (template repository, workflow, and tests tree; detailed in [`10-automated-task-verification.md`](10-automated-task-verification.md)), and each milestone names the workflow job that proves it. When a learner completes a milestone, the tests in their public repository pass and the server verifies completion automatically via the GitHub REST API and SHA integrity checks.
 - **Derived Track Completion:** A Track is marked complete if and only if **all Modules are passed** AND **all capstone Milestones are verified**.
 - **Optional Supplementary Mentorship:** While peer or mentor code reviews may be added as an optional learning enhancement in the future, they **never block** milestone unlocking, track completion, or certificates. Progression is 100% automated.
 
@@ -29,7 +29,7 @@ Represents the cumulative project definition attached to a Track.
 | `TrackId` | `Guid` | No | Required FK to `Track.Id`. Delete behavior: `Restrict`. `UNIQUE(TrackId)` (exactly one capstone per track). | Target |
 | `Title` | `string` | No | Project title (e.g., "Build an Enterprise E-Commerce Engine"). Max length **150**. | Target |
 | `Description` | `string` | No | Architectural overview, technology stack, and high-level requirements. Max length **4000**. | Target |
-| `StarterTemplateRepo` | `string` | No | GitHub repository template under `Tawjjeh/`. Max length **150**. | Target |
+| `TaskId` | `Guid` | No | Required FK to `GitHubTask.Id`. Decision 36a replaced `StarterTemplateRepo`: one template repository, one locked workflow, and one tests tree. `UNIQUE(TaskId)`. | Target |
 
 ### 2.2 Entity: ProjectMilestone (Target)
 
@@ -40,10 +40,10 @@ Defines an ordered deliverable checkpoint within the cumulative project.
 | `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
 | `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
 | `ProjectId` | `Guid` | No | Required FK to `CapstoneProject.Id`. Delete behavior: `Restrict`. | Target |
-| `TaskId` | `Guid` | No | Required FK to `GitHubTask.Id`. Delete behavior: `Restrict`. Links to the automated verifier. | Target |
 | `ModuleId` | `Guid?` | Yes | Optional link to the corresponding Track `Module.Id` if the milestone is tackled alongside that module. | Target |
 | `Title` | `string` | No | Milestone title (e.g., "Milestone 2: Relational Persistence"). Max length **150**. | Target |
 | `Instructions` | `string` | No | Specific milestone requirements and test suite guide. Max length **2000**. | Target |
+| `WorkflowJobName` | `string` | No | Exact GitHub Actions workflow job name that proves this milestone. Max length **100**. `UNIQUE(ProjectId, WorkflowJobName)`. | Target |
 | `Order` | `int` | No | Sequence number (1, 2, 3...). `UNIQUE(ProjectId, Order)`. | Target |
 
 ### 2.3 Milestone Progress: UserMilestoneProgress (Target)

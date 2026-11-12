@@ -2,6 +2,7 @@
 name: .NET CI
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
@@ -13,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -132,3 +133,6 @@ jobs:
 
       - name: Test
         run: dotnet test TalebElm.slnx --no-build --verbosity normal
+
+      - name: Check documentation links
+        run: python3 scripts/check-docs.py
