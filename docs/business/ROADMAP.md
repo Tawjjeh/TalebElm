@@ -110,7 +110,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
 - **Goal:** Integrate external coding problem platforms (Codeforces) and practical framework tasks (automated GitHub tasks), enforcing zero manual gating and dual-gated progression.
 - **Scope:**
   - `ProblemKind` enum: `CodeforcesProblem` and `GitHubTask`, implemented behind `IProblemVerifier`.
-  - `UserExternalAccount` entity & repository: stores Codeforces handle and GitHub OAuth numeric ID (`ExternalUserId`).
+  - `UserExternalAccount` entity & repository: stores Codeforces handle and GitHub OAuth numeric ID (`ExternalNumericId`).
   - Codeforces handle verification: server issues 128-bit single-use token; learner pastes into Codeforces profile; platform verifies via public `user.info` API.
   - Codeforces solve verification: queries public `user.status` for `verdict == "OK"` matching `contestId` and problem `index`. All-time accepted solves count. Enforces 60s per-user debouncing.
   - Automated GitHub tasks (CodeCrafters-style): official starter template repositories (`Tawjjeh/task-<slug>-template`), GitHub REST API client (`IGitHubClient`), checking repository ownership, template provenance, latest workflow run success, and cryptographic blob/tree SHA matches against `TaskVersion`.

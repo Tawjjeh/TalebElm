@@ -58,7 +58,7 @@ Stores the verified connection to the learner's GitHub account.
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. `UNIQUE(UserId, Platform)`. | Target |
 | `Platform` | `ExternalPlatform` | No | Enum: `Codeforces = 1`, `GitHub = 2`. | Target |
 | `Handle` | `string` | No | GitHub username/login (e.g., `octocat`). Max length **64**, non-blank. | Target |
-| `ExternalUserId` | `long?` | Yes | Immutable numeric GitHub user ID (e.g., `583231`). Required when `Platform == GitHub`. `UNIQUE(Platform, ExternalUserId)`. | Target |
+| `ExternalNumericId` | `long?` | Yes | Immutable numeric GitHub user ID (e.g., `583231`). Required when `Platform == GitHub`. `UNIQUE(Platform, ExternalNumericId)`. | Target |
 | `VerificationStatus` | `AccountVerificationStatus` | No | Enum: `Verified = 2` (set automatically via OAuth callback). | Target |
 | `VerifiedAt` | `DateTimeOffset?` | Yes | Timestamp of OAuth verification. | Target |
 
@@ -89,7 +89,7 @@ When a learner triggers `POST /api/tasks/{taskId}/verify` with their repository 
 2. **Fetch Repository Metadata:**
    - Call GitHub REST API: `GET /repos/{owner}/{repo}` via `IGitHubClient`.
    - Ensure repository exists and is public (`private == false`).
-   - Validate ownership: `response.owner.id` must strictly match the stored numeric `ExternalUserId`.
+   - Validate ownership: `response.owner.id` must strictly match the stored numeric `ExternalNumericId`.
    - Validate provenance: `response.template_repository.full_name` must equal `TaskVersion.TemplateRepoFullName`.
 3. **Verify CI Workflow Run:**
    - Call GitHub REST API: `GET /repos/{owner}/{repo}/actions/runs?branch={default_branch}&event=push`.
