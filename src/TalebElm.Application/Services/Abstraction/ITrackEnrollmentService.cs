@@ -4,5 +4,5 @@ namespace TalebElm.Application.Services.Abstraction;
 
 public interface ITrackEnrollmentService
 {
-    Task<EnrollmentResponse> EnrollAsync(Guid userId, Guid trackId);
+    Task<EnrollmentResponse> EnrollAsync(Guid userId, Guid trackId, CancellationToken ct = default);
 }
