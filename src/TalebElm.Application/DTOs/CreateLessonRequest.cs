@@ -1,3 +1,5 @@
+using TalebElm.Domain.Enums;
+
 namespace TalebElm.Application.DTOs;
 
 /// <summary>
@@ -9,4 +11,6 @@ namespace TalebElm.Application.DTOs;
 public record CreateLessonRequest(
     string Title,
     Guid ModuleId,
-    int Order);
+    int Order,
+    string Content,
+    LessonType Type);
