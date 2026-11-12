@@ -1,9 +1,11 @@
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
 using TalebElm.Infrastructure;
+using TalebElm.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +64,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    await DemoDataSeeder.SeedAsync(db);
 }
 
 // Configure the HTTP request pipeline.
