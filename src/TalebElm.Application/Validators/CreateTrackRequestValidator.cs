@@ -7,9 +7,11 @@ public class CreateTrackRequestValidator : AbstractValidator<CreateTrackRequest>
 {
     public CreateTrackRequestValidator()
     {
-        RuleFor(request => request.Name).NotEmpty().WithMessage("Track Name is required");
+        RuleFor(request => request.Name).NotEmpty().WithMessage("Track Name is required")
+            .MaximumLength(150).WithMessage("Track.Name.To Long");
         RuleFor(request => request.Description)
                 .NotEmpty()
-                .WithMessage("Track Description is required");
+                .WithMessage("Track Description is required")
+                .MaximumLength(1000).WithMessage("Track.Description.TooLong");
     }
 }
