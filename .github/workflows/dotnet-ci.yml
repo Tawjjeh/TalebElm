@@ -6,6 +6,7 @@ name: .NET Build & Test (Release)
 # Release configuration (unlike ci.yml's default Debug) validates the exact
 # binaries we would ship.
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:

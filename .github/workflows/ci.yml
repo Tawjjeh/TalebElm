@@ -2,6 +2,7 @@
 name: .NET CI
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
@@ -132,3 +133,6 @@ jobs:
 
       - name: Test
         run: dotnet test TalebElm.slnx --no-build --verbosity normal
+
+      - name: Check documentation links
+        run: python3 scripts/check-docs.py
