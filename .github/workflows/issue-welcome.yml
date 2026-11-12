@@ -1,0 +1,33 @@
+name: Welcome new issues
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const lower = (s) => s.toLowerCase();
+            if (issue.user.type === 'Bot') return;
+            const repoInfo = await github.rest.repos.get({ owner, repo });
+            const res = await github.rest.repos.getContent({
+              owner, repo, path: '.github/maintainers.json', ref: repoInfo.data.default_branch
+            });
+            const cfg = JSON.parse(Buffer.from(res.data.content, 'base64').toString());
+            const exempt = new Set([cfg.owner, ...cfg.core].map(lower));
+            if (exempt.has(lower(issue.user.login))) return;
+            const body = [
+              `Thanks for opening this, @${issue.user.login}.`,
+              '',
+              'Please hold off starting on it for now. Someone on the team will read it and, if it fits the plan, mark it open for work (it gets the `help wanted` label) and assign it to whoever wants it. If you would like to take it yourself, just say so in a comment.',
+              '',
+              'ممكن تستنى شوية قبل ما تبدأ؟ هنراجع الـ issue وهنقولك لما تبقى جاهزة للشغل.'
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body });
