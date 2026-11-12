@@ -53,7 +53,7 @@
 
 ## Related root files
 
-- [README.md](README.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [CONTRIBUTORS.md](../CONTRIBUTORS.md), `LICENSE`
+- [README.md](README.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), `LICENSE`
 - [AGENTS.md](../AGENTS.md) — operating contract for AI coding assistants and contributors
 
 ## Complete file index
