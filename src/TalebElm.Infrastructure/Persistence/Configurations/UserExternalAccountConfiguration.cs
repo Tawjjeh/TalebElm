@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 
 namespace TalebElm.Infrastructure.Persistence.Configurations;
 
@@ -14,7 +15,7 @@ public class UserExternalAccountConfiguration : IEntityTypeConfiguration<UserExt
 
         builder.HasIndex(x => new { x.Platform, x.Handle })
             .IsUnique()
-            .HasFilter("[Status] = 'Verified'");
+            .HasFilter($"[Status] = '{nameof(AccountVerificationStatus.Verified)}'");
 
         builder.HasIndex(x => new { x.Platform, x.ExternalNumericId })
             .IsUnique()

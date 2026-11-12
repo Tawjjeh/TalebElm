@@ -43,7 +43,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("ModuleId")
                         .IsUnique();
 
-                    b.ToTable("Exams", t =>
+                    b.ToTable("Exams", null, t =>
                         {
                             t.HasCheckConstraint("CK_Exams_PassThreshold_Range", "PassThreshold >= 1 AND PassThreshold <= 100");
 
@@ -75,7 +75,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasIndex("ExamQuestionId");
 
-                    b.ToTable("ExamOptions", t =>
+                    b.ToTable("ExamOptions", null, t =>
                         {
                             t.HasCheckConstraint("CK_ExamOptions_Text_NotEmpty", "length(trim(\"Text\")) > 0");
                         });
@@ -109,7 +109,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("ExamId", "Order")
                         .IsUnique();
 
-                    b.ToTable("ExamQuestions", t =>
+                    b.ToTable("ExamQuestions", null, t =>
                         {
                             t.HasCheckConstraint("CK_ExamQuestions_Points_Positive", "\"Points\" > 0");
                         });
@@ -145,7 +145,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("ModuleId", "Order")
                         .IsUnique();
 
-                    b.ToTable("Lessons", t =>
+                    b.ToTable("Lessons", null, t =>
                         {
                             t.HasCheckConstraint("CK_Lessons_Order_Positive", "\"Order\" > 0");
 
@@ -188,7 +188,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasIndex("LessonId");
 
-                    b.ToTable("LessonResources", t =>
+                    b.ToTable("LessonResources", null, t =>
                         {
                             t.HasCheckConstraint("CK_LessonResources_Order_Positive", "\"Order\" > 0");
                         });
@@ -225,7 +225,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("TrackId", "Order")
                         .IsUnique();
 
-                    b.ToTable("Modules", t =>
+                    b.ToTable("Modules", null, t =>
                         {
                             t.HasCheckConstraint("CK_Modules_Order_Positive", "\"Order\" > 0");
 
@@ -258,7 +258,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tracks", t =>
+                    b.ToTable("Tracks", null, t =>
                         {
                             t.HasCheckConstraint("CK_Tracks_Description_NotEmpty", "length(trim(Description)) > 0");
 
@@ -292,7 +292,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("UserId", "TrackId")
                         .IsUnique();
 
-                    b.ToTable("TrackEnrollments");
+                    b.ToTable("TrackEnrollments", (string)null);
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.User", b =>
@@ -331,7 +331,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", t =>
+                    b.ToTable("Users", null, t =>
                         {
                             t.HasCheckConstraint("CK_Users_Email_NotEmpty", "length(trim(Email)) > 0");
 
@@ -388,7 +388,7 @@ namespace TalebElm.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[Status] = 'Verified'");
 
-                    b.ToTable("UserExternalAccount");
+                    b.ToTable("UserExternalAccount", (string)null);
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
@@ -428,7 +428,7 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("UserId", "ModuleId")
                         .IsUnique();
 
-                    b.ToTable("UserProgresses", t =>
+                    b.ToTable("UserProgresses", null, t =>
                         {
                             t.HasCheckConstraint("CK_UserProgress_Score_Range", "Score >= 0 AND Score <= 100");
                         });
