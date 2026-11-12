@@ -12,7 +12,6 @@ public class CapstoneProjectTests
         Assert.Equal(Guid.Empty, project.TrackId);
         Assert.Equal(string.Empty, project.Title);
         Assert.Equal(string.Empty, project.Description);
-        Assert.Equal(string.Empty, project.StarterTemplateRepo);
         Assert.Equal(Guid.Empty, project.TaskId);
         Assert.NotNull(project.Milestones);
         Assert.Empty(project.Milestones);
@@ -29,14 +28,12 @@ public class CapstoneProjectTests
             TrackId = trackId,
             Title = "Build an Enterprise E-Commerce Engine",
             Description = "Overview",
-            StarterTemplateRepo = "my-template",
             TaskId = taskId
         };
 
         Assert.Equal(trackId, project.TrackId);
         Assert.Equal("Build an Enterprise E-Commerce Engine", project.Title);
         Assert.Equal("Overview", project.Description);
-        Assert.Equal("my-template", project.StarterTemplateRepo);
         Assert.Equal(taskId, project.TaskId);
     }
 

@@ -5,7 +5,6 @@ public class CapstoneProject : BaseEntity
     public Guid TrackId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string StarterTemplateRepo { get; set; } = string.Empty;
     public Guid TaskId { get; set; }
     
     // Navigation properties
