@@ -8,19 +8,19 @@ namespace TalebElm.Infrastructure.Repositories;
 
 public class TrackRepository(AppDbContext context) : ITrackRepository
 {
-    public async Task AddAsync(Track entity)
+    public async Task AddAsync(Track entity, CancellationToken ct = default)
     {
-        await context.Tracks.AddAsync(entity);
+        await context.Tracks.AddAsync(entity, ct);
     }
 
-    public async Task<IReadOnlyList<Track>> GetAllAsync()
+    public async Task<IReadOnlyList<Track>> GetAllAsync(CancellationToken ct = default)
     {
-        return await context.Tracks.AsNoTracking().ToListAsync();
+        return await context.Tracks.AsNoTracking().ToListAsync(ct);
     }
 
-    public async Task<Track?> GetByIdAsync(Guid id)
+    public async Task<Track?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id);
+        return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 
     public async Task<(IReadOnlyList<Track> Items, int TotalCount)> GetPagedAsync(

@@ -8,21 +8,21 @@ namespace TalebElm.Application.Services.Concrete;
 
 public class TrackEnrollmentService(IUnitOfWork unitOfWork) : ITrackEnrollmentService
 {
-    public async Task<EnrollmentResponse> EnrollAsync(Guid userId, Guid trackId)
+    public async Task<EnrollmentResponse> EnrollAsync(Guid userId, Guid trackId, CancellationToken ct = default)
     {
-        var user = await unitOfWork.Users.GetByIdAsync(userId);
+        var user = await unitOfWork.Users.GetByIdAsync(userId, ct);
         if (user is null)
             throw new NotFoundException($"User with id '{userId}' was not found.");
 
-        var track = await unitOfWork.Tracks.GetByIdAsync(trackId);
+        var track = await unitOfWork.Tracks.GetByIdAsync(trackId, ct);
         if (track is null)
             throw new NotFoundException($"Track with id '{trackId}' was not found.");
 
-        var existingEnrollment = await unitOfWork.TrackEnrollments.GetAllAsync();
+        var existingEnrollment = await unitOfWork.TrackEnrollments.GetAllAsync(ct);
         if (existingEnrollment.Any(enrollment => enrollment.UserId == userId && enrollment.TrackId == trackId))
             throw new ConflictException("The user has already enrolled in this track.");
 
-        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId);
+        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId, ct);
         if (modules.Count == 0)
             throw new ValidationException("The track has no modules to enroll in.");
 
@@ -44,9 +44,9 @@ public class TrackEnrollmentService(IUnitOfWork unitOfWork) : ITrackEnrollmentSe
             IsUnlocked = true
         };
 
-        await unitOfWork.TrackEnrollments.AddAsync(enrollment);
-        await unitOfWork.UserProgresses.AddAsync(progress);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.TrackEnrollments.AddAsync(enrollment, ct);
+        await unitOfWork.UserProgresses.AddAsync(progress, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new EnrollmentResponse(enrollment.Id, enrollment.TrackId, enrollment.EnrolledAt);
     }
