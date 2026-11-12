@@ -1,61 +1,126 @@
-name: Assign pull requests
+name: Auto-assign reviewers and owners
+
 on:
   pull_request_target:
     types: [opened, reopened, ready_for_review]
+
 permissions:
   contents: read
   pull-requests: write
   issues: write
+
 jobs:
   assign:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v9
+      - name: Route reviewers and assignees
+        uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request;
             const { owner, repo } = context.repo;
-            if ((pr.assignees || []).length > 0) { core.info('already assigned'); return; }
+
+            if ((pr.assignees || []).length > 0) {
+              core.info('PR already has assignees; skipping.');
+              return;
+            }
+
             const res = await github.rest.repos.getContent({
-              owner, repo, path: '.github/maintainers.json',
-              ref: context.payload.repository.default_branch
+              owner,
+              repo,
+              path: '.github/maintainers.json',
+              ref: context.payload.repository.default_branch,
             });
-            const cfg = JSON.parse(Buffer.from(res.data.content, 'base64').toString());
+            const cfg = JSON.parse(Buffer.from(res.data.content, 'base64').toString('utf8'));
+
             const lower = (s) => s.toLowerCase();
             const author = lower(pr.user.login);
-            const never = new Set(cfg.neverAssign.map(lower));
+            const never = new Set((cfg.neverAssign || []).map(lower));
+
             const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: pr.number, per_page: 100
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
             });
-            const labels = (pr.labels || []).map((l) => l.name);
-            const sensitive = [
-              /^src\/TalebElm\.Infrastructure\/Migrations\//,
-              /^src\/TalebElm\.Infrastructure\/Persistence\//,
-              /UnitOfWork/i, /AppDbContext/i,
-              /(^|\/)(Auth|Authentication|Authorization|Identity|Jwt|Security)[^\/]*(\/|\.cs$)/i,
-              /(PasswordHasher|JwtToken|TokenService|AccessToken|OAuth|Cors|RateLimit|Verifier|Verification|Grading)/i,
-              /(^|\/)appsettings.*\.json$/i,
-              /^\.github\/workflows\//,
-              /\.csproj$/i,
-              /(^|\/)(Directory\.Build\.(props|targets)|Directory\.Packages\.props|NuGet\.config|global\.json)$/i
+            const labels = (pr.labels || []).map((l) => lower(l.name));
+
+            const dbOrSecurityPatterns = [
+              /(^|\/)(Data|Migrations|Persistence|Configurations|Repositories|Entities)\//i,
+              /DbContext/i,
+              /\.sql$/i,
+              /(^|\/)(Auth|Authentication|Authorization|Security|Identity|Jwt|Policies|Policy)[^/]*(\/|\.cs$)/i,
+              /(PasswordHasher|JwtToken|TokenService|AccessToken|OAuth|RateLimit)/i,
             ];
-            const isSensitive = labels.some((l) => ['security', 'database'].includes(l)) ||
-              files.some((f) => sensitive.some((rx) => rx.test(f.filename)));
-            const pool = (isSensitive ? cfg.core : cfg.regular)
-              .filter((l) => lower(l) !== author && !never.has(lower(l)));
-            if (pool.length === 0) { core.warning('no eligible assignee'); return; }
-            const loads = [];
-            for (const login of pool) {
-              const r = await github.rest.search.issuesAndPullRequests({
-                q: `repo:${owner}/${repo} is:pr is:open assignee:${login}`, per_page: 1
-              });
-              loads.push({ login, n: r.data.total_count });
+
+            const isDatabaseOrSecurity =
+              labels.some((l) => l === 'database' || l === 'security') ||
+              files.some((f) => dbOrSecurityPatterns.some((rx) => rx.test(f.filename)));
+
+            let assignees = [];
+            let reviewers = [];
+
+            if (isDatabaseOrSecurity) {
+              // Database and Security PRs route to both core owners (Abdulrahman and Abdullah).
+              const coreOwners = (cfg.core || []).filter((u) => !never.has(lower(u)));
+              assignees = coreOwners;
+              reviewers = coreOwners.filter((u) => lower(u) !== author);
+              core.info(`Database/Security PR #${pr.number}: assignees=[${assignees.join(', ')}], reviewers=[${reviewers.join(', ')}]`);
+            } else {
+              // General PRs: Round-Robin across active maintainers (excluding exempted members and author).
+              const allActive = [...(cfg.core || []), ...(cfg.regular || [])];
+              const seen = new Set();
+              const pool = [];
+              for (const u of allActive) {
+                const key = lower(u);
+                if (!seen.has(key) && key !== author && !never.has(key)) {
+                  seen.add(key);
+                  pool.push(u);
+                }
+              }
+
+              if (pool.length === 0) {
+                core.warning('No eligible maintainers available for assignment.');
+                return;
+              }
+
+              const loads = [];
+              for (const login of pool) {
+                const search = await github.rest.search.issuesAndPullRequests({
+                  q: `repo:${owner}/${repo} is:pr is:open assignee:${login}`,
+                  per_page: 1,
+                });
+                loads.push({ login, count: search.data.total_count });
+              }
+
+              const minCount = Math.min(...loads.map((x) => x.count));
+              const tied = loads.filter((x) => x.count === minCount);
+              const pick = tied[pr.number % tied.length].login;
+
+              assignees = [pick];
+              reviewers = [pick];
+              core.info(`General PR #${pr.number}: selected ${pick} (min open PR load=${minCount})`);
             }
-            const min = Math.min(...loads.map((x) => x.n));
-            const tied = loads.filter((x) => x.n === min);
-            const pick = tied[pr.number % tied.length].login;
-            await github.rest.issues.addAssignees({ owner, repo, issue_number: pr.number, assignees: [pick] });
-            try {
-              await github.rest.pulls.requestReviewers({ owner, repo, pull_number: pr.number, reviewers: [pick] });
-            } catch (e) { core.warning(String(e.message)); }
+
+            if (reviewers.length > 0) {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner,
+                  repo,
+                  pull_number: pr.number,
+                  reviewers,
+                });
+              } catch (e) {
+                core.warning(`Failed to request reviewers: ${e.message}`);
+              }
+            }
+
+            if (assignees.length > 0) {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: pr.number,
+                assignees,
+              });
+            }

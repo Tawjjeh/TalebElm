@@ -1,0 +1,98 @@
+name: PR Governance
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, assigned, unassigned, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  governance:
+    name: PR Governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce assignee ownership and review permissions
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const SUPER_OWNER = 'abdulrahmanhossam';
+            const lower = (s) => (s || '').toLowerCase();
+
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+            const actor = lower(context.actor);
+
+            // Super-owner has unrestricted authority across all PRs at all times.
+            if (actor === lower(SUPER_OWNER)) {
+              core.info(`Super-owner @${actor} bypasses governance restrictions.`);
+              return;
+            }
+
+            const { data: prData } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: pr.number,
+            });
+
+            const prAuthor = lower(prData.user.login);
+            const assignees = (prData.assignees || []).map((a) => lower(a.login));
+
+            // 1. Block commit pushes from unassigned maintainers (only super-owner, PR author, or assigned maintainer may push).
+            if (context.eventName === 'pull_request' && context.payload.action === 'synchronize') {
+              if (actor !== prAuthor && !assignees.includes(actor)) {
+                core.setFailed(
+                  `Push blocked: @${actor} is not assigned to PR #${pr.number}. ` +
+                  `Only the PR author (@${prAuthor}), assigned maintainer(s) (${assignees.join(', ') || 'none'}), ` +
+                  `or @${SUPER_OWNER} may push commits to this branch.`
+                );
+                return;
+              }
+            }
+
+            // 2. Evaluate reviews on the current head commit for merge eligibility.
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const latest = new Map();
+            for (const r of reviews) {
+              if (['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(r.state)) {
+                latest.set(lower(r.user.login), r);
+              }
+            }
+
+            if ([...latest.values()].some((r) => r.state === 'CHANGES_REQUESTED')) {
+              core.setFailed('Merge blocked: changes were requested by a reviewer.');
+              return;
+            }
+
+            if (assignees.length === 0) {
+              core.setFailed(
+                `Merge blocked: PR #${pr.number} has no assigned maintainer yet. ` +
+                `Unassigned maintainers may review, but only an assigned maintainer or @${SUPER_OWNER} may approve for merge.`
+              );
+              return;
+            }
+
+            const hasAuthorizedApproval = [...latest.entries()].some(([reviewer, rev]) => {
+              const isAuthorized = reviewer === lower(SUPER_OWNER) || assignees.includes(reviewer);
+              return isAuthorized && rev.state === 'APPROVED' && rev.commit_id === prData.head.sha;
+            });
+
+            if (!hasAuthorizedApproval) {
+              core.setFailed(
+                `Waiting for approval on current commit from assigned maintainer (${assignees.map((a) => '@' + a).join(', ')}) ` +
+                `or @${SUPER_OWNER}. Unassigned maintainers may submit reviews, but cannot merge this PR.`
+              );
+              return;
+            }
+
+            core.info(`PR Governance passed for #${pr.number}.`);
+

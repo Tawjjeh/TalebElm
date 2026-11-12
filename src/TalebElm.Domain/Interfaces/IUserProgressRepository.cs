@@ -1,4 +1,4 @@
-﻿using TalebElm.Domain.Entities;
+using TalebElm.Domain.Entities;
 
 namespace TalebElm.Domain.Interfaces
 {
@@ -6,6 +6,5 @@ namespace TalebElm.Domain.Interfaces
     {
         Task<UserProgress?> GetByUserAndModuleAsync(Guid userId, Guid moduleId);
         Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default);
-        Task<IReadOnlyList<UserProgress>> GetAllAsync(CancellationToken ct = default);
     }
 }
