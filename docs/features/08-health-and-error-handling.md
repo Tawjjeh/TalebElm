@@ -23,6 +23,7 @@ DomainException (base)
 ├── NotFoundException
 ├── ValidationException
 ├── ConflictException
+├── ExternalServiceUnavailableException
 └── NotImplementedException
 ```
 
@@ -61,6 +62,7 @@ DomainException (base)
 | Domain `ValidationException`       | `400`       | `A business rule was violated.`                                      |
 | FluentValidation `ValidationException` | `400`   | `One or more validation errors occurred.`                            |
 | `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.` (also raised by `UnitOfWork.SaveChangesAsync` for unique and foreign-key violations) |
+| `ExternalServiceUnavailableException` | `503`    | `An external service is temporarily unavailable.` (external clients use this for outages, rate limits, timeouts and untrusted responses, so a failure never looks like `404 Not Found`) |
 | `DomainException`                  | `400`       | `The request could not be processed.`                                |
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
 | Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |

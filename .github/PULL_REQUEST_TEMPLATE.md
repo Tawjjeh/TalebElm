@@ -4,6 +4,10 @@
 Briefly explain what changed and why.
 For 'feat:' or 'fix:' PRs, issue linkage is required by CI:
 Closes #123
+
+Open this pull request only for an issue that was approved for work and
+assigned to you (see CONTRIBUTING.md). If this is a docs or chore change with
+no issue, say so instead.
 -->
 
 ## Traceability
@@ -24,6 +28,7 @@ Please verify and check all that apply:
 - [ ] **Domain Invariants:** Never trust client-supplied scores; learner DTOs never expose `IsCorrect`; server-side gating is strictly enforced.
 - [ ] **Security & Hygiene:** No secrets, tokens, connection strings, credentials, or `*.db` files are included.
 - [ ] **Scope:** The PR is small, reversible, and focused on a single vertical slice (~200 lines target).
+- [ ] **Approval:** The linked issue has `help wanted`, a milestone, and a go-ahead reply, and was assigned to me before I started (skip for docs/chore PRs with no issue).
 
 ## Risk and Rollback
 

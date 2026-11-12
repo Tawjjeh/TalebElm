@@ -128,7 +128,7 @@ Coverage is a **floor, not a goal**. A high-coverage test that asserts nothing i
 - Generated test credentials are disposable and unique per test run.
 - Test databases are created in memory or as temporary files and removed after the test run.
 - Logs from failed tests must not reveal sensitive values.
-- Do not call real external APIs (Codeforces, GitHub) from tests. Use fakes or stubs for any `ICodeforcesClient` or `IGitHubClient` implementations (target behavior; those interfaces do not exist yet).
+- Do not call real external APIs (Codeforces, GitHub) from tests. Use fakes or stubs for any `ICodeforcesClient` or `IGitHubClient` implementations. Outages and rate limits must be simulated with `ExternalServiceUnavailableException`, not with a `null` result, so tests prove a failure never looks like "not found".
 
 ---
 
