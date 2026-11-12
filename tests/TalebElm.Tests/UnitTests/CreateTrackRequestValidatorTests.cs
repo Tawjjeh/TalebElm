@@ -66,4 +66,65 @@ public class CreateTrackRequestValidatorTests
             e.PropertyName == nameof(CreateTrackRequest.Description) &&
             e.ErrorMessage == "Track Description is required");
     }
+
+        [Fact]
+    public void Name_AtMaxLength150_Passes()
+    {
+        // Arrange
+        var request = new CreateTrackRequest(new string('a', 150), "Valid description.");
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void Name_ExceedingMaxLength150_Fails()
+    {
+        // Arrange
+        var request = new CreateTrackRequest(new string('a', 151), "Valid description.");
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateTrackRequest.Name) &&
+            e.ErrorMessage == "Track.Name.TooLong");
+    }
+
+    [Fact]
+    public void Description_AtMaxLength1000_Passes()
+    {
+        // Arrange
+        var request = new CreateTrackRequest(".NET Basic Level 0", new string('a', 1000));
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void Description_ExceedingMaxLength1000_Fails()
+    {
+        // Arrange
+        var request = new CreateTrackRequest(".NET Basic Level 0", new string('a', 1001));
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateTrackRequest.Description) &&
+            e.ErrorMessage == "Track.Description.TooLong");
+    }
+
 }
