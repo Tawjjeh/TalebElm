@@ -11,14 +11,14 @@ using TalebElm.Infrastructure.Persistence;
 namespace TalebElm.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261107092103_ConfigureModuleProblemGitHubTask")]
-    partial class ConfigureModuleProblemGitHubTask
+    [Migration("20261112140930_AddUserExternalAccountConfiguration")]
+    partial class AddUserExternalAccountConfiguration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
                 {
@@ -116,35 +116,6 @@ namespace TalebElm.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_ExamQuestions_Points_Positive", "\"Points\" > 0");
                         });
-                });
-
-            modelBuilder.Entity("TalebElm.Domain.Entities.GitHubTask", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedAt")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("MinPassingTests")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("TemplateRepository")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowFileName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("GitHubTask");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
@@ -265,7 +236,78 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("TalebElm.Domain.Entities.ModuleProblem", b =>
+            modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Citation")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ConsecutiveFailureCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("LastCheckedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("TechnologyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("TechnologyId", "Status");
+
+                    b.ToTable("Resources", t =>
+                        {
+                            t.HasCheckConstraint("CK_Resources_ConsecutiveFailureCount_NonNegative", "ConsecutiveFailureCount >= 0");
+
+                            t.HasCheckConstraint("CK_Resources_Language_NotEmpty", "length(trim(Language)) > 0");
+
+                            t.HasCheckConstraint("CK_Resources_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Technology", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -275,42 +317,54 @@ namespace TalebElm.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ExternalIdentifier")
-                        .IsRequired()
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("GitHubTaskId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Kind")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("ModuleId")
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Order")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("Rating")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<string>("Title")
+                    b.Property<string>("Slug")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GitHubTaskId");
+                    b.HasIndex("Order")
+                        .IsUnique()
+                        .HasFilter("\"ParentId\" IS NULL");
 
-                    b.HasIndex("ModuleId", "Order")
-                        .IsUnique();
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasFilter("\"ParentId\" IS NULL");
 
-                    b.ToTable("ModuleProblem", t =>
+                    b.HasIndex("ParentId", "Order")
+                        .IsUnique()
+                        .HasFilter("\"ParentId\" IS NOT NULL");
+
+                    b.HasIndex("ParentId", "Slug")
+                        .IsUnique()
+                        .HasFilter("\"ParentId\" IS NOT NULL");
+
+                    b.ToTable("Technologies", t =>
                         {
-                            t.HasCheckConstraint("CK_ModuleProblems_GitHubTaskId_Value", "(Kind = 1 AND GitHubTaskId IS NULL) OR (Kind = 2 AND GitHubTaskId IS NOT NULL)");
+                            t.HasCheckConstraint("CK_Technologies_Name_NotEmpty", "length(trim(Name)) > 0");
+
+                            t.HasCheckConstraint("CK_Technologies_Order_Positive", "\"Order\" > 0");
+
+                            t.HasCheckConstraint("CK_Technologies_Slug_NotEmpty", "length(trim(Slug)) > 0");
                         });
                 });
 
@@ -419,6 +473,63 @@ namespace TalebElm.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Users_Name_NotEmpty", "length(trim(Name)) > 0");
 
                             t.HasCheckConstraint("CK_Users_PasswordHash_NotEmpty", "length(PasswordHash) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserExternalAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalNumericId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Handle")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TokenExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VerificationToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Platform", "ExternalNumericId")
+                        .IsUnique()
+                        .HasFilter("ExternalNumericId IS NOT NULL");
+
+                    b.HasIndex("Platform", "Handle")
+                        .IsUnique()
+                        .HasFilter("Status = 1");
+
+                    b.HasIndex("UserId", "Platform")
+                        .IsUnique();
+
+                    b.ToTable("UserExternalAccounts", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserExternalAccounts_Handle_NotEmpty", "length(trim(Handle)) > 0");
                         });
                 });
 
@@ -531,22 +642,31 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Track");
                 });
 
-            modelBuilder.Entity("TalebElm.Domain.Entities.ModuleProblem", b =>
+            modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
                 {
-                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", "GitHubTask")
+                    b.HasOne("TalebElm.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
-                        .HasForeignKey("GitHubTaskId")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TalebElm.Domain.Entities.Technology", "Technology")
+                        .WithMany()
+                        .HasForeignKey("TechnologyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Technology");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Technology", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Technology", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
-                        .WithMany()
-                        .HasForeignKey("ModuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("GitHubTask");
-
-                    b.Navigation("Module");
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.TrackEnrollment", b =>
@@ -566,6 +686,15 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Track");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserExternalAccount", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
@@ -602,6 +731,11 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Exam");
 
                     b.Navigation("Lessons");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.Technology", b =>
+                {
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Track", b =>

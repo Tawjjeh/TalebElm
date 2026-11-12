@@ -59,7 +59,7 @@ Learning software engineering today is broken in two distinct ways:
   2. `GitHubTask`: CodeCrafters-style automated repository tasks for framework modules (`Target`).
 - **Codeforces Handle Ownership Challenge:** The server generates a random 128-bit single-use token (expires in 15 minutes). The learner places the token into their Codeforces profile (`firstName` or `organization`). The server reads the profile via the public `user.info` API and stores the verified handle (`Target`).
 - **Automated Solve Verification:** The platform queries the public Codeforces API (`user.status`) for `OK` (Accepted) verdicts matching `contestId` and problem `index` (`Target`). All-time accepted solves count.
-- **Automated GitHub Tasks:** Learners link their GitHub account via OAuth (numeric `ExternalUserId` stored). For each framework task, the learner generates a repository from an official template (`Tawjjeh/task-<slug>-template`), implements code, and pushes. The server queries the GitHub REST API to verify that:
+- **Automated GitHub Tasks:** Learners link their GitHub account via OAuth (numeric `ExternalNumericId` stored). For each framework task, the learner generates a repository from an official template (`Tawjjeh/task-<slug>-template`), implements code, and pushes. The server queries the GitHub REST API to verify that:
   - The repository owner matches the linked numeric account ID.
   - The repository was generated from the official template.
   - The latest workflow run on the default branch succeeded.

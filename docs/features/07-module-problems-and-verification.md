@@ -27,22 +27,22 @@ To transition learners from passive concept absorption to job-ready engineering 
 
 ## 2. Database & Domain Contract
 
-### 2.1 Entity: UserExternalAccount (Target)
+### 2.1 Entity: UserExternalAccount (Implemented Entity and Mapping)
 
 Stores a learner's linked profile on an external platform and tracks its ownership verification status.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
-| `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
-| `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
-| `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Target |
-| `Platform` | `ExternalPlatform` | No | Enum: `Codeforces = 1`, `GitHub = 2`. `UNIQUE(UserId, Platform)`. | Target |
-| `Handle` | `string` | No | Platform username / handle. Max length **64**, non-blank. `UNIQUE(Platform, Handle)` for verified accounts. | Target |
-| `ExternalUserId` | `long?` | Yes | Numeric user id (used by GitHub). Nullable for Codeforces. | Target |
-| `VerificationStatus` | `AccountVerificationStatus` | No | Enum: `PendingChallenge = 1`, `Verified = 2`, `Failed = 3`. | Target |
-| `VerificationToken` | `string?` | Yes | Cryptographically random single-use token (≥128 bits hex string). Max length **64**. | Target |
-| `TokenExpiresAt` | `DateTimeOffset?` | Yes | 15 minutes from generation. | Target |
-| `VerifiedAt` | `DateTimeOffset?` | Yes | Timestamp when ownership was successfully verified. | Target |
+| `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Implemented |
+| `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Implemented |
+| `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Implemented |
+| `Platform` | `ExternalPlatform` | No | Enum: `Codeforces = 1`, `GitHub = 2`. `UNIQUE(UserId, Platform)`. | Implemented |
+| `Handle` | `string` | No | Platform username / handle. Max length **64**, non-blank (`CK_UserExternalAccounts_Handle_NotEmpty`). Filtered `UNIQUE(Platform, Handle)` for verified accounts (`Status = 1`). | Implemented |
+| `ExternalNumericId` | `string?` | Yes | Numeric user id (used by GitHub). Max length **64**. Filtered `UNIQUE(Platform, ExternalNumericId)` where not null. | Implemented |
+| `Status` | `AccountVerificationStatus` | No | Enum: `Pending = 0`, `Verified = 1`, `Expired = 2`. | Implemented |
+| `VerificationToken` | `string?` | Yes | Cryptographically random single-use token (≥128 bits hex string). Max length **64**. | Implemented |
+| `TokenExpiresAtUtc` | `DateTime?` | Yes | 15 minutes from generation. | Implemented |
+| `VerifiedAtUtc` | `DateTime?` | Yes | Timestamp when ownership was successfully verified. | Implemented |
 
 ### 2.2 Entity: ModuleProblem (Target)
 
@@ -115,7 +115,7 @@ sequenceDiagram
 1. Learner visits an unlocked Module, views assigned Codeforces problems, and submits code directly on Codeforces.
 2. Learner clicks **"Verify My Solves"** on TalebElm (`POST /api/modules/{moduleId}/problems/verify`).
 3. Platform checks rate limit: enforced per-user cooldown of **60 seconds**. If called within 60s, return `429 Too Many Requests`.
-4. Platform calls `ICodeforcesClient.GetUserSubmissionsAsync(handle, count: 50)`.
+4. Platform calls `ICodeforcesClient.GetUserSubmissionsAsync(handle, from: 1, count: 50)` and pages until it has the submissions it needs; a page smaller than `count` marks the end.
 5. If Codeforces API is down or throttled, return `503 Service Unavailable` with `"External verification service is temporarily unavailable"`. Alter **zero** learner state.
 6. For each required `ModuleProblem` of kind `CodeforcesProblem`:
    - Match by `contestId` and problem `index` (parsed from `ExternalId`).
@@ -179,8 +179,16 @@ public interface IProblemVerifier
 
 public interface ICodeforcesClient
 {
-    Task<CodeforcesUserResponse?> GetUserInfoAsync(string handle);
-    Task<IReadOnlyList<CodeforcesSubmissionResponse>> GetUserSubmissionsAsync(string handle, int count = 50);
+    // null only when Codeforces says the handle does not exist; outages throw
+    // ExternalServiceUnavailableException (503) so a failure never looks like "not found".
+    Task<CodeforcesUser?> GetUserProfileAsync(string handle, CancellationToken cancellationToken = default);
+
+    // One page from user.status, newest first. Callers page with from/count for all-time checks.
+    Task<IReadOnlyList<CodeforcesSubmission>> GetUserSubmissionsAsync(
+        string handle,
+        int from,
+        int count,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IModuleProblemService

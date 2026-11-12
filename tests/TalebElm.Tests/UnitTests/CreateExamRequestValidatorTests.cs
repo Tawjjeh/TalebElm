@@ -2,7 +2,6 @@ using FluentValidation.TestHelper;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Validators;
 
-
 namespace TalebElm.Tests.UnitTests;
 
 public class CreateExamRequestValidatorTests
@@ -12,6 +11,18 @@ public class CreateExamRequestValidatorTests
     private static CreateExamRequest ValidRequest()
     {
         return new CreateExamRequest(Guid.NewGuid(), "Final Exam", 60);
+    }
+
+
+    [Fact]
+    public void ModuleId_Empty_HasError()
+    {
+        var request = ValidRequest() with { ModuleId = Guid.Empty };
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.ModuleId)
+            .WithErrorMessage("Exam.ModuleId.Required");
     }
 
     [Fact]
@@ -31,6 +42,26 @@ public class CreateExamRequestValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.Title)
             .WithErrorMessage("Exam.Title.Required");
+    }
+
+    [Fact]
+    public void Title_150Characters_IsValid()
+    {
+        var request = ValidRequest() with { Title = new string('a', 150) };
+
+        var result = _validator.TestValidate(request);
+        result.ShouldNotHaveValidationErrorFor(x => x.Title);
+    }
+
+    [Fact]
+    public void Title_151Characters_HasError()
+    {
+        var request = ValidRequest() with { Title = new string('a', 151) };
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Title)
+            .WithErrorMessage("Exam.Title.TooLong");
     }
 
     [Fact]
