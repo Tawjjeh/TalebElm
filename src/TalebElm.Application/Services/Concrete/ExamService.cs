@@ -32,7 +32,7 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
     {
         if (request.Answers is null)
             throw new ValidationException("Answers are required.");
-        var exam = await unitOfWork.Exams.GetByIdAsync(request.ExamId) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
+        var exam = await unitOfWork.Exams.GetWithQuestionsAsync(request.ExamId) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
         var questionIds = exam.Questions.Select(q => q.Id).ToHashSet();
 
         // Checks each answer belongs to the exam and not duplicated
@@ -75,8 +75,7 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
 
         var passed = exam.HasPassed(score);
 
-        // Didn't assign direct, because in case of retake
-        progress.Score = Math.Max(progress.Score, score);
+        progress.Score = score;
         progress.PassedExam |= passed;
 
         await unitOfWork.SaveChangesAsync();

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
@@ -20,6 +20,14 @@ public class ExamRepository(AppDbContext context) : IExamRepository
     public async Task<Exam?> GetByIdAsync(Guid id)
     {
         return await context.Set<Exam>().FindAsync(id);
+    }
+
+    public async Task<Exam?> GetWithQuestionsAsync(Guid examId)
+    {
+        return await context.Set<Exam>()
+            .Include(e => e.Questions)
+            .ThenInclude(q => q.Options)
+            .FirstOrDefaultAsync(e => e.Id == examId);
     }
 
     public async Task<Exam?> GetByModuleIdAsync(Guid moduleId)
