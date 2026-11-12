@@ -1,6 +1,6 @@
 # Feature Specification: Public Resource Hub
 
-> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation in Phase 4). None are currently Implemented in code.
+> **Status discipline:** Domain entities (`Technology`, `Resource`) and their EF Core configurations/migrations are **Implemented**. Repository interfaces, Hub read/admin services, link-health checker, shared `LessonResource` migration, and API endpoints remain **Target** (Milestone M4).
 
 ---
 

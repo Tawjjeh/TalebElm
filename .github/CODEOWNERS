@@ -1,0 +1,6 @@
+# Simple CODEOWNERS: protects workflow configuration and core product rules
+# without adding extra reviewers to regular feature pull requests.
+
+/.github/                          @abdulrahmanhossam
+/docs/OPEN_DECISIONS.md            @abdulrahmanhossam
+/docs/business/BUSINESS_RULES.md   @abdulrahmanhossam

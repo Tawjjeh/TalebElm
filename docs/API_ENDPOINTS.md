@@ -16,7 +16,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
 | POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
-| POST | `/api/exams/{id}/submit` | Declared as a placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
@@ -58,7 +58,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 | GET | `/api/progress/me` | None | Progress summaries for authenticated Student | 200, 401 |
 | GET | `/api/progress/me/tracks/{trackId}` | None | Ordered progress for one Track | 200, 401, 404 |
 
-The current `SubmitExamRequest` accepts a client-supplied score. Do not use that value for trusted grading. The target request must submit answers so the server can compare them with a server-side answer key, calculate the score, record `UserProgress`, and unlock only the next Module on a pass.
+`ExamService.SubmitAsync` grades `SubmitExamAnswersRequest` server-side from stored answer keys, updates `UserProgress` with latest `Score` and sticky `PassedExam`, and never exposes `IsCorrect`. Next-module unlock (`#208`) and `ExamsController` wiring (`#255`) are target.
 
 ### Practice problems & external verification
 

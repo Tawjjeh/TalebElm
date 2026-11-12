@@ -46,9 +46,8 @@ A TalebElm change is done when **all** of the following hold:
 All of the following must pass before merge:
 
 ```text
-dotnet build TalebElm.slnx              ← zero errors, zero warnings
-dotnet test TalebElm.slnx -c Release   ← all tests pass
-python3 scripts/check-docs.py          ← no broken links
-PR title: conventional-commit format   ← validated by pr-validation.yml
-Security / vulnerability scan          ← no unapproved High/Critical findings
+dotnet build TalebElm.slnx              -> zero errors, zero warnings
+dotnet test TalebElm.slnx               -> all tests pass
+python3 scripts/check-docs.py           -> no broken links
+OpenAPI validation                      -> swagger.json generates cleanly with Bearer scheme
 ```
