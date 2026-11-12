@@ -115,6 +115,35 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.GitHubTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MinPassingTests")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TemplateRepository")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowFileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GitHubTask");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -230,6 +259,55 @@ namespace TalebElm.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Modules_Order_Positive", "\"Order\" > 0");
 
                             t.HasCheckConstraint("CK_Modules_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ModuleProblem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalIdentifier")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("GitHubTaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ModuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GitHubTaskId");
+
+                    b.HasIndex("ModuleId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("ModuleProblem", t =>
+                        {
+                            t.HasCheckConstraint("CK_ModuleProblems_GitHubTaskId_Value", "(Kind = 1 AND GitHubTaskId IS NULL) OR (Kind = 2 AND GitHubTaskId IS NOT NULL)");
                         });
                 });
 
@@ -637,6 +715,24 @@ namespace TalebElm.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ModuleProblem", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", "GitHubTask")
+                        .WithMany()
+                        .HasForeignKey("GitHubTaskId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GitHubTask");
+
+                    b.Navigation("Module");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
