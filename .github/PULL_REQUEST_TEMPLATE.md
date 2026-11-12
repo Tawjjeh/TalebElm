@@ -13,6 +13,7 @@ no issue, say so instead.
 ## Traceability
 
 - Related Issue: <!-- e.g., Closes #123 or Relates to #123 -->
+- Linked issue check: <!-- turns green when the issue is open for work, has `help wanted`, and is assigned to you -->
 - Business Rule(s): <!-- e.g., BR-TRACK-01, P-2 in docs/business/BUSINESS_RULES.md (or None) -->
 - Open Decision(s): <!-- e.g., Decision 32, Decision 37 in docs/OPEN_DECISIONS.md (or None) -->
 - Layer(s) Modified: <!-- Domain / Application / Infrastructure / Api / Tests / Docs -->
