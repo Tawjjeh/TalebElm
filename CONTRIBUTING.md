@@ -56,6 +56,8 @@ If you already have two open issues assigned to you, finish one first. If you go
 
 Open a pull request only for an issue that got the go-ahead, and write `Closes #123` in the description so the issue closes when the pull request merges. If the work turns out bigger than the issue suggested, say so on the issue before you keep going.
 
+A `linked-issue` check then runs on the pull request and turns green when the issue you close is open for work, carries `help wanted`, and is assigned to you. It is not a merge gate by itself, but we will ask about a red one before merging.
+
 The label catalog is in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md). Every issue has one `layer:` label and one or two component labels so you can find work in the part of the codebase you want to learn.
 
 ---
@@ -179,10 +181,12 @@ CI additionally enforces Release-mode build/test parity, dependency vulnerabilit
 
 ## 4. Review process
 
+- The person assigned to your pull request reviews it. Assignment happens automatically when you open the pull request: security and database changes go to one of the two core reviewers, everything else rotates among the regular reviewers.
 - We review for correctness, architecture, tests, and documentation impact.
 - A pull request needs one approving review, a green `build-and-test` check, and every conversation resolved before it can merge.
-- If `main` moved while your pull request was open, we may ask you to merge `main` into your branch and push.
-- Address feedback by pushing additional commits to the same branch; the PR updates automatically.
+- After approving, the assignee merges it by commenting `/merge`. The owner can comment `/merge` on any pull request. You do not press a button and you do not need to ask someone else to merge for you; a `/merge` from anyone else is politely declined.
+- If `main` moved while your pull request was open, merge `main` into your branch and push, so the required check runs against the current base.
+- Address feedback by pushing additional commits to the same branch; the PR updates automatically. A new commit removes the earlier approval, so the assignee approves the latest commit again.
 - Keep the PR scope tight so it can be reviewed and reverted safely. Split unrelated changes into separate PRs.
 
 ---
