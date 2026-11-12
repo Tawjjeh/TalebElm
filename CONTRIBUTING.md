@@ -56,6 +56,8 @@ If you already have two open issues assigned to you, finish one first. If you go
 
 Open a pull request only for an issue that got the go-ahead, and write `Closes #123` in the description so the issue closes when the pull request merges. If the work turns out bigger than the issue suggested, say so on the issue before you keep going.
 
+A `linked-issue` check then runs on the pull request and turns green when the issue you close is open for work, carries `help wanted`, and is assigned to you. It is not a merge gate by itself, but we will ask about a red one before merging.
+
 The label catalog is in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md). Every issue has one `layer:` label and one or two component labels so you can find work in the part of the codebase you want to learn.
 
 ---
