@@ -87,8 +87,8 @@ When a pull request is opened (and is not a draft), `.github/workflows/auto-assi
 
 ## 5. Review and merge workflow
 
-- The requested reviewer handles reviewing, approving, pushing minor fixes if needed, and merging the pull request (by commenting `/merge` after approving, or via the GitHub UI once `build-and-test` passes).
-- Other maintainers are welcome to review and approve, while merging via `/merge` is reserved for the requested reviewer or `abdulrahmanhossam`.
+- The requested reviewer handles reviewing, approving, pushing minor fixes if needed, and merging the pull request using GitHub's **Squash and merge** button once `build-and-test` passes and conversations are resolved.
+- Other maintainers are welcome to review and approve.
 - `abdulrahmanhossam` can review and merge any pull request at any time.
 
 ## 6. Reference docs

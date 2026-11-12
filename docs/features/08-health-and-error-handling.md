@@ -54,7 +54,7 @@ DomainException (base)
 
 ### Exception Handling Middleware
 
-`ExceptionHandlingMiddleware` currently returns `application/problem+json` with `status`, `title`, and `detail` (the detail is suppressed for `500`):
+`ExceptionHandlingMiddleware` returns `application/problem+json` with `status`, `title`, `detail` (suppressed for `500`), and `traceId` (`HttpContext.TraceIdentifier`). Unhandled `500` failures are logged at `Error` level with request method, path, status, `traceId`, and exception type name (never raw exception messages or inner SQL); known domain/client exceptions are logged at `Information` level:
 
 | Exception Type                     | HTTP Status | Current Title                                                        |
 | ---------------------------------- | ----------- | -------------------------------------------------------------------- |

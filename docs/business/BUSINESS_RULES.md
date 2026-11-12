@@ -78,10 +78,10 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | ID | Rule | Status |
 |---|---|---|
 | A-1 | `Score` is an integer `0–100`; `PassThreshold` is `1–100` in the same scale; pass is `score ≥ PassThreshold` (`Exam.HasPassed`). | Predicate, validator and DB check (`CK_Exams_PassThreshold_Range`, `1–100`) implemented |
-| A-2 | Grading is server-side only, from server-side answer keys. `SubmitExamRequest(ExamId, Score)` accepts a client-supplied score and **must not** be used on the trusted path; it will be replaced by selected-answer submission. | Implemented (as prohibition) |
+| A-2 | Grading is server-side only, from server-side answer keys via `SubmitExamAnswersRequest` (`ExamService.SubmitAsync`). Client-supplied scores are rejected and `SubmitExamRequest` has been removed. | Implemented (service) / Target (API controller) |
 | A-3 | At most one Exam per Module, enforced by `UNIQUE(ModuleId)`. A Module may have no Exam; such Modules never set `PassedExam` and progress only by explicit unlock. | Implemented |
-| A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Target (submit behavior) |
-| A-5 | Each exam question (planned `ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Target |
+| A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Implemented (service) / Target (unlock & API) |
+| A-5 | Each exam question (`ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Implemented (entities/service) / Target (create validator & API) |
 
 ## 6. Progress tracking & unlock
 

@@ -77,7 +77,8 @@ Decided (MVP, Decision 7): each question has at least two options and exactly on
 | DTO | Type | Fields |
 |---|---|---|
 | `CreateExamRequest` | Current input | `Guid ModuleId`, `string Title`, `int PassThreshold` (`Questions` is planned, #273) |
-| `SubmitExamRequest` | Current input | `Guid ExamId`, `int Score` |
+| `SubmitExamAnswersRequest` | Current input | `Guid ExamId`, `IReadOnlyList<SubmittedAnswer> Answers` |
+| `SubmittedAnswer` | Current input | `Guid QuestionId`, `Guid OptionId` |
 | `ExamResponse` | Current output | `Guid Id`, `string Title`, `int PassThreshold`, `Guid ModuleId` |
 | `ExamResultResponse` | Output | `Guid ExamId`, `bool Passed`, `int Score` |
 
@@ -95,13 +96,11 @@ public interface IExamService
 {
     Task<ExamResponse> CreateAsync(CreateExamRequest request);
     Task<ExamResponse> GetByIdAsync(Guid id);
-    Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request);
+    Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default);
 }
 ```
 
-**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `CreateAsync` and `SubmitAsync` still throw domain `NotImplementedException`. `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
-
-The current Submit DTO accepts a client-supplied score and cannot provide trusted grading. Before implementing submission, replace it with selected question/option IDs and add an explicit learner ID argument to the service call.
+**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `ExamService.SubmitAsync` validates submitted answers against `Exam.Questions`, grades strictly on the server, updates `UserProgress.Score` (latest wins) and `UserProgress.PassedExam` (sticky), and returns `ExamResultResponse` without `IsCorrect`. `CreateAsync` (#273) still throws domain `NotImplementedException`, and next-module unlock (#208) is not wired yet. `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 
@@ -111,7 +110,7 @@ The current Submit DTO accepts a client-supplied score and cannot provide truste
 |---|---|---|---|---|
 | `POST` | `/api/exams` | `CreateExamRequest` | `ExamResponse` | `201 Created`, `400 Bad Request` |
 | `GET` | `/api/exams/{id}` | — | `ExamResponse` | `200 OK`, `404 Not Found` |
-| `POST` | `/api/exams/{id}/submit` | `SubmitExamRequest` | `ExamResultResponse` | `200 OK`, `400 Bad Request`, `404 Not Found` |
+| `POST` | `/api/exams/{id}/submit` | `SubmitExamAnswersRequest` | `ExamResultResponse` | `200 OK`, `400 Bad Request`, `404 Not Found` |
 
 > An `ExamsController` placeholder exists. `GET /api/exams/{id}` could delegate to the implemented `ExamService.GetByIdAsync` but does not yet. All three actions throw domain `NotImplementedException`; the endpoints are not wired to services.
 
@@ -121,7 +120,7 @@ The target submit request contains selected question/option IDs, not a score. Th
 
 - `CreateExamRequest`: `Title` must not be empty and must fit 150 characters; `PassThreshold` must be between 1 and 100.
 - `CreateExamRequest.Questions` must not be empty once the planned nested DTO exists (#273). Each question needs at least two options and exactly one correct option.
-- `SubmitExamRequest`: the current `Score` field is a placeholder and is not validated; replace it with selected answer IDs before submission is implemented.
+- `SubmitExamAnswersRequest`: requires non-null `Answers` covering every question in the exam exactly once with valid option IDs belonging to each question.
 - `CreateExamRequestValidator` exists; question/option validators do not exist yet.
 
 ### Submission persistence decision (planned)

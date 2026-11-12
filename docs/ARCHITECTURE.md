@@ -83,19 +83,20 @@ public interface IExamService
 {
     Task<ExamResponse> CreateAsync(CreateExamRequest request);
     Task<ExamResponse> GetByIdAsync(Guid id);
-    Task<ExamResultResponse> SubmitAsync(SubmitExamRequest request);
+    Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default);
 }
 ```
 
-### Registration (Target)
+### Registration (Implemented — Decision 38)
 
-Service implementations are registered in `Program.cs` via DI:
+Infrastructure and Application registrations live in `AddInfrastructure(configuration)` and `AddApplication()`, and `Program.cs` calls only those two extension methods:
 
 ```csharp
-builder.Services.AddScoped<IExamService, ExamService>();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 ```
 
-**Current status:** `Program.cs` registers `AddInfrastructure`, `AddApplication` (password hasher, validators, Module/Lesson services), `IUnitOfWork`, and adds `ExceptionHandlingMiddleware` to the pipeline. The existing feature controllers do not yet delegate to service interfaces. Treat controller delegation as the required pattern, not as current behavior.
+**Current status:** `Program.cs` uses `AddInfrastructure` and `AddApplication`, registers Swashbuckle OpenAPI in `Development`, and attaches `ExceptionHandlingMiddleware` to the pipeline. `TracksController.Get` delegates to `ITrackService.GetPagedAsync`; remaining feature controllers still throw `NotImplementedException` until their controller wiring issues land.
 
 ---
 
