@@ -14,6 +14,7 @@ This document distinguishes Domain entities that exist in code from the relation
 | Exam | `Id`, `CreatedAt`, `Title`, `PassThreshold: int`, `ModuleId: Guid` | `Title` ≤ 150, `UNIQUE(ModuleId)` implemented. `HasPassed(score)` returns `score >= PassThreshold`. No question model yet. |
 | TrackEnrollment | `Id`, `CreatedAt`, `UserId: Guid`, `TrackId: Guid`, `EnrolledAt: DateTimeOffset` | `UNIQUE(UserId, TrackId)` implemented; both FKs use `Restrict`. Enrollment workflow is target behavior. |
 | UserProgress | `Id`, `CreatedAt`, `UserId: Guid`, `ModuleId: Guid`, `IsUnlocked: bool`, `PassedExam: bool`, `Score: int` | Unique index exists on `(UserId, ModuleId)`; score check is 0–100. `Score` stores the **latest** attempt score; `PassedExam` is sticky (see §4). |
+| UserExternalAccount | `Id`, `CreatedAt`, `UserId: Guid`, `Platform: ExternalPlatform`, `Handle: string`, `ExternalNumericId: string?`, `VerificationToken: string?`, `TokenExpiresAtUtc: DateTime?`, `VerifiedAtUtc: DateTime?`, `Status: AccountVerificationStatus` | `Handle` ≤ 64 and non-empty; `ExternalNumericId` ≤ 64; `VerificationToken` ≤ 64. `UNIQUE(UserId, Platform)` implemented; filtered `UNIQUE(Platform, Handle)` for verified accounts and filtered `UNIQUE(Platform, ExternalNumericId)` for non-null external IDs implemented (Decision 33). FK to `User` uses `Restrict`. Verification workflows are target behavior. |
 
 `Id` and `CreatedAt` are inherited from `BaseEntity`.
 
@@ -31,8 +32,8 @@ This document distinguishes Domain entities that exist in code from the relation
 
 ### Current EF Core mapping status
 
-- Configurations exist for `User`, `Track`, `Module`, `Lesson`, `Exam`, `UserProgress`, `TrackEnrollment`, and `LessonResource`; required relationships use explicit foreign keys with `DeleteBehavior.Restrict` and the unique indexes in §5.
-- `UserProgressConfiguration` maps the unique `(UserId, ModuleId)` index; `TrackEnrollmentConfiguration` maps the unique `(UserId, TrackId)` index.
+- Configurations exist for `User`, `Track`, `Module`, `Lesson`, `Exam`, `UserProgress`, `TrackEnrollment`, `LessonResource`, and `UserExternalAccount`; required relationships use explicit foreign keys with `DeleteBehavior.Restrict` and the unique indexes in §5.
+- `UserProgressConfiguration` maps the unique `(UserId, ModuleId)` index; `TrackEnrollmentConfiguration` maps the unique `(UserId, TrackId)` index; `UserExternalAccountConfiguration` maps the unique `(UserId, Platform)` index and filtered unique indexes on verified `(Platform, Handle)` and non-null `(Platform, ExternalNumericId)`.
 - Navigation properties (`Track.Modules`/`TrackEnrollments`, `Module.Track`/`Lessons`/`Exam`, `Lesson.Module`, `Exam.Module`, `UserProgress.User`/`Module`, `TrackEnrollment.User`/`Track`, `LessonResource.Lesson`) are implemented. `Lesson.Resources` is intentionally not defined; resources are queried through `LessonResource`.
 - `ExamQuestion`/`ExamOption` remain proposed; see §3.
 
@@ -45,6 +46,10 @@ Keep Track enrollment distinct from per-Module progress. Fields: `Id`, `UserId`,
 ### LessonResource (Implemented)
 
 Allow one Lesson to cite multiple learning sources. Fields: `Id`, `LessonId`, `Title`, `Kind`, `Url?`, `Citation?`, and `Order`. The entity, configuration, repository, and migration exist. URL/citation validation and authoring workflow remain target behavior.
+
+### UserExternalAccount (Implemented)
+
+Links a learner profile on an external problem platform (Codeforces, GitHub) with ownership verification challenge state (Decision 33). Fields: `Id`, `UserId`, `Platform`, `Handle`, `ExternalNumericId?`, `VerificationToken?`, `TokenExpiresAtUtc?`, `VerifiedAtUtc?`, `Status`. Configured with `UNIQUE(UserId, Platform)`, filtered `UNIQUE(Platform, Handle)` where `Status = 1` (Verified), filtered `UNIQUE(Platform, ExternalNumericId)` where `ExternalNumericId IS NOT NULL`, and `DeleteBehavior.Restrict` to `User`. The entity, configuration, and migration exist; verification workflows remain target behavior.
 
 ### ExamQuestion and ExamOption (Proposed)
 
