@@ -16,5 +16,11 @@ public class UpdateLessonRequestValidator : AbstractValidator<UpdateLessonReques
 
         RuleFor(x => x.Order)
             .GreaterThanOrEqualTo(1).WithMessage("Lesson.Order.Invalid");
+
+        RuleFor(x => x.Content)
+            .NotEmpty().WithMessage("Lesson.Content.Required");
+
+        RuleFor(x => x.Type)
+            .IsInEnum().WithMessage("Lesson.Type.Invalid");
     }
 }

@@ -7,8 +7,12 @@ public class CreateExamRequestValidator : AbstractValidator<CreateExamRequest>
 {
     public CreateExamRequestValidator()
     {
+        RuleFor(x => x.ModuleId)
+             .NotEmpty().WithMessage("Exam.ModuleId.Required");
+
         RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Exam.Title.Required");
+            .NotEmpty().WithMessage("Exam.Title.Required")
+            .MaximumLength(150).WithMessage("Exam.Title.TooLong");
 
         RuleFor(x => x.PassThreshold)
             .InclusiveBetween(1, 100).WithMessage("Exam.PassThreshold.Invalid");

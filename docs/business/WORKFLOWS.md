@@ -149,12 +149,12 @@ sequenceDiagram
     participant Platform as TalebElm Platform
     participant GH as GitHub REST API
 
-    Note over Learner,Platform: Prerequisite: OAuth Account Link (Numeric ExternalUserId Stored)
+    Note over Learner,Platform: Prerequisite: OAuth Account Link (Numeric ExternalNumericId Stored)
     Learner->>GH: Push commit to default branch of repository created from official template
     GH->>GH: Execute .github/workflows/test.yml (Status: Completed, Conclusion: Success)
     Learner->>Platform: POST /api/tasks/{taskId}/verify (repoName)
     Platform->>GH: GET /repos/{owner}/{repo}
-    Platform->>Platform: Assert owner.id == ExternalUserId AND template_repository == TaskVersion.TemplateRepoFullName
+    Platform->>Platform: Assert owner.id == ExternalNumericId AND template_repository == TaskVersion.TemplateRepoFullName
     Platform->>GH: GET /repos/{owner}/{repo}/actions/runs?branch=default&event=push
     Platform->>Platform: Assert latest run conclusion == "success" (head_sha)
     Platform->>GH: GET /repos/{owner}/{repo}/git/trees/{head_sha}?recursive=1
