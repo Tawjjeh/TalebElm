@@ -99,6 +99,7 @@ public class ExceptionHandlingMiddleware
             NotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
             TalebElm.Domain.Exceptions.ValidationException => (HttpStatusCode.BadRequest, "A business rule was violated."),
             ConflictException => (HttpStatusCode.Conflict, "A conflicting state or duplicate resource was detected."),
+            ExternalServiceUnavailableException => (HttpStatusCode.ServiceUnavailable, "An external service is temporarily unavailable."),
             FluentValidation.ValidationException => (HttpStatusCode.BadRequest, "One or more validation errors occurred."),
             TalebElm.Domain.Exceptions.NotImplementedException => (HttpStatusCode.NotImplemented, "The requested capability is not implemented yet."),
             DomainException => (HttpStatusCode.BadRequest, "The request could not be processed."),

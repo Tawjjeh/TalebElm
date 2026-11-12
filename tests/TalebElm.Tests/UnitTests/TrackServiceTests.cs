@@ -91,8 +91,8 @@ public class TrackServiceTests
         Track? addedTrack = null;
 
         _unitOfWork
-            .Setup(u => u.Tracks.AddAsync(It.IsAny<Track>()))
-            .Callback<Track>(track =>
+            .Setup(u => u.Tracks.AddAsync(It.IsAny<Track>(), It.IsAny<CancellationToken>()))
+            .Callback<Track, CancellationToken>((track, _) =>
             {
                 addedTrack = track;
                 track.Id = Guid.NewGuid();
