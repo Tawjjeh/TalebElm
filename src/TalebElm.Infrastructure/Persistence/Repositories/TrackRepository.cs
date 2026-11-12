@@ -36,6 +36,10 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
 
         var totalCount = await query.CountAsync(cancellationToken);
 
+        var offset = (long)(page - 1) * pageSize;
+        if (offset >= totalCount || offset > int.MaxValue)
+            return ([], totalCount);
+
         var items = await query
             .OrderBy(t => t.CreatedAt)
             .ThenBy(t => t.Id)
