@@ -91,9 +91,9 @@ To maintain high development velocity and architectural focus, the following are
 
 ### Automated GitHub Task Verification Limitation
 - **The Limitation:** Because the test suite executes on GitHub Actions within the learner's own repository, a determined, technically sophisticated user could theoretically manipulate the CI environment (e.g., monkey-patching runner binaries, intercepting process outputs, or spoofing execution hooks) to make the workflow pass while keeping the file SHAs intact.
-- **Future Hardening (Post-MVP):**
-  - **Platform-Owned Runners:** In a future phase, webhooks on push will trigger task execution on TalebElm-owned ephemeral runner sandboxes (e.g., isolated Docker containers or Firecracker microVMs).
-  - **Hidden / Canary Test Suites:** The platform will inject private, undisclosed test cases at evaluation time that do not exist in the public starter template.
+- **Future Hardening (Beyond MVP):**
+  - **Platform-Owned Runners:** Later phases can use push webhooks to trigger task execution on TalebElm-owned ephemeral runner sandboxes (e.g., isolated Docker containers or microVMs).
+  - **Hidden / Canary Test Suites:** Injecting private test cases at evaluation time outside the starter template.
 - **MVP Assessment:** For the MVP, Git blob/tree SHA verification combined with template provenance provides strong tamper resistance against 99% of learners while maintaining zero server compute cost.
 
 ---

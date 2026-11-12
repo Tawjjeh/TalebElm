@@ -127,17 +127,17 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 
 | Invariant | Database | Application |
 |---|---|---|
-| One progress row per learner+Module | `UNIQUE(UserId, ModuleId)` ✅ | Upsert, never duplicate-insert |
+| One progress row per learner+Module | `UNIQUE(UserId, ModuleId)` (Implemented) | Upsert, never duplicate-insert |
 | Dual-gated module unlock | — | Next module unlocked only if exam passed AND required problems completed |
-| One exam per Module | `UNIQUE(ModuleId)` ✅ | Duplicate create → `409` (target) |
-| Case-insensitive unique email | `UNIQUE(Email)` + `NOCASE` ✅ | Identical normalization in register/login (target) |
-| Non-blank identity fields | `CK_Users_*_NotEmpty` ✅ | Register validator → `400` (target) |
-| No silent data loss | `Restrict` FKs ✅ | Blocked delete → `409` (target) |
-| Contiguous sibling order | Unique `(parent, Order)` ✅ | Shift/re-sequence in one transaction (target) |
-| Length bounds | `HasMaxLength` ✅ | Module/Lesson validators; Track validator gaps → `400` (partial) |
-| Server-side grading | — | Submit path ignores client score |
-| Verified handle challenge | `UNIQUE(Platform, Handle)` | Token verification via Codeforces `user.info` profile check |
+| One exam per Module | `UNIQUE(ModuleId)` (Implemented) | Duplicate create → `409` (target) |
+| Case-insensitive unique email | `UNIQUE(Email)` + `NOCASE` (Implemented) | Identical normalization in register/login (target) |
+| Non-blank identity fields | `CK_Users_*_NotEmpty` (Implemented) | Register validator → `400` (target) |
+| No silent data loss | `Restrict` FKs (Implemented) | Blocked delete → `409` (target) |
+| Contiguous sibling order | Unique `(parent, Order)` (Implemented) | Shift/re-sequence in one transaction (target) |
+| Length bounds | `HasMaxLength` (Implemented) | Module/Lesson validators; Track validator gaps → `400` (partial) |
+| Server-side grading | — | Submit path ignores client score (`ExamService.SubmitAsync` implemented) |
+| Verified handle challenge | `UNIQUE(Platform, Handle)` (Implemented) | Token verification via Codeforces `user.info` profile check |
 | Automated task integrity | — | GitHub Actions success AND blob/tree SHA integrity matches |
 | Anonymous Hub access | — | Public read endpoints bypass authorization filter |
 
-✅ Implemented · ⏳ Target (decided, scheduled)
+All rules without "(Implemented)" remain Target unless marked otherwise.

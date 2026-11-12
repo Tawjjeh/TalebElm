@@ -54,8 +54,8 @@ To ensure the platform can cover hosting costs, database persistence, continuous
 |---|---|---|---|---|
 | **Community Donations** | Moderate | Very Low | Excellent (pure FOSS) | Recommended first step |
 | **Cloud Grants** | Covers hosting only | Low | Excellent | Pursue immediately upon public release |
-| **Hiring Partnerships** | High | High | Good (must protect privacy) | Proposed for post-MVP scale |
-| **Paid Mentor Review** | High | High | Good (must stay strictly optional) | Proposed for post-MVP scale |
+| **Hiring Partnerships** | High | High | Good (must protect privacy) | Proposed for later scale |
+| **Paid Mentor Review** | High | High | Good (must stay strictly optional) | Proposed for later scale |
 
 ---
 
