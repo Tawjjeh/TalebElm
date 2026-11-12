@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using TalebElm.Domain.Exceptions;
 
 namespace TalebElm.Api.Middlewares;
@@ -21,7 +22,31 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
+            var (statusCode, _) = Map(ex);
+            LogFailure(context, ex, statusCode);
             await WriteProblemAsync(context, ex);
+        }
+    }
+
+    private static void LogFailure(HttpContext context, Exception exception, HttpStatusCode statusCode)
+    {
+        var logger = context.RequestServices?.GetService<ILogger<ExceptionHandlingMiddleware>>();
+        if (logger is null)
+            return;
+
+        // Genuine server failures are errors; known domain/client failures stay informational.
+        if (statusCode == HttpStatusCode.InternalServerError)
+        {
+            // Log only the exception type: messages and inner exceptions can carry raw SQL or query text.
+            logger.LogError("Unhandled exception {ExceptionType} for {Method} {Path} returned {StatusCode} (TraceId {TraceId})",
+                exception.GetType().FullName, context.Request.Method, context.Request.Path.Value,
+                (int)statusCode, context.TraceIdentifier);
+        }
+        else
+        {
+            logger.LogInformation("Request {Method} {Path} failed with {StatusCode}: {ExceptionType} (TraceId {TraceId})",
+                context.Request.Method, context.Request.Path.Value, (int)statusCode, exception.GetType().Name,
+                context.TraceIdentifier);
         }
     }
 
@@ -54,7 +79,8 @@ public class ExceptionHandlingMiddleware
             {
                 ["status"] = (int)statusCode,
                 ["title"] = title,
-                ["detail"] = detail
+                ["detail"] = detail,
+                ["traceId"] = context.TraceIdentifier
             };
 
             if (fieldErrors.Count > 0)
@@ -74,7 +100,8 @@ public class ExceptionHandlingMiddleware
         {
             status = (int)statusCode,
             title,
-            detail = standardDetail
+            detail = standardDetail,
+            traceId = context.TraceIdentifier
         };
 
         return context.Response.WriteAsync(JsonSerializer.Serialize(standardProblem));
