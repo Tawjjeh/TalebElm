@@ -1,7 +1,7 @@
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
 using TalebElm.Infrastructure.Persistence;
-
+using Microsoft.EntityFrameworkCore;
 public static class DemoDataSeeder
 {
     private static readonly Guid TrackId = Guid.Parse("11111111-1111-1111-1111-111111111101");
@@ -68,6 +68,7 @@ public static class DemoDataSeeder
             await context.ExamQuestions.AddAsync(question, ct);
             await context.ExamOptions.AddRangeAsync(options, ct);
         }
+
 
         if (!await context.Technologies.AnyAsync(t => t.Id == CSharpTechId, ct))
         {
