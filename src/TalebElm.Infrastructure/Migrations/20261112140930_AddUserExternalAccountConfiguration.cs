@@ -24,7 +24,7 @@ namespace TalebElm.Infrastructure.Migrations
                     TokenExpiresAtUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
                     VerifiedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

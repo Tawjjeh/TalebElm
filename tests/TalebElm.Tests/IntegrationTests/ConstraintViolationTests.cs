@@ -41,7 +41,7 @@ public class ConstraintViolationTests : SqliteTestBase
 
         DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
 
-        await Assert.ThrowsAsync<ConflictException>(_unitOfWork.SaveChangesAsync);
+        await Assert.ThrowsAsync<ConflictException>(() => _unitOfWork.SaveChangesAsync());
         await using var check = CreateContext();
         Assert.Equal(1, await check.UserProgresses.CountAsync());
     }
@@ -55,7 +55,7 @@ public class ConstraintViolationTests : SqliteTestBase
 
         DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = _user.Id, TrackId = _track.Id });
 
-        await Assert.ThrowsAsync<ConflictException>(_unitOfWork.SaveChangesAsync);
+        await Assert.ThrowsAsync<ConflictException>(() => _unitOfWork.SaveChangesAsync());
         await using var check = CreateContext();
         Assert.Equal(1, await check.TrackEnrollments.CountAsync());
     }
@@ -69,7 +69,7 @@ public class ConstraintViolationTests : SqliteTestBase
 
         DbContext.Exams.Add(new Exam { Title = "Exam 2", PassThreshold = 70, ModuleId = _module.Id });
 
-        await Assert.ThrowsAsync<ConflictException>(_unitOfWork.SaveChangesAsync);
+        await Assert.ThrowsAsync<ConflictException>(() => _unitOfWork.SaveChangesAsync());
         await using var check = CreateContext();
         Assert.Equal("Exam 1", Assert.Single(await check.Exams.ToListAsync()).Title);
     }
@@ -79,7 +79,7 @@ public class ConstraintViolationTests : SqliteTestBase
     {
         DbContext.Tracks.Remove(await DbContext.Tracks.SingleAsync(t => t.Id == _track.Id));
 
-        await Assert.ThrowsAsync<ConflictException>(_unitOfWork.SaveChangesAsync);
+        await Assert.ThrowsAsync<ConflictException>(() => _unitOfWork.SaveChangesAsync());
         await using var check = CreateContext();
         Assert.NotNull(await check.Tracks.FindAsync(_track.Id));
     }
@@ -90,7 +90,7 @@ public class ConstraintViolationTests : SqliteTestBase
         DbContext.Exams.Add(new Exam { Title = null!, PassThreshold = 70, ModuleId = _module.Id });
 
         // ThrowsAsync checks the exact type, so this is not a ConflictException.
-        await Assert.ThrowsAsync<DbUpdateException>(_unitOfWork.SaveChangesAsync);
+        await Assert.ThrowsAsync<DbUpdateException>(() => _unitOfWork.SaveChangesAsync());
     }
 
     [Fact]

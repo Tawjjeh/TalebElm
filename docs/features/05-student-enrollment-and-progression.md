@@ -51,7 +51,7 @@ The unique index on `(UserId, TrackId)` is implemented. Payment and attendance a
 
 ### Current DTO
 
-`ProgressResponse(Guid ModuleId, bool IsUnlocked, bool PassedExam, int Score)`.
+`ProgressResponse(Guid ModuleId, bool IsUnlocked, bool PassedExam, int Score, int RequiredProblemsTotal = 0, int RequiredProblemsCompleted = 0)`.
 
 ### Proposed DTOs and Services
 
@@ -80,4 +80,4 @@ Authentication is not wired yet, so current-user routes cannot resolve a learner
 - Test first-Module unlock, duplicate enrollment, empty Track rejection, pass/fail/retry, final Module, and isolation between two Users.
 
 ## Decision 32 update
-`UserProgress` stores sticky `CompletedRequiredProblems` (default false) as a Target field, with migration in Phase 3. `examGate = !hasExam || PassedExam`; `problemGate = !hasReq || CompletedRequiredProblems`. The next Module unlocks only when `(hasExam || hasReq)` and both gates and a next Module exist. A Module with neither uses Admin manual unlock. The unlock check runs after both events inside one UnitOfWork transaction. `ProgressResponse` also exposes `RequiredProblemsTotal` and `RequiredProblemsCompleted`.
+`UserProgress` stores sticky `CompletedRequiredProblems` (default false) as a Target field, with migration in Phase 3. `examGate = !hasExam || PassedExam`; `problemGate = !hasReq || CompletedRequiredProblems`. The next Module unlocks only when `(hasExam || hasReq)` and both gates and a next Module exist. A Module with neither uses Admin manual unlock. The unlock check runs after both events inside one UnitOfWork transaction. `ProgressResponse` also exposes `RequiredProblemsTotal` and `RequiredProblemsCompleted`. Both counts are **Target**: they default to `0` until #413 computes them, so clients must not use `Completed == Total` as a gate; the gate remains the stored sticky `UserProgress.CompletedRequiredProblems` flag.

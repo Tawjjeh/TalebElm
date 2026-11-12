@@ -36,4 +36,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TrackEnrollment> TrackEnrollments => Set<TrackEnrollment>();
     public DbSet<LessonResource> LessonResources => Set<LessonResource>();
     public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
+    public DbSet<Technology> Technologies => Set<Technology>();
+    public DbSet<Resource> Resources => Set<Resource>();
 }

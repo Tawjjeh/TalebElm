@@ -148,7 +148,7 @@ erDiagram
     MODULE_PROBLEM }o--o| GITHUB_TASK : "links to (if GitHubTask)"
 
     GITHUB_TASK ||--o{ TASK_VERSION : "versioned by"
-    GITHUB_TASK ||--o{ PROJECT_MILESTONE : "verifies"
+    GITHUB_TASK ||--o| CAPSTONE_PROJECT : "templates"
 
     CAPSTONE_PROJECT ||--o{ PROJECT_MILESTONE : "defines"
     PROJECT_MILESTONE ||--o{ USER_MILESTONE_PROGRESS : "tracks"
@@ -222,7 +222,7 @@ erDiagram
         Guid UserId FK
         int Platform
         string Handle
-        long ExternalUserId "nullable, numeric GitHub ID"
+        long ExternalNumericId "nullable, numeric GitHub ID"
         int VerificationStatus
         string VerificationChallengeToken "nullable, 128-bit"
         DateTimeOffset ChallengeExpiresAt "nullable"
@@ -309,16 +309,16 @@ erDiagram
         Guid TrackId FK
         string Title
         string Description
-        string StarterTemplateRepo
+        Guid TaskId FK
     }
 
     PROJECT_MILESTONE {
         Guid Id PK
         Guid ProjectId FK
-        Guid TaskId FK
         Guid ModuleId FK "nullable"
         string Title
         string Instructions
+        string WorkflowJobName
         int Order
     }
 

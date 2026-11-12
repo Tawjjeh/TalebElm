@@ -48,10 +48,10 @@ public interface IUserRepository : IRepository<User> { }
 
 - Add `RegisterRequest` with student profile fields plus password/credential input.
 - Add `LoginRequest` with email/username plus password.
-- Add `AuthTokenResponse` with access token, optional refresh token, expiry, and basic user identity metadata.
+- Add `AuthTokenResponse` with access token, expiry, and basic user identity metadata. No refresh token in the MVP (Decision 1).
 - Add `IAuthService` to validate credentials, hash passwords, and issue/revoke tokens.
 
-### Password policy (proposed)
+### Password policy (Decided, MVP)
 
 Passwords are never stored or returned in plain text. Registration enforces the
 following complexity rules before hashing (see [OPEN_DECISIONS.md](../OPEN_DECISIONS.md)):
@@ -64,8 +64,7 @@ following complexity rules before hashing (see [OPEN_DECISIONS.md](../OPEN_DECIS
 | Buffer | Reject leading/trailing whitespace-only passwords |
 | Storage | Hash with a salted, slow algorithm (e.g. ASP.NET Core `PasswordHasher<T>`); never return the hash |
 
-These values are a starting proposal; confirm them before implementation so the
-validator and the hash parameters stay in sync.
+These values are Decided (MVP) in Decision 14; keep the validator and the hash parameters in sync.
 
 ### Role model and authorization policies
 
@@ -113,7 +112,7 @@ public interface IUserService
 
 ### Authentication and authorization rules
 
-- Password hashing is implemented through `IPasswordHasher`/`PasswordHasher`. Token handling is planned, not implemented; the MVP needs credential validation, access-token issuance, and token lifetime/refresh behavior.
+- Password hashing is implemented through `IPasswordHasher`/`PasswordHasher`. Token handling is planned, not implemented; the MVP needs credential validation, access-token issuance, and token lifetime behavior. No refresh token in the MVP (Decision 1).
 - `GET /api/users/{id}` is a separate read contract from list/create and should throw `NotFoundException` when the user does not exist.
 - Critical user-management operations such as `PUT /api/users/{id}` and `DELETE /api/users/{id}` must be role-protected. A student should not update or delete arbitrary users.
 - Enforcement uses the `StudentOnly` and `AdminOnly` policies defined above. Attribute-level `[Authorize(Policy = "...")]` is preferred over manual role checks so the rule lives in one place.
