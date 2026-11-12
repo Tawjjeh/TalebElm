@@ -47,7 +47,7 @@ No question, option, or answer entity exists. For the MVP, use multiple choice:
 | ExamOption | Text | string | No | Learner-visible option text |
 | ExamOption | IsCorrect | bool | No | Server-only grading data; never return in learner responses |
 
-Proposed rules: each question has at least two options and exactly one correct option. Keep these as Application validation until a database constraint is selected.
+Decided (MVP, Decision 7): each question has at least two options and exactly one correct option. Keep these as Application validation until a database constraint is selected.
 
 ### Scoring rule (MVP — binding)
 

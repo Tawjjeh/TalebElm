@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors remain target behavior.
+Expose a lightweight health endpoint so callers can confirm the API process responds. Global exception middleware is registered and maps domain/FluentValidation exceptions to `application/problem+json`; structured field-level validation errors are implemented.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
@@ -23,6 +23,7 @@ DomainException (base)
 ├── NotFoundException
 ├── ValidationException
 ├── ConflictException
+├── ExternalServiceUnavailableException
 └── NotImplementedException
 ```
 
@@ -61,17 +62,20 @@ DomainException (base)
 | Domain `ValidationException`       | `400`       | `A business rule was violated.`                                      |
 | FluentValidation `ValidationException` | `400`   | `One or more validation errors occurred.`                            |
 | `ConflictException`                | `409`       | `A conflicting state or duplicate resource was detected.` (also raised by `UnitOfWork.SaveChangesAsync` for unique and foreign-key violations) |
+| `ExternalServiceUnavailableException` | `503`    | `An external service is temporarily unavailable.` (external clients use this for outages, rate limits, timeouts and untrusted responses, so a failure never looks like `404 Not Found`) |
 | `DomainException`                  | `400`       | `The request could not be processed.`                                |
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
 | Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
-### Validation error payload (target contract)
+### Validation error payload (implemented)
 
-The current middleware returns a single `detail` string. The target contract adds field-specific errors so clients can attach each message to its input field:
+The middleware returns an RFC 7807 problem-details envelope with field-specific errors so clients can attach each message to its input field:
 
 ```json
 {
-  "error": "Validation failed.",
+  "status": 400,
+  "title": "One or more validation errors occurred.",
+  "detail": "One or more validation errors occurred.",
   "errors": {
     "name": ["'Name' must not be empty."],
     "capacity": ["'Capacity' must be greater than '0'."]
@@ -79,9 +83,10 @@ The current middleware returns a single `detail` string. The target contract add
 }
 ```
 
-- Keys in `errors` are the failing property names in camelCase; each value is an array of messages, because one field can fail more than one rule.
-- The top-level `error` string stays present for logging and generic display; failures that are not tied to a specific field are reported there only.
-- Services currently throw FluentValidation's `ValidationException` (for example `TrackService.CreateAsync`), whose `ValidationFailure` items already carry `PropertyName` and `ErrorMessage`. The middleware must map those into the `errors` object above. `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `error` only, until it is extended to carry per-field errors.
+- Keys in `errors` are failing property names converted to camelCase (including nested segments, e.g. `lesson.title`); each value is an array of messages, supporting multiple rule violations per property.
+- Failures without a property name fall back to the top-level `detail` string rather than generating an empty key in `errors`.
+- FluentValidation's `ValidationException` (thrown by application services) is mapped to this structured shape.
+- `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `detail` only without the `errors` map.
 
 ### Registration (implemented)
 
