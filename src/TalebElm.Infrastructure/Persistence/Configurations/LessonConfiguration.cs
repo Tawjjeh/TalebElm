@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 
 namespace TalebElm.Infrastructure.Persistence.Configurations;
 
@@ -25,6 +26,10 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
             .WithMany(m => m.Lessons)
             .HasForeignKey(l => l.ModuleId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(op => op.Type)
+            .IsRequired()
+            .HasDefaultValue(LessonType.Text);
 
         builder.ToTable(t =>
         {
