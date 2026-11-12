@@ -11,14 +11,15 @@ The first MVP is one complete learner journey:
 
 > register or log in → browse and enroll in a published Track → study its Lessons → submit a server-graded Exam → complete the required practice problems → unlock the next Module.
 
-The public, read-only Resource Hub ships in the same MVP because it has no dependency on the learning flow. Everything else waits.
+The public, read-only Resource Hub ships in the same MVP because it has no dependency on the learning flow. GitHub task verification starts in M3b, right after the MVP, because the Codeforces path is enough to close the learner loop first. Everything else waits.
 
 | Milestone | Scope | Done when |
 |---|---|---|
 | **M0 Foundations** | DI baseline, validation errors, content guards, cancellation tokens, logging, API wiring, CI health | The API starts cleanly, returns real responses, and the build, tests, and blank-database migration check are green. |
 | **M1 Identity** | Registration, login, JWT, `StudentOnly` / `AdminOnly`, users API, login throttling | A learner can register, log in, and reach a protected route; 401/403/409 behave correctly. |
 | **M2 Learning flow** | Tracks, Modules, Lessons, Exams, Progress, server-side grading, sticky unlocking, lesson type and authoring fields | The full study loop works and a pass unlocks only the next Module. |
-| **M3 Verified problems** | External accounts, Codeforces verification, GitHub task verification, completion persistence, dual-gate unlock | Required problems are verified without human review and the problem gate blocks or unlocks correctly. |
+| **M3 Codeforces problems** | External accounts, Codeforces handle and solve verification, `ModuleProblem`, completion persistence, dual-gate unlock | Required Codeforces problems are verified without human review and the problem gate blocks or unlocks correctly. |
+| **M3b GitHub tasks** | GitHub OAuth, GitHub client, `TaskVersion` lifecycle, SHA integrity checks, GitHub task authoring and verification endpoints | A linked repository is verified against an active `TaskVersion` and the matched version and head SHA are recorded. |
 | **M4 Public Resource Hub (read-only)** | Technology tree, resources, filters, anonymous browse, seed content | A visitor can browse and filter resources without logging in. |
 | **After MVP** | Capstone projects, Hub authoring and moderation, link health, shared `Resource` migration | Deferred until the learner MVP is complete. |
 
