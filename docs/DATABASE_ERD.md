@@ -242,7 +242,6 @@ erDiagram
         string Title
         string Description
         string TemplateRepoFullName
-        Guid CurrentVersionId FK
     }
 
     TASK_VERSION {
@@ -252,7 +251,7 @@ erDiagram
         string OfficialCommitSha
         string WorkflowBlobSha
         string TestsTreeSha
-        bool IsActive
+        int Status "TaskVersionStatus"
     }
 
     USER_PROBLEM_COMPLETION {
