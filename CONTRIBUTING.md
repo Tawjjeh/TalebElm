@@ -179,10 +179,12 @@ CI additionally enforces Release-mode build/test parity, dependency vulnerabilit
 
 ## 4. Review process
 
+- The person assigned to your pull request reviews it. Assignment happens automatically when you open the pull request: security and database changes go to one of the two core reviewers, everything else rotates among the regular reviewers.
 - We review for correctness, architecture, tests, and documentation impact.
 - A pull request needs one approving review, a green `build-and-test` check, and every conversation resolved before it can merge.
-- If `main` moved while your pull request was open, we may ask you to merge `main` into your branch and push.
-- Address feedback by pushing additional commits to the same branch; the PR updates automatically.
+- After approving, the assignee merges it by commenting `/merge`. The owner can comment `/merge` on any pull request. You do not press a button and you do not need to ask someone else to merge for you; a `/merge` from anyone else is politely declined.
+- If `main` moved while your pull request was open, merge `main` into your branch and push, so the required check runs against the current base.
+- Address feedback by pushing additional commits to the same branch; the PR updates automatically. A new commit removes the earlier approval, so the assignee approves the latest commit again.
 - Keep the PR scope tight so it can be reviewed and reverted safely. Split unrelated changes into separate PRs.
 
 ---
