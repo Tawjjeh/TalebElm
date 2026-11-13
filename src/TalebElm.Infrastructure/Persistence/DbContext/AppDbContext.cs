@@ -38,4 +38,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
     public DbSet<Technology> Technologies => Set<Technology>();
     public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<UserProblemCompletion> userProblemCompletions => Set<UserProblemCompletion>();
 }
