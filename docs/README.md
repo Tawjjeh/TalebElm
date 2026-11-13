@@ -3,19 +3,20 @@
 > Public documentation map for `Tawjjeh/TalebElm`.
 > Status discipline: every behavior is `Implemented`, `Target`, or `Proposed`. See
 > [docs/FEATURE_INDEX.md ](FEATURE_INDEX.md) for current implementation status.
-> Last updated: 2026-10-25.
+> Last updated: 2026-11-11.
 
 ## Start here
 
 | If you want to… | Read |
 |---|---|
-| Understand the product and learner journey | [README.md](README.md) (root), [docs/MVP_LEARNING_JOURNEY.md ](MVP_LEARNING_JOURNEY.md) |
+| Understand the product and learner journey | [README.md](../README.md) (root), [docs/MVP_LEARNING_JOURNEY.md ](MVP_LEARNING_JOURNEY.md) |
 | Understand code layers and conventions | [docs/ARCHITECTURE.md ](../ARCHITECTURE.md), [docs/PROJECT_STRUCTURE.md ](PROJECT_STRUCTURE.md) |
 | See what is implemented vs. planned | [docs/FEATURE_INDEX.md ](FEATURE_INDEX.md) |
 | Find a feature specification | [docs/features/01-auth-identity.md ](features/01-auth-identity.md) … [features/10-automated-task-verification.md](features/10-automated-task-verification.md) |
 | Follow the product roadmap | [docs/business/ROADMAP.md ](business/ROADMAP.md) |
 | Learn the business rules and constraints | [docs/business/BUSINESS_RULES.md ](business/BUSINESS_RULES.md) |
 | Check open product decisions | [docs/OPEN_DECISIONS.md ](OPEN_DECISIONS.md) |
+| Start contributing: how work is claimed, approved, and reviewed | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Understand the API surface | [docs/API_ENDPOINTS.md ](API_ENDPOINTS.md) |
 | Understand the data model | [docs/DATABASE_ERD.md ](DATABASE_ERD.md) |
 | Set up the local database | [docs/LOCAL_SETUP.md ](LOCAL_SETUP.md) |
@@ -52,7 +53,7 @@
 
 ## Related root files
 
-- [README.md](README.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [CONTRIBUTORS.md](../CONTRIBUTORS.md), `LICENSE`
+- [README.md](README.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md), `LICENSE`
 - [AGENTS.md](../AGENTS.md) — operating contract for AI coding assistants and contributors
 
 ## Complete file index

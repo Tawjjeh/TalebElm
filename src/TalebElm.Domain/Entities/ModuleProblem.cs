@@ -10,6 +10,7 @@ public class ModuleProblem : BaseEntity
 
     public string ExternalIdentifier { get; set; } = string.Empty;
     public Guid? GitHubTaskId { get; set; }
+    public GitHubTask? GitHubTask { get; set; } = default!;
     public int Order { get; set; }
     public bool IsRequired { get; set; } = true;
     public int? Rating { get; set; }

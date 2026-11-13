@@ -58,7 +58,7 @@ Stores the verified connection to the learner's GitHub account.
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. `UNIQUE(UserId, Platform)`. | Target |
 | `Platform` | `ExternalPlatform` | No | Enum: `Codeforces = 1`, `GitHub = 2`. | Target |
 | `Handle` | `string` | No | GitHub username/login (e.g., `octocat`). Max length **64**, non-blank. | Target |
-| `ExternalUserId` | `long?` | Yes | Immutable numeric GitHub user ID (e.g., `583231`). Required when `Platform == GitHub`. `UNIQUE(Platform, ExternalUserId)`. | Target |
+| `ExternalNumericId` | `long?` | Yes | Immutable numeric GitHub user ID (e.g., `583231`). Required when `Platform == GitHub`. `UNIQUE(Platform, ExternalNumericId)`. | Target |
 | `VerificationStatus` | `AccountVerificationStatus` | No | Enum: `Verified = 2` (set automatically via OAuth callback). | Target |
 | `VerifiedAt` | `DateTimeOffset?` | Yes | Timestamp of OAuth verification. | Target |
 
@@ -89,7 +89,7 @@ When a learner triggers `POST /api/tasks/{taskId}/verify` with their repository 
 2. **Fetch Repository Metadata:**
    - Call GitHub REST API: `GET /repos/{owner}/{repo}` via `IGitHubClient`.
    - Ensure repository exists and is public (`private == false`).
-   - Validate ownership: `response.owner.id` must strictly match the stored numeric `ExternalUserId`.
+   - Validate ownership: `response.owner.id` must strictly match the stored numeric `ExternalNumericId`.
    - Validate provenance: `response.template_repository.full_name` must equal `TaskVersion.TemplateRepoFullName`.
 3. **Verify CI Workflow Run:**
    - Call GitHub REST API: `GET /repos/{owner}/{repo}/actions/runs?branch={default_branch}&event=push`.
@@ -153,10 +153,27 @@ public record TaskVerificationResultResponse(
 ```csharp
 public interface IGitHubClient
 {
-    Task<GitHubUserResponse> GetAuthenticatedUserAsync(string accessToken);
-    Task<GitHubRepositoryResponse?> GetRepositoryAsync(string owner, string repo);
-    Task<GitHubWorkflowRunResponse?> GetLatestWorkflowRunAsync(string owner, string repo, string defaultBranch);
-    Task<GitHubTreeResponse?> GetTreeAsync(string owner, string repo, string commitSha);
+    // null only when GitHub says the repository does not exist; outages throw
+    // ExternalServiceUnavailableException (503) so a failure never looks like "not found".
+    Task<GitHubRepository?> GetRepositoryAsync(string owner, string repo, CancellationToken cancellationToken = default);
+
+    // Latest run for this workflow on this branch, regardless of status. Callers require
+    // Status == "completed" and Conclusion == "success"; queued/in-progress is not a failure.
+    Task<GitHubWorkflowRun?> GetLatestWorkflowRunAsync(
+        string owner,
+        string repo,
+        string workflow,
+        string branch,
+        CancellationToken cancellationToken = default);
+
+    // Recursive by default so nested files are returned. Truncated == true means the tree is
+    // incomplete: a missing path is not proof of absence, so callers fail closed.
+    Task<GitHubGitTree?> GetGitTreeAsync(
+        string owner,
+        string repo,
+        string treeSha,
+        bool recursive = true,
+        CancellationToken cancellationToken = default);
 }
 ```
 

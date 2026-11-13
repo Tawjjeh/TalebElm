@@ -1,71 +1,50 @@
 # Contributing to TalebElm
 
-Thank you for contributing to TalebElm. This guide defines the workflow, quality standards, and review expectations for all contributors.
+This guide explains how to set up your environment, claim an issue, open a pull request, and understand how PR reviews work.
 
----
+## 1. Prerequisites and baseline check
 
-## 1. Prerequisites
-
-- Git (`git --version`)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) (`dotnet --version` → `10.x`)
-- A GitHub account with the repository forked
-
-Verify the baseline before starting work:
+You need Git, the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Python 3. After cloning, confirm the baseline passes:
 
 ```bash
 dotnet restore TalebElm.slnx
 dotnet build TalebElm.slnx
 dotnet test TalebElm.slnx
+python3 scripts/check-docs.py
 ```
 
----
+## 2. MVP milestones and picking an issue
 
-## Finding work
+All work belongs to the six MVP milestones in [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md):
 
-Issues are grouped by the MVP milestones described in [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md):
+- **M0 Foundations** — DI composition, validation errors, `CancellationToken` pipeline, logging, and test baseline.
+- **M1 Identity** — Registration, login, JWT configuration, throttling, and role policies.
+- **M2 Learning flow** — Tracks, Modules, Lessons, Exams, Progress, enrollment, and sticky unlocking.
+- **M3 Automated Verification** — External accounts, Codeforces verification, GitHub OAuth, `GitHubTask` / `TaskVersion` integrity, and dual-gate unlock.
+- **M4 Public Resource Hub** — Technology tree, anonymous browse/filters, admin curation, link health, and shared `Resource` migration.
+- **M5 Capstone Projects** — Cumulative track projects, milestone verification, and derived Track completion.
 
-- **M0 Foundations** — the build, validation, and API baseline.
-- **M1 Identity** — registration, login, JWT, and user access.
-- **M2 Learning flow** — tracks, lessons, exams, grading, and progression.
-- **M3 Verified problems** — Codeforces and GitHub task verification.
-- **M4 Public Resource Hub (read-only)** — anonymous browse and filters.
-- **After MVP** — capstone projects and Hub authoring.
+Start with issues labeled `good first issue` or `help wanted`. See [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md) for the full label catalog.
 
-Start with a `good first issue` if you are new. They are small, self-contained, and safe to change. `help wanted` marks accepted work that is ready for a contributor. Comment on the issue with what you plan to change, then open a pull request when the build and tests pass. You do not need to wait for an assignment.
+To claim an issue:
 
-The label catalog is in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md). Every issue has one `layer:` label and one or two component labels so you can find work in the part of the codebase you want to learn.
+1. Comment on the issue with your planned approach and the files you expect to touch.
+2. Wait for confirmation and assignment so two contributors do not implement the same task.
+3. Branch from a current `main` after assignment.
 
----
+## 3. Fork and branch workflow
 
-## 2. Contribution workflow
+TalebElm uses a fork-based workflow. Direct pushes to `main` are not allowed.
 
-TalebElm uses a **fork-based workflow**. All changes land via pull request against `main`; direct pushes to `main` are not accepted.
-
-### Step 1 — Fork and clone
-
-1. Fork `Tawjjeh/TalebElm` via the GitHub **Fork** button.
-2. Clone your fork:
+1. Fork `Tawjjeh/TalebElm` and clone your fork:
 
 ```bash
 git clone https://github.com/<YourUsername>/TalebElm.git
 cd TalebElm
-```
-
-### Step 2 — Track upstream
-
-```bash
 git remote add upstream https://github.com/Tawjjeh/TalebElm.git
-git remote -v
 ```
 
-Expected remotes:
-
-```text
-origin    https://github.com/<YourUsername>/TalebElm.git
-upstream  https://github.com/Tawjjeh/TalebElm.git
-```
-
-### Step 3 — Sync before branching
+2. Sync `main` before creating a branch:
 
 ```bash
 git checkout main
@@ -74,97 +53,48 @@ git merge upstream/main
 git push origin main
 ```
 
-### Step 4 — Create a scoped branch
-
-Branch from an up-to-date `main` using the `<type>/<short-description>` convention:
+3. Create a topic branch (`feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/`, `ci/`):
 
 ```bash
 git checkout -b feat/track-enrollment-endpoint
 ```
 
-Branch prefixes:
+4. Implement one clean vertical slice following [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md):
+   - `Domain` has zero project dependencies.
+   - `Application` depends only on `Domain` and `IUnitOfWork` (never direct `DbContext`).
+   - `Infrastructure` handles persistence and external HTTP clients without business logic.
+   - Add or update xUnit tests covering the behavior.
+   - Never commit secrets, connection strings, or `*.db` files.
 
-- `feat/` — new capability
-- `fix/` — defect correction
-- `docs/` — documentation only
-- `refactor/`, `test/`, `chore/`, `ci/`, `build/`, `perf/`, `style/` — as applicable
-
-Examples: `feat/enrollment-endpoint`, `fix/exam-score-rounding`, `docs/api-endpoint-matrix`.
-
-### Step 5 — Implement
-
-- One logical change per pull request.
-- Place code in the correct Clean Architecture layer — see [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-- Application services depend only on `IUnitOfWork`; controllers call service interfaces; Infrastructure contains no business logic.
-- Add or update tests covering the change.
-- Never commit secrets, connection strings, `*.db` files, or environment-specific credentials.
-
-### Step 6 — Commit
-
-Stage and commit with a conventional-commit message:
+5. Commit using conventional commits and push to your fork:
 
 ```bash
-git add <files>
 git commit -m "feat: add track enrollment endpoint"
-```
-
-Accepted commit/PR-title types (validated by CI; optional scope permitted):
-
-- `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `ci`, `build`, `perf`, `style`
-
-Examples:
-
-```text
-feat: add track enrollment endpoint
-fix(auth): reject duplicate user email with 409
-docs: clarify exam grading contracts
-test: cover module ordering constraints
-```
-
-### Step 7 — Push and open the pull request
-
-```bash
 git push --set-upstream origin feat/track-enrollment-endpoint
 ```
 
-Then open a pull request:
+6. Open a pull request against `Tawjjeh/TalebElm` `main`, link the issue with `Closes #NNN` if applicable, and make sure `build-and-test` passes.
 
-- **Base:** `Tawjjeh/TalebElm` @ `main`
-- **Head:** `<YourUsername>/TalebElm` @ your branch
-- **Title:** conventional-commit format (e.g., `feat: add track enrollment endpoint`)
-- **Description:** complete the PR template, including `Closes #NNN` for `feat:` and `fix:` PRs so the issue closes automatically. `chore:` / `docs:` / `refactor:` / `test:` / `ci:` maintenance PRs do not require issue linkage.
+## 4. Automated PR routing (Reviewers)
 
-Reviewers are assigned automatically via round-robin rotation; path-based labels are applied by CI.
+When a pull request is opened (and is not a draft), `.github/workflows/auto-assign.yml` reads [`.github/maintainers.json`](.github/maintainers.json) and requests one maintainer in the **Reviewers** box. The **Assignees** box is left unused on pull requests.
 
----
+### Routing rules
 
-## 3. Quality gates
+1. **Database and Security PRs:** Any PR touching Database files (`Data`, `Migrations`, `Persistence`, `Configurations`, `Repositories`, `Entities`, `DbContext`, `.sql`) or Security files (`Auth`, `Security`, `Identity`, `Jwt`, `Policies`, `PasswordHasher`, `TokenService`, `OAuth`, `RateLimit`), or carrying `database` or `security` labels, rotates one reviewer at a time between `abdulrahmanhossam` and `abdulla7mohamed` (selecting whichever has fewer open review requests).
+2. **General PRs (Round-Robin):** All other PRs rotate evenly among the regular maintainers (`AhmedShaabanAl-Saidi`, `Asma-Elhadiedy`, `Mohammad-Metwally`), picking from those with the fewest currently open review requests.
+3. **Exempted maintainers:** `SarahRefaat19` (Eng. Sara), `Sroor000` (Eng. Sorour), and `Aya-Selim` (Eng. Aya Samir) remain part of the repository team and are excluded from automatic review rotation.
 
-All pull requests must satisfy the following before merge:
+## 5. Review and merge workflow
 
-- [ ] `dotnet build TalebElm.slnx` succeeds without errors.
-- [ ] New or affected behavior is covered by tests (`dotnet test TalebElm.slnx` passes).
-- [ ] Changes respect Clean Architecture boundaries described in `ARCHITECTURE.md`.
-- [ ] Naming, folder, DTO, and EF Core conventions in `docs/ARCHITECTURE.md` are followed.
-- [ ] No secrets, production connection strings, or database artifacts are committed.
-- [ ] PR title uses conventional-commit format; `feat:` / `fix:` PRs link their issue.
+- The requested reviewer handles reviewing, approving, pushing minor fixes if needed, and merging the pull request using GitHub's **Squash and merge** button once `build-and-test` passes and conversations are resolved.
+- Other maintainers are welcome to review and approve.
+- `abdulrahmanhossam` can review and merge any pull request at any time.
 
-CI additionally enforces Release-mode build/test parity, dependency vulnerability review (fails on high/critical), full-tree NuGet audit, and automatic labeling.
+## 6. Reference docs
 
----
-
-## 4. Review process
-
-- Maintainers review against correctness, architecture conformance, test coverage, and documentation impact.
-- Address feedback by pushing additional commits to the same branch; the PR updates automatically.
-- Keep the PR scope tight so it can be reviewed and reverted safely. Split unrelated changes into separate PRs.
-
----
-
-## 5. Reference documentation
-
-- [`README.md`](README.md) — platform overview and operator guide
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — layer responsibilities and request lifecycle
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — normative technical conventions
-- [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) — implementation status per feature
-- [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) — source layout and scope boundaries
+- [`README.md`](README.md) — project overview and quick start
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — layer responsibilities
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — technical conventions
+- [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) — implementation status
+- [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) — repository layout

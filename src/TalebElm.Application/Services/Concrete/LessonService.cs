@@ -1,4 +1,4 @@
-﻿using TalebElm.Application.DTOs;
+using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
@@ -7,14 +7,14 @@ namespace TalebElm.Application.Services.Concrete;
 
 public class LessonService(IUnitOfWork unitOfWork) : ILessonService
 {
-    public async Task<IReadOnlyList<LessonResponse>> GetByModuleAsync(Guid moduleId)
+    public async Task<IReadOnlyList<LessonResponse>> GetByModuleAsync(Guid moduleId, CancellationToken ct = default)
     {
-        if (await unitOfWork.Modules.GetByIdAsync(moduleId) is null)
+        if (await unitOfWork.Modules.GetByIdAsync(moduleId,ct) is null)
         {
             throw new NotFoundException($"Module with id '{moduleId}' was not found.");
         }
 
-        var lessons = await unitOfWork.Lessons.GetByModuleIdAsync(moduleId);
+        var lessons = await unitOfWork.Lessons.GetByModuleIdAsync(moduleId,ct);
 
         return lessons
             .OrderBy(lesson => lesson.Order)
@@ -22,16 +22,16 @@ public class LessonService(IUnitOfWork unitOfWork) : ILessonService
             .ToList();
     }
 
-    public async Task<LessonDetailResponse> GetByIdAsync(Guid id)
+    public async Task<LessonDetailResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var lesson = await unitOfWork.Lessons.GetByIdAsync(id);
+        var lesson = await unitOfWork.Lessons.GetByIdAsync(id,ct);
 
         if (lesson is null)
         {
             throw new NotFoundException($"Lesson with id '{id}' was not found.");
         }
 
-        var resources = await unitOfWork.LessonResources.GetByLessonIdAsync(id);
+        var resources = await unitOfWork.LessonResources.GetByLessonIdAsync(id, ct);
 
         var resourceResponses = resources
             .OrderBy(resource => resource.Order)

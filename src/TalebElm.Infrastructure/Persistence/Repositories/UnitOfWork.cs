@@ -43,11 +43,11 @@ public class UnitOfWork : IUnitOfWork
 
     }
 
-    public async Task<int> SaveChangesAsync()
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         try
         {
-            return await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync(ct);
         }
         catch (DbUpdateException ex) when (ConflictMessage(ex) is { } message)
         {

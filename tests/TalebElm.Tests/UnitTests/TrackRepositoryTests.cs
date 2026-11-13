@@ -85,16 +85,13 @@ public class TrackRepositoryTests : SqliteTestBase
         await SaveChangesAsync();
         ClearTracker();
 
-        // Act - Page 1 with pageSize 2 (published only)
         var (page1Items, totalCount) = await _repository.GetPagedAsync(page: 1, pageSize: 2, publishedOnly: true);
 
-        // Assert - Only 3 published tracks total (t1, t3, t4)
         Assert.Equal(3, totalCount);
         Assert.Equal(2, page1Items.Count);
         Assert.Equal(t1.Id, page1Items[0].Id);
         Assert.Equal(t3.Id, page1Items[1].Id);
 
-        // Act - Page 2 with pageSize 2
         var (page2Items, _) = await _repository.GetPagedAsync(page: 2, pageSize: 2, publishedOnly: true);
 
         Assert.Single(page2Items);
@@ -120,6 +117,29 @@ public class TrackRepositoryTests : SqliteTestBase
         Assert.Equal(3, items.Count);
     }
 
+    [Fact]
+    public async Task GetPagedAsync_WhenTokenIsCancelled_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _repository.GetPagedAsync(page: 1, pageSize: 20, publishedOnly: true, cancellationToken: cts.Token));
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WhenOffsetExceedsIntMax_ReturnsEmptyListWithoutOverflow()
+    {
+        var track = CreateTrack("Backend");
+        await _repository.AddAsync(track);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var (items, totalCount) = await _repository.GetPagedAsync(page: int.MaxValue, pageSize: 100, publishedOnly: false);
+
+        Assert.Equal(1, totalCount);
+        Assert.Empty(items);
+    }
     private static Track CreateTrack(string name) => new()
     {
         Id = Guid.NewGuid(),

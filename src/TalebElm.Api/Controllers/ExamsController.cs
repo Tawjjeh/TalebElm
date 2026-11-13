@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using TalebElm.Application.DTOs;
@@ -46,7 +46,7 @@ public class ExamsController : ControllerBase
     [HttpPost("{id}/submit")]
     [ProducesResponseType(typeof(ExamResultResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
-    public IActionResult Submit(Guid id, [FromBody] SubmitExamRequest request)
+    public IActionResult Submit(Guid id, [FromBody] SubmitExamAnswersRequest request)
         => throw new NotImplementedException(
             $"Submitting exam '{id}' is not implemented yet.");
 }

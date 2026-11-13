@@ -16,7 +16,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
 | POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
-| POST | `/api/exams/{id}/submit` | Declared as a placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
@@ -58,7 +58,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 | GET | `/api/progress/me` | None | Progress summaries for authenticated Student | 200, 401 |
 | GET | `/api/progress/me/tracks/{trackId}` | None | Ordered progress for one Track | 200, 401, 404 |
 
-The current `SubmitExamRequest` accepts a client-supplied score. Do not use that value for trusted grading. The target request must submit answers so the server can compare them with a server-side answer key, calculate the score, record `UserProgress`, and unlock only the next Module on a pass.
+`ExamService.SubmitAsync` grades `SubmitExamAnswersRequest` server-side from stored answer keys, updates `UserProgress` with latest `Score` and sticky `PassedExam`, and never exposes `IsCorrect`. Next-module unlock (`#208`) and `ExamsController` wiring (`#255`) are target.
 
 ### Practice problems & external verification
 
@@ -70,7 +70,7 @@ The current `SubmitExamRequest` accepts a client-supplied score. Do not use that
 | GET | `/api/auth/github` | None | Redirect to GitHub OAuth authorize URL | 302 |
 | GET | `/api/auth/github/callback` | OAuth code & state | Identity linked confirmation | 200, 400, 401, 503 |
 | POST | `/api/modules/{moduleId}/problems/verify` | None | Solves summary & module completion state | 200, 400, 401, 403, 429, 503 |
-| POST | `/api/tasks/{taskId}/verify` | Verify task request (repoName) | Task completion response & unlock state | 200, 400, 401, 403, 429, 503 |
+| POST | `/api/module-problems/{moduleProblemId}/verify` | Verify task request (repoName) | Task completion response & unlock state | 200, 400, 401, 403, 429, 503 |
 | POST | `/api/admin/modules/{moduleId}/problems` | Problem creation DTO | Created problem DTO | 201, 400, 401, 403 |
 | POST | `/api/admin/tasks` | Task creation DTO | Created task DTO | 201, 400, 401, 403 |
 
@@ -102,7 +102,7 @@ The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `
 | Access | Routes |
 |---|---|
 | Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/resources` |
-| Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/tasks/{taskId}/verify`, `/api/tracks/{trackId}/project*` |
+| Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/module-problems/{moduleProblemId}/verify`, `/api/tracks/{trackId}/project*` |
 | Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, and `GET /api/users` |
 
 Student-facing reads should also return a Track's Modules and Lessons only to an enrolled Student once the unlock rule is implemented: a locked Module's Lessons, Exam, and Problems must not be served. When an authenticated Student requests a Lesson, Exam, or Problem set that belongs to a Module the Student has not unlocked, the API must return `403 Forbidden` — not `404` — because the resource exists but the Student is not allowed to access it yet.

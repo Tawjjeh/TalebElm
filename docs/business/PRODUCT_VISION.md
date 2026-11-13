@@ -59,7 +59,7 @@ Learning software engineering today is broken in two distinct ways:
   2. `GitHubTask`: CodeCrafters-style automated repository tasks for framework modules (`Target`).
 - **Codeforces Handle Ownership Challenge:** The server generates a random 128-bit single-use token (expires in 15 minutes). The learner places the token into their Codeforces profile (`firstName` or `organization`). The server reads the profile via the public `user.info` API and stores the verified handle (`Target`).
 - **Automated Solve Verification:** The platform queries the public Codeforces API (`user.status`) for `OK` (Accepted) verdicts matching `contestId` and problem `index` (`Target`). All-time accepted solves count.
-- **Automated GitHub Tasks:** Learners link their GitHub account via OAuth (numeric `ExternalUserId` stored). For each framework task, the learner generates a repository from an official template (`Tawjjeh/task-<slug>-template`), implements code, and pushes. The server queries the GitHub REST API to verify that:
+- **Automated GitHub Tasks:** Learners link their GitHub account via OAuth (numeric `ExternalNumericId` stored). For each framework task, the learner generates a repository from an official template (`Tawjjeh/task-<slug>-template`), implements code, and pushes. The server queries the GitHub REST API to verify that:
   - The repository owner matches the linked numeric account ID.
   - The repository was generated from the official template.
   - The latest workflow run on the default branch succeeded.
@@ -91,9 +91,9 @@ To maintain high development velocity and architectural focus, the following are
 
 ### Automated GitHub Task Verification Limitation
 - **The Limitation:** Because the test suite executes on GitHub Actions within the learner's own repository, a determined, technically sophisticated user could theoretically manipulate the CI environment (e.g., monkey-patching runner binaries, intercepting process outputs, or spoofing execution hooks) to make the workflow pass while keeping the file SHAs intact.
-- **Future Hardening (Post-MVP):**
-  - **Platform-Owned Runners:** In a future phase, webhooks on push will trigger task execution on TalebElm-owned ephemeral runner sandboxes (e.g., isolated Docker containers or Firecracker microVMs).
-  - **Hidden / Canary Test Suites:** The platform will inject private, undisclosed test cases at evaluation time that do not exist in the public starter template.
+- **Future Hardening (Beyond MVP):**
+  - **Platform-Owned Runners:** Later phases can use push webhooks to trigger task execution on TalebElm-owned ephemeral runner sandboxes (e.g., isolated Docker containers or microVMs).
+  - **Hidden / Canary Test Suites:** Injecting private test cases at evaluation time outside the starter template.
 - **MVP Assessment:** For the MVP, Git blob/tree SHA verification combined with template provenance provides strong tamper resistance against 99% of learners while maintaining zero server compute cost.
 
 ---
