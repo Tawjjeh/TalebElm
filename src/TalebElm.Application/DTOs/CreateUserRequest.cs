@@ -1,4 +1,4 @@
-﻿namespace TalebElm.Application.DTOs;
+namespace TalebElm.Application.DTOs;
 
 /// <summary>
 /// Represents the data required to create a new user.
