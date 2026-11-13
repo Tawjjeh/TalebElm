@@ -17,6 +17,53 @@ namespace TalebElm.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskId1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TrackId1")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId")
+                        .IsUnique();
+
+                    b.HasIndex("TaskId1");
+
+                    b.HasIndex("TrackId")
+                        .IsUnique();
+
+                    b.HasIndex("TrackId1");
+
+                    b.ToTable("CapstoneProjects");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
                 {
                     b.Property<Guid>("Id")
@@ -309,6 +356,59 @@ namespace TalebElm.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_ModuleProblems_GitHubTaskId_Value", "(Kind = 1 AND GitHubTaskId IS NULL) OR (Kind = 2 AND GitHubTaskId IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ModuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ModuleId1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowJobName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleId");
+
+                    b.HasIndex("ModuleId1");
+
+                    b.HasIndex("ProjectId1");
+
+                    b.HasIndex("ProjectId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("ProjectMilestones");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
@@ -651,6 +751,37 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.Track", null)
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("Track");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
@@ -735,6 +866,34 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Module", null)
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany()
+                        .HasForeignKey("ModuleId1");
+
+                    b.HasOne("TalebElm.Domain.Entities.CapstoneProject", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.CapstoneProject", "Project")
+                        .WithMany("Milestones")
+                        .HasForeignKey("ProjectId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.User", "CreatedByUser")
@@ -807,6 +966,11 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
