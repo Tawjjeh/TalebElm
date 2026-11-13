@@ -691,6 +691,49 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserProblemCompletion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DetailsJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalSubmissionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ModuleProblemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TaskVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("VerifiedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VerifiedHeadCommitSha")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleProblemId");
+
+                    b.HasIndex("UserId", "ModuleProblemId")
+                        .IsUnique();
+
+                    b.ToTable("userProblemCompletions");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -907,6 +950,23 @@ namespace TalebElm.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserProblemCompletion", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.ModuleProblem", "ModuleProblem")
+                        .WithMany()
+                        .HasForeignKey("ModuleProblemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ModuleProblem");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
