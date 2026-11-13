@@ -12,10 +12,13 @@ public class ExamServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IExamRepository> _exams = new();
     private readonly Mock<IUserProgressRepository> _progresses = new();
+    private readonly Mock<IModuleRepository> _modules = new();
     private readonly ExamService _sut;
 
     private readonly Guid _learnerId = Guid.NewGuid();
     private readonly Exam _exam;
+    private readonly Module _module;
+    private readonly Module _nextModule;
     private readonly UserProgress _progress = new() { Score = 42, PassedExam = false };
 
     public ExamServiceTests()
@@ -38,10 +41,18 @@ public class ExamServiceTests
             }).ToList()
         };
 
-        _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id)).ReturnsAsync(_exam);
-        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId)).ReturnsAsync(_progress);
+        var trackId = Guid.NewGuid();
+        _module = new Module { Id = _exam.ModuleId, TrackId = trackId, Order = 1 };
+        _nextModule = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 2 };
+        _progress.UserId = _learnerId;
+        _progress.ModuleId = _module.Id;
+        _progress.Module = _module; // the service reads progress.Module.TrackId / .Order
+
+        _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_exam);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(_progress);
         _unitOfWork.SetupGet(u => u.Exams).Returns(_exams.Object);
         _unitOfWork.SetupGet(u => u.UserProgresses).Returns(_progresses.Object);
+        _unitOfWork.SetupGet(u => u.Modules).Returns(_modules.Object);
 
         _sut = new ExamService(_unitOfWork.Object);
     }
@@ -79,7 +90,6 @@ public class ExamServiceTests
 
     #region SubmtiAsync_Method_Tests
 
-
     #region Helper_Methods
     // One answer per question: true = picks the correct option, false = picks the wrong one.
     private List<SubmittedAnswer> Answers(params bool[] correct) =>
@@ -92,7 +102,7 @@ public class ExamServiceTests
     private async Task AssertRejected(List<SubmittedAnswer>? answers)
     {
         await Assert.ThrowsAsync<ValidationException>(() => Submit(answers));
-        _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         Assert.Equal(42, _progress.Score);
         Assert.False(_progress.PassedExam);
     }
@@ -114,7 +124,7 @@ public class ExamServiceTests
         Assert.Equal(expectedPassed, result.Passed);
         Assert.Equal(expectedScore, _progress.Score);
         Assert.Equal(expectedPassed, _progress.PassedExam);
-        _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -203,23 +213,157 @@ public class ExamServiceTests
     [Fact]
     public async Task Submit_ExamNotFound_Throws()
     {
-        _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id)).ReturnsAsync((Exam?)null);
+        _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() => Submit(Answers(true, true, true)));
-        _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Submit_ProgressNotFound_Throws()
     {
-        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId))
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>()))
                    .ReturnsAsync((UserProgress?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() => Submit(Answers(true, true, true)));
-        _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
     #endregion
 
+    #region Unlock_next_module
+
+    #region Helper_Methods
+    // The next module exists, and the learner's row for it is `existingRow` (null = no row yet).
+    private void ArrangeNextModule(UserProgress? existingRow)
+    {
+        _modules.Setup(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_nextModule);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _nextModule.Id, It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(existingRow);
+    }
+
+    private UserProgress NewLockedRow(Guid userId) =>
+        new() { UserId = userId, ModuleId = _nextModule.Id, IsUnlocked = false };
+
+    private void ArrangeRequiredProblemsDone() => _progress.CompletedRequiredProblems = true;
+    #endregion
+
+    [Fact]
+    public async Task Submit_PassAndRequiredProblemsDone_UnlocksNextModule()
+    {
+        ArrangeRequiredProblemsDone();
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+
+        await Submit(Answers(true, true, true));
+
+        Assert.True(next.IsUnlocked);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once); // score + unlock in ONE save
+    }
+
+    [Fact]
+    public async Task Submit_PassButRequiredProblemsNotDone_DoesNotUnlock()
+    {
+        // CompletedRequiredProblems stays false
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+
+        await Submit(Answers(true, true, true));
+
+        Assert.False(next.IsUnlocked);
+        _modules.Verify(r => r.GetNextModuleAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Submit_FailWithRequiredProblemsDone_DoesNotUnlock()
+    {
+        ArrangeRequiredProblemsDone();
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+
+        await Submit(Answers(false, false, false));
+
+        Assert.False(next.IsUnlocked);
+    }
+
+    [Fact]
+    public async Task Submit_PassAndNextProgressRowMissing_CreatesUnlockedRow()
+    {
+        ArrangeRequiredProblemsDone();
+        ArrangeNextModule(existingRow: null);
+
+        await Submit(Answers(true, true, true));
+
+        _progresses.Verify(r => r.AddAsync(
+            It.Is<UserProgress>(p => p.UserId == _learnerId && p.ModuleId == _nextModule.Id && p.IsUnlocked),
+            It.IsAny<CancellationToken>()), Times.Once); // check the real "add" method name
+    }
+
+    [Fact]
+    public async Task Submit_PassTwice_DoesNotCreateDuplicateRows()
+    {
+        ArrangeRequiredProblemsDone();
+        var rows = new List<UserProgress>(); // fake table: starts empty, AddAsync fills it
+        _modules.Setup(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_nextModule);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _nextModule.Id, It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(() => rows.FirstOrDefault());
+        _progresses.Setup(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()))
+                   .Callback<UserProgress, CancellationToken>((p, _) => rows.Add(p));
+
+        await Submit(Answers(true, true, true));
+        await Submit(Answers(true, true, true));
+
+        var row = Assert.Single(rows);   // exactly one row after two passes
+        Assert.True(row.IsUnlocked);
+    }
+
+    [Fact]
+    public async Task Submit_PassOnFinalModule_DoesNotThrowAndCreatesNothing()
+    {
+        ArrangeRequiredProblemsDone();
+        _modules.Setup(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Module?)null); // no successor
+
+        var result = await Submit(Answers(true, true, true));
+
+        Assert.True(result.Passed);
+        _progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once); // score still saved
+    }
+
+    [Fact]
+    public async Task Submit_PassByOneLearner_DoesNotTouchOtherLearners()
+    {
+        ArrangeRequiredProblemsDone();
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+        var other = NewLockedRow(Guid.NewGuid()); // another learner's row for the same next module
+
+        await Submit(Answers(true, true, true));
+
+        Assert.True(next.IsUnlocked);
+        Assert.False(other.IsUnlocked);
+        // The service only ever asks for this learner's rows
+        _progresses.Verify(r => r.GetByUserAndModuleAsync(
+            It.Is<Guid>(id => id != _learnerId), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Submit_ForwardsCancellationToken()
+    {
+        ArrangeRequiredProblemsDone();
+        ArrangeNextModule(NewLockedRow(_learnerId));
+        using var cts = new CancellationTokenSource();
+        var request = new SubmitExamAnswersRequest(_exam.Id, Answers(true, true, true));
+
+        await _sut.SubmitAsync(_learnerId, request, cts.Token);
+
+        _exams.Verify(r => r.GetWithQuestionsAsync(_exam.Id, cts.Token), Times.Once);
+        _modules.Verify(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
+    #endregion
 
     #endregion
 }

@@ -1,5 +1,6 @@
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
+using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 using NotImplementedException = TalebElm.Domain.Exceptions.NotImplementedException;
@@ -28,11 +29,11 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         );
     }
 
-    public async Task<ExamResultResponse> SubmitAsync(Guid learnerId, SubmitExamAnswersRequest request, CancellationToken ct = default)
+    public async Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default)
     {
         if (request.Answers is null)
             throw new ValidationException("Answers are required.");
-        var exam = await unitOfWork.Exams.GetWithQuestionsAsync(request.ExamId) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
+        var exam = await unitOfWork.Exams.GetWithQuestionsAsync(request.ExamId, ct) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
         var questionIds = exam.Questions.Select(q => q.Id).ToHashSet();
 
         // Checks each answer belongs to the exam and not duplicated
@@ -70,15 +71,42 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
             MidpointRounding.AwayFromZero);
 
         // Update progress for this learner and this exam's module.
-        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(learnerId, exam.ModuleId)
-            ?? throw new NotFoundException($"Progress for learner {learnerId} was not found.");
+        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(userId, exam.ModuleId, ct)
+            ?? throw new NotFoundException($"Progress for learner {userId} was not found.");
 
         var passed = exam.HasPassed(score);
 
         progress.Score = score;
         progress.PassedExam |= passed;
 
-        await unitOfWork.SaveChangesAsync();
+        // Make checks for unlocking the next module
+        if (progress.PassedExam && progress.CompletedRequiredProblems)
+        {
+            Module? nextModule = await unitOfWork.Modules
+                .GetNextModuleAsync(progress.Module.TrackId, progress.Module.Order, ct);
+
+            if (nextModule is not null)
+            {
+                UserProgress? nextProgress = await unitOfWork.UserProgresses
+                    .GetByUserAndModuleAsync(userId, nextModule.Id, ct);
+
+                if (nextProgress is null)
+                {
+                    await unitOfWork.UserProgresses.AddAsync(new UserProgress
+                    {
+                        UserId = userId,
+                        ModuleId = nextModule.Id,
+                        IsUnlocked = true
+                    }, ct);
+                }
+                else
+                {
+                    nextProgress.IsUnlocked = true;
+                }
+            }
+        }
+
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new ExamResultResponse(exam.Id, passed, score);
     }
