@@ -22,9 +22,9 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
         return await context.UserProgresses.FirstOrDefaultAsync(up => up.Id == id, ct);
     }
 
-    public async Task<UserProgress?> GetByUserAndModuleAsync(Guid userId, Guid moduleId)
+    public async Task<UserProgress?> GetByUserAndModuleAsync(Guid userId, Guid moduleId, CancellationToken ct = default)
     {
-        return await context.UserProgresses.FirstOrDefaultAsync(up => up.UserId == userId && up.ModuleId == moduleId);
+        return await context.UserProgresses.FirstOrDefaultAsync(up => up.UserId == userId && up.ModuleId == moduleId, ct);
     }
 
     public async Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default)

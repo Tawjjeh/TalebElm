@@ -27,4 +27,13 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
         return await context.Modules.Where(m => m.TrackId == trackId)
             .OrderBy(m => m.Order).AsNoTracking().ToListAsync(ct);
     }
+
+    public async Task<Module?> GetNextModuleAsync(Guid trackId, int order, CancellationToken ct = default)
+    {
+        return await context.Modules
+            .AsNoTracking()
+            .Where(m => m.TrackId == trackId && m.Order > order)
+            .OrderBy(m => m.Order)
+            .FirstOrDefaultAsync(ct);
+    }
 }
