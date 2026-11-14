@@ -14,4 +14,6 @@ public class LessonEntityTests
         Assert.Equal(0, lesson.Order);
         Assert.Equal(Guid.Empty, lesson.ModuleId);
     }
+
+
 }
