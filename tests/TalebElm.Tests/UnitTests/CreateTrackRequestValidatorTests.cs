@@ -29,6 +29,28 @@ public class CreateTrackRequestValidatorTests
         Assert.Empty(result.Errors);
     }
 
+    [Fact]
+    public void Name_And_Description_Boundary_Lengths_Are_Enforced()
+    {
+        // The limits are inclusive: the exact maximum passes and one character over fails.
+        var atLimit = new CreateTrackRequest(new string('n', 150), new string('d', 1000));
+        Assert.True(_validator.Validate(atLimit).IsValid);
+
+        var overName = new CreateTrackRequest(new string('n', 151), new string('d', 1000));
+        var nameResult = _validator.Validate(overName);
+        Assert.False(nameResult.IsValid);
+        Assert.Contains(nameResult.Errors, e =>
+            e.PropertyName == nameof(CreateTrackRequest.Name) &&
+            e.ErrorMessage == "Track.Name.TooLong");
+
+        var overDescription = new CreateTrackRequest(new string('n', 150), new string('d', 1001));
+        var descriptionResult = _validator.Validate(overDescription);
+        Assert.False(descriptionResult.IsValid);
+        Assert.Contains(descriptionResult.Errors, e =>
+            e.PropertyName == nameof(CreateTrackRequest.Description) &&
+            e.ErrorMessage == "Track.Description.TooLong");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
