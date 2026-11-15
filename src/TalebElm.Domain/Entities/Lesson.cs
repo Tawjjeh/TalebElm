@@ -11,7 +11,6 @@ public class Lesson : BaseEntity
     public int Order { get; set; }
 
     public Guid ModuleId { get; set; }
-    public LessonType Type { get; set; }
 
     public LessonType Type { get; set; } = LessonType.Text;
 

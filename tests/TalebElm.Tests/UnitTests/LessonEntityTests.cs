@@ -16,6 +16,4 @@ public class LessonEntityTests
         Assert.Equal(Guid.Empty, lesson.ModuleId);
         Assert.Equal(LessonType.Text, lesson.Type);
     }
-
-
 }

@@ -73,7 +73,7 @@ To avoid schema duplication between Codeforces algorithmic problems and GitHub t
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Target |
 | `ModuleProblemId` | `Guid` | No | Required FK to `ModuleProblem.Id`. Delete behavior: `Restrict`. `UNIQUE(UserId, ModuleProblemId)`. | Target |
 | `CompletedAt` | `DateTimeOffset` | No | Verification timestamp. | Target |
-| `ExternalSubmissionId` | `string?` | Yes | Codeforces submission ID OR GitHub repository full name (`owner/repo`). Max length **150**. | Target |
+| `ExternalSubmissionId` | `string?` | Yes | Codeforces submission ID OR GitHub repository full name (`owner/repo`). Max length **200**. | Target |
 | `VerifiedHeadCommitSha` | `string?` | Yes | Git commit SHA at which the test suite passed and SHAs matched. | Target |
 | `TaskVersionId` | `Guid?` | Yes | FK to `TaskVersion.Id` evaluated during verification. | Target |
 

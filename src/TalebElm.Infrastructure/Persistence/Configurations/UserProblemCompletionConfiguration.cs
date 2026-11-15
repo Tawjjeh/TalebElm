@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
@@ -9,27 +8,23 @@ public class UserProblemCompletionConfiguration : IEntityTypeConfiguration<UserP
 {
     public void Configure(EntityTypeBuilder<UserProblemCompletion> builder)
     {
-        builder.Property(op => op.ExternalSubmissionId)
+        builder.Property(c => c.ExternalSubmissionId)
             .HasMaxLength(200);
 
-        builder.Property(op => op.VerifiedHeadCommitSha)
+        builder.Property(c => c.VerifiedHeadCommitSha)
             .HasMaxLength(40);
 
         builder.HasOne<User>()
             .WithMany()
-            .HasForeignKey(op => op.UserId)
+            .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(op => op.ModuleProblem)
+        builder.HasOne(c => c.ModuleProblem)
             .WithMany()
-            .HasForeignKey(op => op.ModuleProblemId)
+            .HasForeignKey(c => c.ModuleProblemId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(op => new
-        {
-            op.UserId,
-            op.ModuleProblemId
-        }).IsUnique();
-
+        builder.HasIndex(c => new { c.UserId, c.ModuleProblemId })
+            .IsUnique();
     }
 }

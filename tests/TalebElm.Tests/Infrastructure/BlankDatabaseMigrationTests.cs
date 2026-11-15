@@ -54,7 +54,6 @@ public class BlankDatabaseMigrationTests : IAsyncLifetime
             await connection.OpenAsync();
         }
 
-
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table';";
 
@@ -105,7 +104,7 @@ public class BlankDatabaseMigrationTests : IAsyncLifetime
         Assert.Contains("IX_TrackEnrollments_UserId_TrackId", indexes);
         Assert.Contains("IX_Users_Email", indexes);
         Assert.Contains("IX_Exams_ModuleId", indexes);
-        Assert.Contains("IX_userProblemCompletions_ModuleProblemId", indexes);
+        Assert.Contains("IX_UserProblemCompletions_ModuleProblemId", indexes);
     }
 
     [Fact]
