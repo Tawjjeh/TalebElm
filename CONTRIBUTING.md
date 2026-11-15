@@ -82,8 +82,8 @@ When a pull request is opened (and is not a draft), `.github/workflows/auto-assi
 ### Routing rules
 
 1. **Database and Security PRs:** Any PR touching Database files (`Data`, `Migrations`, `Persistence`, `Configurations`, `Repositories`, `Entities`, `DbContext`, `.sql`) or Security files (`Auth`, `Security`, `Identity`, `Jwt`, `Policies`, `PasswordHasher`, `TokenService`, `OAuth`, `RateLimit`), or carrying `database` or `security` labels, rotates one reviewer at a time between `abdulrahmanhossam` and `abdulla7mohamed` (selecting whichever has fewer open review requests).
-2. **General PRs (Round-Robin):** All other PRs rotate evenly among the regular maintainers (`AhmedShaabanAl-Saidi`, `Asma-Elhadiedy`, `Mohammad-Metwally`), picking from those with the fewest currently open review requests.
-3. **Exempted maintainers:** `SarahRefaat19` (Eng. Sara), `Sroor000` (Eng. Sorour), and `Aya-Selim` (Eng. Aya Samir) remain part of the repository team and are excluded from automatic review rotation.
+2. **General PRs (Round-Robin):** All other PRs rotate evenly among the regular maintainers (`Asma-Elhadiedy`, `Mohammad-Metwally`), picking from those with the fewest currently open review requests.
+3. **Exempted reviewers:** `SarahRefaat19` (Eng. Sara), `Sroor000` (Eng. Sorour), and `Aya-Selim` (Eng. Aya Samir) remain part of the repository team and are excluded from automatic review rotation. `AhmedShaabanAl-Saidi` has read-only access, so he is never requested for review.
 
 ## 5. Review and merge workflow
 
