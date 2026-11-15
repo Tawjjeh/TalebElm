@@ -8,7 +8,12 @@ public class CapstoneProjectConfiguration : IEntityTypeConfiguration<CapstonePro
 {
     public void Configure(EntityTypeBuilder<CapstoneProject> builder)
     {
-        builder.HasKey(p => p.Id);
+        builder.ToTable("CapstoneProjects", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_CapstoneProjects_Title_NotEmpty",
+                "length(trim(Title)) > 0");
+        });
 
         builder.Property(p => p.Title)
             .IsRequired()
@@ -24,12 +29,12 @@ public class CapstoneProjectConfiguration : IEntityTypeConfiguration<CapstonePro
         builder.HasIndex(p => p.TaskId)
             .IsUnique();
 
-        builder.HasOne<Track>()
+        builder.HasOne(p => p.Track)
             .WithMany()
             .HasForeignKey(p => p.TrackId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<GitHubTask>()
+        builder.HasOne(p => p.Task)
             .WithMany()
             .HasForeignKey(p => p.TaskId)
             .OnDelete(DeleteBehavior.Restrict);
