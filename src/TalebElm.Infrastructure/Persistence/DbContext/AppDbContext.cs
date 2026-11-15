@@ -40,4 +40,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<CapstoneProject> CapstoneProjects => Set<CapstoneProject>();
     public DbSet<ProjectMilestone> ProjectMilestones => Set<ProjectMilestone>();
+    public DbSet<UserProblemCompletion> UserProblemCompletions => Set<UserProblemCompletion>();
 }
