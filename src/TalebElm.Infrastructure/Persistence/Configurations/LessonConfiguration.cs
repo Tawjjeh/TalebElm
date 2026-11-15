@@ -27,12 +27,13 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
             .HasForeignKey(l => l.ModuleId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(op => op.Type)
+        builder.Property(l => l.Type)
             .IsRequired()
             .HasDefaultValue(LessonType.Text);
 
         builder.ToTable(t =>
         {
+            t.HasCheckConstraint("CK_Lessons_Type_Valid", "Type IN (1, 2, 3)");
             t.HasCheckConstraint("CK_Lessons_Title_NotEmpty", "length(trim(Title)) > 0");
             t.HasCheckConstraint("CK_Lessons_Order_Positive", "\"Order\" > 0");
         });

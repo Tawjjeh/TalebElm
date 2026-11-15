@@ -217,6 +217,8 @@ namespace TalebElm.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Lessons_Order_Positive", "\"Order\" > 0");
 
                             t.HasCheckConstraint("CK_Lessons_Title_NotEmpty", "length(trim(Title)) > 0");
+
+                            t.HasCheckConstraint("CK_Lessons_Type_Valid", "Type IN (1, 2, 3)");
                         });
                 });
 

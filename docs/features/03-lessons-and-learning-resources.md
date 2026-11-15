@@ -16,6 +16,7 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | Lesson | Content | string | No | Required lesson explanation |
 | Lesson | Order | int | No | Display order within a Module |
 | Lesson | ModuleId | Guid | No | Parent Module identifier |
+| Lesson | Type | LessonType | No | Lesson format; `Text = 1`, `Video = 2`, `Exercise = 3`; defaults to `Text`; `CHECK (Type IN (1, 2, 3))` |
 
 ### Relationship
 - `Lesson.ModuleId` is a required FK to `Module.Id` with `DeleteBehavior.Restrict`; `Lesson.Module` is the navigation.
@@ -35,7 +36,7 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | LessonResource | Citation | string | Yes | Author/title/edition/page for a book or other non-URL reference |
 | LessonResource | Order | int | No | Display order within the Lesson |
 
-Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format and is stored on Lesson (Decision 13); the latter describes a cited source. Do not claim `LessonType` is currently stored on Lesson; the column is not yet implemented.
+Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format and is stored on Lesson (Decision 13); the latter describes a cited source. `Lesson.Type` is implemented with a default of `Text` and rejects values outside 1–3 at the database level.
 
 ### Application Contract (Implemented)
 

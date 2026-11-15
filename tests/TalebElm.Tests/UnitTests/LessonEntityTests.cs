@@ -1,4 +1,5 @@
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -13,7 +14,6 @@ public class LessonEntityTests
         Assert.Equal(string.Empty, lesson.Content);
         Assert.Equal(0, lesson.Order);
         Assert.Equal(Guid.Empty, lesson.ModuleId);
+        Assert.Equal(LessonType.Text, lesson.Type);
     }
-
-
 }
