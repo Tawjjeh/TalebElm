@@ -1,6 +1,6 @@
 # Feature Specification: Automated GitHub Task Verification
 
-> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation in Phase 3). None are currently Implemented in code.
+> **Status discipline:** The `GitHubTask` and `UserProblemCompletion` entities exist, and `UserProblemCompletion` is configured and migrated. `TaskVersion`, the verification services, contracts, and endpoints remain **Target** (Phase 3).
 > Adheres strictly to the **Zero Manual Gating** principle: all verification is executed automatically by the server.
 
 ---

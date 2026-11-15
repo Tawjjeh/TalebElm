@@ -1,6 +1,6 @@
 # Feature Specification: Cumulative Capstone Projects & Track Completion
 
-> **Status discipline:** `CapstoneProject` and `ProjectMilestone` Domain entities are **Implemented**. `UserMilestoneProgress`, EF Core configurations/migrations, milestone verification, derived completion evaluator, and API endpoints remain **Target** (Milestone M5).
+> **Status discipline:** `CapstoneProject` and `ProjectMilestone` Domain entities and their EF Core configurations/migrations are **Implemented**. `UserMilestoneProgress`, milestone verification, derived completion evaluator, and API endpoints remain **Target** (Milestone M5).
 > Adheres strictly to the **Zero Manual Gating** principle: all milestone progress is verified automatically.
 
 ---

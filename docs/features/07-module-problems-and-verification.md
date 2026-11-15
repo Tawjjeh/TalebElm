@@ -1,6 +1,6 @@
 # Feature Specification: Module Practice Problems & External Verification
 
-> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation in Phase 3). None are currently Implemented in code.
+> **Status discipline:** The `ModuleProblem`, `UserExternalAccount`, and `UserProblemCompletion` entities and their EF Core configurations/migrations are **Implemented**. Repositories, verification services, contracts, and endpoints remain **Target** (Phase 3).
 > Adheres strictly to the **Zero Manual Gating** principle: all verification is executed automatically by the server.
 > External API rules are marked **"Verify against official docs (codeforces.com/apiHelp)"**.
 
