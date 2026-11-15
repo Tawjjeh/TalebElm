@@ -29,6 +29,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("TaskId")
@@ -36,6 +37,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("TrackId")
@@ -43,11 +45,16 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaskId");
+                    b.HasIndex("TaskId")
+                        .IsUnique();
 
-                    b.HasIndex("TrackId");
+                    b.HasIndex("TrackId")
+                        .IsUnique();
 
-                    b.ToTable("CapstoneProject");
+                    b.ToTable("CapstoneProjects", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CapstoneProjects_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
@@ -363,6 +370,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Instructions")
                         .IsRequired()
+                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ModuleId")
@@ -376,6 +384,7 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowJobName")
@@ -393,7 +402,14 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasIndex("ProjectId", "WorkflowJobName")
                         .IsUnique();
 
-                    b.ToTable("ProjectMilestone");
+                    b.ToTable("ProjectMilestones", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProjectMilestones_Order_Positive", "\"Order\" > 0");
+
+                            t.HasCheckConstraint("CK_ProjectMilestones_Title_NotEmpty", "length(trim(Title)) > 0");
+
+                            t.HasCheckConstraint("CK_ProjectMilestones_WorkflowJobName_NotEmpty", "length(trim(WorkflowJobName)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
@@ -741,13 +757,13 @@ namespace TalebElm.Infrastructure.Migrations
                     b.HasOne("TalebElm.Domain.Entities.GitHubTask", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TalebElm.Domain.Entities.Track", "Track")
                         .WithMany()
                         .HasForeignKey("TrackId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Task");
@@ -843,12 +859,13 @@ namespace TalebElm.Infrastructure.Migrations
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
                         .WithMany()
-                        .HasForeignKey("ModuleId");
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TalebElm.Domain.Entities.CapstoneProject", "Project")
                         .WithMany("Milestones")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Module");
