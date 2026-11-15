@@ -1,187 +1,277 @@
-# TalebElm Architecture Guide
+# TalebElm architecture
 
-This document defines the architectural boundaries, dependency rules, and request lifecycle for the TalebElm backend platform. It is the conceptual companion to the normative technical reference in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+TalebElm uses **Clean Architecture**. Code is split into four layers, and dependencies point
+inward: an outer layer may use an inner layer, never the other way round. This keeps business
+rules independent of the database and of HTTP.
 
----
-
-## 1. Architectural style
-
-TalebElm implements **Clean Architecture**: the system is decomposed into concentric layers, each with a single, well-defined responsibility. Dependencies point **inward only** — outer layers may depend on inner layers; inner layers never depend on outer layers.
-
-The core invariant:
-
-> Each layer owns exactly one concern, and dependencies always point toward the Domain.
-
-This separation keeps business rules independent of persistence technology and delivery mechanism, enabling the Domain and Application layers to evolve without being coupled to Entity Framework Core, ASP.NET Core, or any external service.
-
----
-
-## 2. Layer overview
+## 1. The layers
 
 ```text
-               +-----------------------+
-               |          Api          |   Presentation / HTTP
-               +-----------------------+
-                           |
-                           v
-               +-----------------------+
-               |    Infrastructure     |   Persistence and external integrations
-               +-----------------------+
-                           |
-                           v
-               +-----------------------+
-               |      Application      |   Use cases and orchestration
-               +-----------------------+
-                           |
-                           v
-               +-----------------------+
-               |        Domain         |   Business rules and contracts
-               +-----------------------+
-
-   Tests are cross-cutting and may reference any production layer.
+Api             controllers, middleware, Program.cs, appsettings
+  ↓
+Infrastructure  EF Core, configurations, repositories, external HTTP clients
+  ↓
+Application     services, DTOs, validators, client interfaces
+  ↓
+Domain          entities, enums, exceptions, repository interfaces
 ```
 
-| Project | Path | Responsibility |
-| --- | --- | --- |
-| Domain | `src/TalebElm.Domain` | Entities, enums, domain exceptions, repository interfaces |
-| Application | `src/TalebElm.Application` | Service interfaces and implementations, DTOs, validators |
-| Infrastructure | `src/TalebElm.Infrastructure` | `AppDbContext`, entity configurations, repository implementations, `UnitOfWork`, DI wiring |
-| Api | `src/TalebElm.Api` | Controllers, middleware, composition root (`Program.cs`) |
-| Tests | `tests/TalebElm.Tests` | Unit, repository, and integration verification |
+| Project | Path | Owns |
+|---|---|---|
+| Domain | `src/TalebElm.Domain` | Entities, enums, domain exceptions, repository interfaces, `IUnitOfWork` |
+| Application | `src/TalebElm.Application` | Service interfaces and implementations, DTOs, validators, external client interfaces |
+| Infrastructure | `src/TalebElm.Infrastructure` | `AppDbContext`, entity configurations, repositories, `UnitOfWork`, DI wiring |
+| Api | `src/TalebElm.Api` | Controllers, middleware, composition root |
+| Tests | `tests/TalebElm.Tests` | Unit, repository, and integration tests |
 
----
-
-## 3. Layer 1 — Domain (business rules)
-
-**Path:** `src/TalebElm.Domain`
-
-The Domain layer models the platform's core concepts — `User`, `Track`, `Module`, `Lesson`, `LessonResource`, `Exam`, `TrackEnrollment`, `UserProgress` — along with their invariants, enumerations (`TrackStatus`, `LessonType`, `LessonResourceKind`, `UserRole`), domain exceptions, and repository contracts (`IRepository<T>`, entity-specific interfaces, `IUnitOfWork`).
-
-Containment rules:
-
-- Entities express state and invariants only (e.g., required names, ordering, uniqueness expectations).
-- Persistence needs are expressed as **interfaces**, never implementations.
-- The Domain references no other project and imports neither Entity Framework Core nor ASP.NET Core.
-
-Anti-patterns: persistence logic inside entities, HTTP or serialization concerns in entities, direct dependencies on infrastructure types.
-
----
-
-## 4. Layer 2 — Application (use cases)
-
-**Path:** `src/TalebElm.Application`
-
-The Application layer implements the platform's use cases — for example, create/track retrieval, exam submission, progress evaluation — as service classes behind explicit interfaces:
-
-- **Interfaces** (`Services/Abstraction/`): `IUserService`, `ITrackService`, `IModuleService`, `ILessonService`, `IExamService`, `IUserProgressService`, `IPasswordHasher`.
-- **Implementations** (`Services/Concrete/`): use-case orchestration depending only on Domain abstractions, normally `IUnitOfWork`. All business-logic decisions reside here.
-- **DTOs** (`DTOs/`): immutable `record` request/response contracts decoupling the HTTP surface from Domain entities.
-- **Validators** (`Validators/`): FluentValidation input rules.
-
-Containment rules:
-
-- No Entity Framework Core references (`DbContext`, `EntityTypeBuilder`).
-- No ASP.NET Core references (`HttpContext`, controllers).
-- No persistence technology assumptions (SQL Server vs. SQLite vs. managed storage are Infrastructure decisions).
-- Persistence access exclusively through `IUnitOfWork`; a separate `DbContext` abstraction in Application services is redundant and prohibited. `IUnitOfWork.SaveChangesAsync()` is the sole commit point.
-
----
-
-## 5. Layer 3 — Infrastructure (persistence and integration)
-
-**Path:** `src/TalebElm.Infrastructure`
-
-Infrastructure provides the concrete implementations requested by the inner layers:
-
-- `Persistence/DbContext/AppDbContext` — the single EF Core context.
-- `Persistence/Configurations/` — one `IEntityTypeConfiguration<T>` per entity (column constraints, relationships, `DeleteBehavior.Restrict`, unique indexes).
-- `Persistence/Repositories/` — repository implementations plus the `UnitOfWork` commit point.
-- `DependencyInjection.cs` — persistence and repository service registration.
-- `Migrations/` — committed EF Core migrations with a design-time context factory.
-- External integrations (messaging, file storage, email) when introduced.
-
-Containment rules: no business-rule decisions, no use-case orchestration, no controllers. Infrastructure answers **how** data is stored and retrieved; it does not define **what** the business rules are.
-
----
-
-## 6. Layer 4 — Api (presentation)
-
-**Path:** `src/TalebElm.Api`
-
-The Api layer is a thin HTTP adapter over Application use cases:
-
-- Controllers (`Controllers/`) translate HTTP requests into service calls and map results to HTTP responses.
-- Middleware (`Middlewares/`) implements cross-cutting pipeline behavior, including centralized domain-exception → status-code mapping.
-- `Program.cs` is the composition root: service registration, middleware ordering, and endpoint mapping.
-- `appsettings*.json` carries environment-specific, non-secret configuration.
-
-Containment rules: no business logic, no direct repository or `DbContext` access, no persistence decisions. Controller actions delegate to injected `I<Feature>Service` contracts and remain free of domain orchestration.
-
----
-
-## 7. Layer 5 — Tests (verification)
-
-**Path:** `tests/TalebElm.Tests`
-
-The test suite verifies behavior at three levels:
-
-- **Unit** — entity invariants, DTO contracts, validators, and service logic against mocked `IUnitOfWork`.
-- **Repository** — SQLite-backed verification of configurations, constraints, and relationship behavior.
-- **Integration** — controller and cross-layer relational-constraint coverage.
-
-Tests are intentionally placed outside the production dependency graph: they may reference any layer, while no production project references Tests.
-
-```bash
-dotnet test TalebElm.slnx
-```
-
----
-
-## 8. Project references
-
-Dependency direction is enforced at the project level:
+Project references:
 
 1. **Domain** references nothing.
 2. **Application** references **Domain**.
 3. **Infrastructure** references **Application** and **Domain**.
-4. **Api** references **Infrastructure** (transitively reaching Application and Domain).
-5. **Tests** may reference **Api**, **Application**, and **Domain** for verification purposes.
+4. **Api** references **Infrastructure**, which brings Application and Domain with it.
+5. **Tests** may reference any production project. No production project references Tests.
 
-These references are declared in the respective `.csproj` files and must not be inverted or bypassed.
+## 2. What each layer may and may not do
 
----
+**Domain** describes the business. Entities hold state and their own rules, enums name fixed sets
+of values, exceptions describe failures, and repository interfaces say what data is needed. Domain
+never imports Entity Framework Core or ASP.NET Core.
 
-## 9. Request lifecycle
+**Application** runs use cases. A service loads what it needs through `IUnitOfWork`, applies the
+rules, and returns DTOs. It never sees `DbContext`, `HttpContext`, or SQL.
 
-Example — `GET /api/tracks` (list tracks):
+**Infrastructure** answers "how is data stored". It maps entities to tables, implements the
+repository interfaces, and calls external services over HTTP. It contains no business rules.
 
-1. **Api** receives the HTTP request and binds/validates input.
-2. **Api** delegates to the injected Application service (e.g., `ITrackService`).
-3. **Application** executes the use case, querying persistence through `IUnitOfWork` without any EF Core coupling.
-4. **Infrastructure** executes the query via its repository implementation and returns mapped entities.
-5. **Application** maps the result to response DTOs and returns them.
-6. **Api** serializes the DTOs to JSON with the appropriate status code.
+**Api** translates HTTP. A controller binds input, calls one Application service, and returns a
+status code. Business decisions stay out of controllers.
 
-Domain rules participate at every step; no layer bypasses its adjacent boundary.
+**Tests** prove the behavior offline. EF Core tests use in-memory SQLite, external services use
+fakes, and nothing touches the network.
 
----
+## 3. One request, step by step
 
-## 10. Placement heuristic
+Example: `GET /api/tracks?page=1`.
 
-| Concern | Location |
-| --- | --- |
-| Business invariant, entity, or repository contract | Domain |
-| Use case, orchestration, DTO, or validator | Application |
-| EF Core mapping, repository implementation, or external integration | Infrastructure |
-| HTTP endpoint, middleware, or composition-root wiring | Api |
-| Behavioral verification | Tests |
+1. **Api** binds the query string and calls `ITrackService.GetPagedAsync`.
+2. **Application** validates the paging values and asks `IUnitOfWork.Tracks` for the page.
+3. **Infrastructure** runs the query through EF Core and returns the entities.
+4. **Application** maps entities to `TrackResponse` records.
+5. **Api** serializes the records and returns `200 OK`.
 
-For normative conventions — service and repository patterns, DTO naming, EF Core constraint catalog, validation, controller standards, and current implementation status — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md).
+If a rule fails, the service throws a domain exception and `ExceptionHandlingMiddleware` turns it
+into the right HTTP status. No layer skips the one next to it.
 
-## External services
+## 4. Where does this code go?
 
-TalebElm calls external services only through interfaces in Application, with typed HttpClient implementations in Infrastructure and business rules in Application services. Every asynchronous method accepts a CancellationToken. Background jobs are hosted services in Api that only call Application services (Decision 30).
+| The code is about… | Put it in |
+|---|---|
+| A business rule, entity, enum, or repository contract | Domain |
+| A use case, its orchestration, a DTO, or an input validator | Application |
+| A table mapping, query, migration, or external API call | Infrastructure |
+| An HTTP route, middleware, or startup wiring | Api |
+| Proof that behavior works | Tests |
 
-## CancellationToken
+## 5. Services
 
-New code must pass `HttpContext.RequestAborted` through the stack. Existing code migrates under the cancellation-token issue.
+The pattern is one interface plus one class. There is no CQRS and no MediatR.
+
+| Artifact | Location | Name | Example |
+|---|---|---|---|
+| Interface | `Application/Services/Abstraction/` | `I<Feature>Service` | `IExamService` |
+| Implementation | `Application/Services/Concrete/` | `<Feature>Service` | `ExamService` |
+
+Rules:
+
+1. Interfaces expose DTOs or plain values, never persistence types.
+2. Implementations depend on `IUnitOfWork` and other Application contracts only.
+3. Dependencies arrive through the constructor. Current services use a primary constructor:
+   `public class TrackService(IUnitOfWork unitOfWork, IValidator<CreateTrackRequest> validator)`.
+4. Services accept and return DTOs. `HttpContext` and user IDs are passed as values, never as
+   framework objects.
+5. Controllers call services. They never touch repositories or `DbContext`.
+
+Registration lives in two places, and `Program.cs` calls only these:
+
+```csharp
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
+```
+
+`AddApplication()` registers services and FluentValidation validators; `AddInfrastructure()`
+registers the `DbContext`, repositories, and `IUnitOfWork`.
+
+## 6. Repositories and the unit of work
+
+```csharp
+public interface IRepository<T> where T : BaseEntity
+{
+    Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default);
+    Task AddAsync(T entity, CancellationToken ct = default);
+}
+```
+
+Each entity gets an interface that inherits it, plus any query methods it needs:
+
+```csharp
+public interface ITrackRepository : IRepository<Track>
+{
+    Task<(IReadOnlyList<Track> Items, int TotalCount)> GetPagedAsync(
+        int page, int pageSize, bool publishedOnly, CancellationToken ct = default);
+}
+```
+
+`IUnitOfWork` exposes the repositories as properties and is the only place that saves:
+
+```csharp
+public interface IUnitOfWork
+{
+    IUserRepository Users { get; }
+    ITrackRepository Tracks { get; }
+    // … one property per repository …
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+```
+
+Rules:
+
+- Repositories add and query. `SaveChangesAsync()` is the single commit point, so several changes
+  are written together or not at all.
+- Application services never inject a `DbContext` or any DbContext-shaped interface. `IUnitOfWork`
+  is the seam; it is also the one thing tests have to mock.
+- Add a repository property only when its interface and implementation exist.
+
+## 7. Entity Framework Core
+
+| Artifact | Location |
+|---|---|
+| Context | `Infrastructure/Persistence/DbContext/AppDbContext.cs` |
+| Configurations | `Infrastructure/Persistence/Configurations/<Entity>Configuration.cs` |
+| Repositories | `Infrastructure/Persistence/Repositories/<Entity>Repository.cs` |
+| Migrations | `Infrastructure/Migrations/` |
+
+Rules:
+
+1. One `IEntityTypeConfiguration<T>` per entity, applied in `OnModelCreating`.
+2. Name the `DbSet` in plural. Entity Framework uses that name as the table name, so
+   `DbSet<UserProblemCompletion> UserProblemCompletions` creates `UserProblemCompletions`, not
+   `userProblemCompletions`.
+3. Generate migrations from `TalebElm.Infrastructure`, with Infrastructure as both project and
+   startup project:
+
+   ```bash
+   dotnet ef migrations add <Name> \
+     --project src/TalebElm.Infrastructure \
+     --startup-project src/TalebElm.Infrastructure
+   ```
+
+4. Never edit a migration that has already run on a real database. Add a new one.
+5. Use `EnsureCreated` in tests only, never in the app.
+
+Constraints that must stay in place:
+
+| Table | Constraint | Means |
+|---|---|---|
+| `Modules` | `UNIQUE(TrackId, Order)` | No two Modules share an order in one Track |
+| `Lessons` | `UNIQUE(ModuleId, Order)` | No two Lessons share an order in one Module |
+| `Exams` | `UNIQUE(ModuleId)` | At most one Exam per Module |
+| `TrackEnrollments` | `UNIQUE(UserId, TrackId)` | One enrollment per learner per Track |
+| `UserProgresses` | `UNIQUE(UserId, ModuleId)` | One progress row per learner per Module |
+| `UserExternalAccounts` | `UNIQUE(UserId, Platform)` | One linked account per platform |
+| `UserProblemCompletions` | `UNIQUE(UserId, ModuleProblemId)` | One completion per learner per problem |
+| `CapstoneProjects` | `UNIQUE(TrackId)`, `UNIQUE(TaskId)` | One capstone per Track, one per task |
+| `ProjectMilestones` | `UNIQUE(ProjectId, Order)`, `UNIQUE(ProjectId, WorkflowJobName)` | Milestones are ordered and named once |
+
+Learner data is never deleted by cascade. Every learning-path foreign key uses
+`DeleteBehavior.Restrict`, so a blocked delete fails in the database and becomes `409 Conflict`
+(see [`docs/DATABASE_ERD.md`](docs/DATABASE_ERD.md)).
+
+## 8. Errors
+
+One exception base type, one middleware, one status per kind of failure:
+
+```text
+Exception
+└── DomainException                 400 Bad Request
+     ├── ValidationException         400 Bad Request (invalid input)
+     ├── NotFoundException           404 Not Found
+     ├── ConflictException           409 Conflict (duplicate or blocked delete)
+     └── NotImplementedException     501 Not Implemented (deliberate placeholder)
+```
+
+Throw the most specific one where the rule fails:
+
+```csharp
+var track = await unitOfWork.Tracks.GetByIdAsync(id, ct)
+    ?? throw new NotFoundException($"Track {id} not found.");
+```
+
+`ExceptionHandlingMiddleware` writes an `application/problem+json` body. Validation failures add
+an `errors` object keyed by camelCase property name, so a client can highlight the right field.
+`409` is also returned when the database rejects a duplicate or a blocked delete; `UnitOfWork`
+translates those failures without leaking the provider message.
+
+Use `TalebElm.Domain.Exceptions.NotImplementedException` only for a deliberate placeholder, not for
+"not written yet".
+
+## 9. DTOs
+
+| Kind | Name | Example |
+|---|---|---|
+| Create input | `Create<Entity>Request` | `CreateTrackRequest` |
+| Update input | `Update<Entity>Request` | `UpdateLessonRequest` |
+| Submit input | `Submit<Entity>Request` | `SubmitExamAnswersRequest` |
+| Read output | `<Entity>Response` | `TrackResponse` |
+| Result output | `<Entity>ResultResponse` | `ExamResultResponse` |
+
+DTOs are `record` types, immutable, and live in `Application/DTOs/`. They never expose an entity,
+a navigation property, or a server-only field such as `ExamOption.IsCorrect`.
+
+## 10. Controllers
+
+- Derive from `ControllerBase` and carry `[ApiController]`.
+- Route prefix is `[Route("api/[controller]")]`.
+- Actions return `IActionResult` or `ActionResult<T>`.
+- An action calls one service method, then returns. No loops over repositories, no rules.
+- Protected routes get an explicit authorization policy; anonymous routes say so.
+
+## 11. Validation
+
+Input rules use **FluentValidation**. One validator per request DTO, in
+`Application/Validators/`, registered automatically by `AddApplication()`:
+
+```csharp
+public class CreateTrackRequestValidator : AbstractValidator<CreateTrackRequest>
+{
+    public CreateTrackRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.Description).NotEmpty().MaximumLength(1000);
+    }
+}
+```
+
+Set an upper bound on every string. Length rules and database column lengths must agree; when they
+disagree the database wins and the request fails with a `500` instead of a `400`.
+
+## 12. External services and cancellation
+
+External APIs are interfaces in Application (`ICodeforcesClient`, `IGitHubClient`), implemented in
+Infrastructure with a typed `HttpClient`. Business rules stay in Application, and tests use fakes
+so no test reaches the network.
+
+Every new async method takes `CancellationToken ct = default` as its last parameter and passes it
+down to EF Core or the HTTP call. Controllers pass `HttpContext.RequestAborted`.
+
+## 13. Tests
+
+| Level | What it checks |
+|---|---|
+| Unit | Entity rules, DTO contracts, validators, service logic with a mocked `IUnitOfWork` |
+| Repository / configuration | EF Core mapping, constraints, indexes, delete behavior, using in-memory SQLite |
+| Integration | Controller behavior, middleware, dependency injection, the full migration chain |
+
+Run everything with `dotnet test TalebElm.slnx`; details are in
+[`docs/development/testing.md`](docs/development/testing.md).

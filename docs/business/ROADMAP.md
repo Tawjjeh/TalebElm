@@ -1,7 +1,7 @@
 # TalebElm Product Roadmap
 
 > **Status discipline:** Every phase and deliverable is marked **Implemented** (present in code today), **Target** (decided for MVP rollout), or **Proposed** (design pending team decision).
-> All backend implementation follows Clean Architecture conventions described in [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md).
+> All backend implementation follows Clean Architecture conventions described in [`ARCHITECTURE.md`](../../ARCHITECTURE.md).
 
 ---
 

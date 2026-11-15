@@ -29,7 +29,7 @@ This index separates current code from planned product behavior. A feature docum
 | [API_ENDPOINTS.md](API_ENDPOINTS.md) | Current routes, target MVP routes, and who may call them |
 | [DATABASE_ERD.md](DATABASE_ERD.md) | Current and proposed data model |
 | [CLASS_FLOW.md](CLASS_FLOW.md) | Student flow and layer boundaries |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technical conventions for contributors |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical conventions for contributors |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Current source layout |
 | [LOCAL_SETUP.md](LOCAL_SETUP.md) | Local database connection string |
 | [business/BUSINESS_RULES.md](business/BUSINESS_RULES.md) | Binding product rules with Implemented/Target status per rule |

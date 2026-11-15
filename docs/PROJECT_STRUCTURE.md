@@ -69,4 +69,4 @@ TalebElm/
 - `Api` controllers call Application service interfaces and translate results to HTTP.
 - `Tests` verify all layers offline with SQLite in-memory and fakes.
 
-See [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for per-feature status, [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the learner flow, and [`ARCHITECTURE.md`](ARCHITECTURE.md) for conventions.
+See [`FEATURE_INDEX.md`](FEATURE_INDEX.md) for per-feature status, [`MVP_LEARNING_JOURNEY.md`](MVP_LEARNING_JOURNEY.md) for the learner flow, and [`ARCHITECTURE.md`](../ARCHITECTURE.md) for conventions.
