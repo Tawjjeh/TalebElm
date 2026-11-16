@@ -1,4 +1,5 @@
 using FluentValidation.TestHelper;
+using TalebElm.Application.DTOs.Requests;
 using TalebElm.Application.Validators;
 
 namespace TalebElm.Tests.UnitTests;
@@ -44,6 +45,20 @@ public class LoginRequestValidatorTest
     }
 
     [Fact]
+    public async Task Validate_EmailLongerThan256Characters_ShouldHaveValidationError()
+    {
+        var email = new string('a', 245) + "@example.com";
+
+        var request = new Application.DTOs.Requests.LoginRequestDTO(
+            email,
+            "Ahmed123");
+
+        var result = await _validator.TestValidateAsync(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Email);
+    }
+
+    [Fact]
     public async Task Validate_EmptyPassword_ShouldHaveValidationError()
     {
         var request = new Application.DTOs.Requests.LoginRequestDTO(
@@ -67,4 +82,15 @@ public class LoginRequestValidatorTest
         result.ShouldNotHaveAnyValidationErrors();
     }
 
+    [Fact]
+    public async Task Validate_PasswordExceedsMaxLength_ShouldHaveValidationError()
+    {
+        var request = new Application.DTOs.Requests.LoginRequestDTO(
+            "ahmed@example.com",
+            new string('a', 128) + "1");
+
+        var result = await _validator.TestValidateAsync(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Password);
+    }
 }

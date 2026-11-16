@@ -126,4 +126,17 @@ public class RegisterRequestValidatorTest
 
         result.ShouldHaveValidationErrorFor(x => x.Password);
     }
+
+    [Fact]
+    public async Task Validate_PasswordExceedsMaxLength_ShouldHaveValidationError()
+    {
+        var request = new RegisterRequestDTO(
+            "Ahmed",
+            "ahmed@example.com",
+            new string('a', 128) + "1");
+
+        var result = await _validator.TestValidateAsync(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Password);
+    }
 }
