@@ -10,5 +10,7 @@ public interface IUnitOfWork
     IUserProgressRepository UserProgresses { get; }
     ITrackEnrollmentRepository TrackEnrollments { get; }
     ILessonResourceRepository LessonResources { get; }
+    ITechnologyRepository Technologies { get; }
+    IResourceRepository Resources { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
