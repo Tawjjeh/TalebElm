@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Attach an exam to a Module and grade the learner's answers against its pass threshold. `ExamQuestion` and `ExamOption` are stored, and `ExamService.SubmitAsync` grades a submission on the server from the stored answer key (Decision 37), then writes `Score` and the sticky `PassedExam` flag to the learner's `UserProgress` row. Wiring the controller and the next-Module unlock (Decision 32) are still target.
+Attach an exam to a Module and grade the learner's answers against its pass threshold. `ExamQuestion` and `ExamOption` are stored, and `ExamService.SubmitAsync` grades a submission on the server from the stored answer key (Decision 37), then writes `Score` and the sticky `PassedExam` flag to the learner's `UserProgress` row. When `CompletedRequiredProblems` already holds, the same transaction unlocks the next Module in the Track (Decision 32). Wiring the controller and the problem-verified trigger for the gate remain target (#444).
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
