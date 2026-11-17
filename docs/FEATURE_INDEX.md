@@ -5,15 +5,15 @@ This index separates current code from planned product behavior. A feature docum
 | Document | Feature | Current state |
 |---|---|---|
 | [01-auth-identity.md](features/01-auth-identity.md) | User profiles and authentication | User fields (`PasswordHash`, `Role`), PBKDF2 password hashing, repositories, and unique email index exist; registration, login, tokens, and authorization policies are not implemented |
-| [02-tracks-content.md](features/02-tracks-content.md) | Tracks, Modules, and Lessons | Core entities, Track list/create service, and ordered Module/Lesson read services exist; delivery APIs are placeholders |
+| [02-tracks-content.md](features/02-tracks-content.md) | Tracks, Modules, and Lessons | Core entities, track creation and paging in `TrackService`, and ordered Module/Lesson read services exist; `GET /api/tracks` is live, the other delivery endpoints are placeholders |
 | [03-lessons-and-learning-resources.md](features/03-lessons-and-learning-resources.md) | Lesson content and source links | Lesson text and `LessonResource` entity/configuration/repository/migration exist; lesson delivery endpoints are placeholders |
-| [04-exams-management.md](features/04-exams-management.md) | Exams, questions, and results | `Exam`, `ExamQuestion`, `ExamOption` entities, configurations, and server-side grading (`ExamService.SubmitAsync`) exist; admin create/edit and controller wiring are missing |
-| [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md) | Track enrollment and per-module progress | `UserProgress` and `TrackEnrollment` persistence exist; the enrollment/unlock workflow and endpoints are not implemented |
-| [06-resource-hub.md](features/06-resource-hub.md) | Public Resource Hub | `Technology` and `Resource` entities, EF Core configurations, and migration exist; repositories, read/admin services, link-checker, and endpoints are target |
-| [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md) | Practice problems and external verification | `ModuleProblem`, `UserExternalAccount`, `UserProblemCompletion` entities, `UserExternalAccount` configuration/migration, and `ICodeforcesClient` exist; repositories, verification services, and endpoints are target |
+| [04-exams-management.md](features/04-exams-management.md) | Exams, questions, and results | `Exam`, `ExamQuestion`, `ExamOption` entities, configurations, and server-side grading (`ExamService.SubmitAsync`, which also writes `Score` and `PassedExam` to `UserProgress`) exist; admin create/edit, controller wiring, and the next-Module unlock are missing |
+| [05-student-enrollment-and-progression.md](features/05-student-enrollment-and-progression.md) | Track enrollment and per-module progress | `UserProgress` and `TrackEnrollment` persistence exist, and `TrackEnrollmentService.EnrollAsync` creates the enrollment plus the first Module's unlocked progress; the enroll endpoint, the dual-gated unlock, and the progress endpoints are not implemented |
+| [06-resource-hub.md](features/06-resource-hub.md) | Public Resource Hub | `Technology` and `Resource` entities, EF Core configurations, migration, and the `ITechnologyRepository` / `IResourceRepository` implementations exist; read/admin services, link-checker, and endpoints are target |
+| [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md) | Practice problems and external verification | `ModuleProblem`, `UserExternalAccount`, `UserProblemCompletion` entities, their configurations/migrations, `IUserExternalAccountRepository`, and the `ICodeforcesClient` contract exist; a Codeforces client, the verification services, and endpoints are target |
 | [08-health-and-error-handling.md](features/08-health-and-error-handling.md) | Health endpoint and exception mapping | Health route and registered exception middleware exist, including `409 Conflict` and `503` external outage mapping; most feature controllers still return `501` |
-| [09-capstone-project.md](features/09-capstone-project.md) | Capstone projects & track completion | `CapstoneProject` and `ProjectMilestone` entities exist; EF Core mapping, milestone verification, derived completion, and endpoints are target |
-| [10-automated-task-verification.md](features/10-automated-task-verification.md) | Automated GitHub task verification | `GitHubTask` entity, `ModuleProblem.GitHubTaskId` constraint, and `IGitHubClient` exist; `TaskVersion`, SHA integrity service, GitHub OAuth, and endpoints are target |
+| [09-capstone-project.md](features/09-capstone-project.md) | Capstone projects & track completion | `CapstoneProject` and `ProjectMilestone` entities and their EF Core configurations/migration exist; milestone verification, derived completion, and endpoints are target |
+| [10-automated-task-verification.md](features/10-automated-task-verification.md) | Automated GitHub task verification | `GitHubTask` entity, `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, and the `IGitHubClient` contract exist; a GitHub client, `TaskVersion`, the SHA integrity service, GitHub OAuth, and endpoints are target |
 
 ## Other Documents
 
@@ -29,7 +29,7 @@ This index separates current code from planned product behavior. A feature docum
 | [API_ENDPOINTS.md](API_ENDPOINTS.md) | Current routes, target MVP routes, and who may call them |
 | [DATABASE_ERD.md](DATABASE_ERD.md) | Current and proposed data model |
 | [CLASS_FLOW.md](CLASS_FLOW.md) | Student flow and layer boundaries |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technical conventions for contributors |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical conventions for contributors |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Current source layout |
 | [LOCAL_SETUP.md](LOCAL_SETUP.md) | Local database connection string |
 | [business/BUSINESS_RULES.md](business/BUSINESS_RULES.md) | Binding product rules with Implemented/Target status per rule |

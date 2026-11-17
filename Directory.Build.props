@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable rolling forward to newer major .NET runtimes without requiring an explicit environment variable -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+</Project>

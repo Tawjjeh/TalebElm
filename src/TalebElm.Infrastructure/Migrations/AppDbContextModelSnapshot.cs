@@ -17,6 +17,46 @@ namespace TalebElm.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId")
+                        .IsUnique();
+
+                    b.HasIndex("TrackId")
+                        .IsUnique();
+
+                    b.ToTable("CapstoneProjects", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CapstoneProjects_Title_NotEmpty", "length(trim(Title)) > 0");
+                        });
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
                 {
                     b.Property<Guid>("Id")
@@ -169,6 +209,11 @@ namespace TalebElm.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Type")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.HasKey("Id");
 
                     b.HasIndex("ModuleId", "Order")
@@ -179,6 +224,8 @@ namespace TalebElm.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Lessons_Order_Positive", "\"Order\" > 0");
 
                             t.HasCheckConstraint("CK_Lessons_Title_NotEmpty", "length(trim(Title)) > 0");
+
+                            t.HasCheckConstraint("CK_Lessons_Type_Valid", "Type IN (1, 2, 3)");
                         });
                 });
 
@@ -308,6 +355,60 @@ namespace TalebElm.Infrastructure.Migrations
                     b.ToTable("ModuleProblem", t =>
                         {
                             t.HasCheckConstraint("CK_ModuleProblems_GitHubTaskId_Value", "(Kind = 1 AND GitHubTaskId IS NULL) OR (Kind = 2 AND GitHubTaskId IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ModuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowJobName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleId");
+
+                    b.HasIndex("ProjectId", "Order")
+                        .IsUnique();
+
+                    b.HasIndex("ProjectId", "WorkflowJobName")
+                        .IsUnique();
+
+                    b.ToTable("ProjectMilestones", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProjectMilestones_Order_Positive", "\"Order\" > 0");
+
+                            t.HasCheckConstraint("CK_ProjectMilestones_Title_NotEmpty", "length(trim(Title)) > 0");
+
+                            t.HasCheckConstraint("CK_ProjectMilestones_WorkflowJobName_NotEmpty", "length(trim(WorkflowJobName)) > 0");
                         });
                 });
 
@@ -608,6 +709,49 @@ namespace TalebElm.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserProblemCompletion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DetailsJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalSubmissionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ModuleProblemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TaskVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("VerifiedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VerifiedHeadCommitSha")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleProblemId");
+
+                    b.HasIndex("UserId", "ModuleProblemId")
+                        .IsUnique();
+
+                    b.ToTable("UserProblemCompletions");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -649,6 +793,25 @@ namespace TalebElm.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_UserProgress_Score_Range", "Score >= 0 AND Score <= 100");
                         });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("Track");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
@@ -735,6 +898,24 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TalebElm.Domain.Entities.CapstoneProject", "Project")
+                        .WithMany("Milestones")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.Resource", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.User", "CreatedByUser")
@@ -790,6 +971,23 @@ namespace TalebElm.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TalebElm.Domain.Entities.UserProblemCompletion", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.ModuleProblem", "ModuleProblem")
+                        .WithMany()
+                        .HasForeignKey("ModuleProblemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ModuleProblem");
+                });
+
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
@@ -807,6 +1005,11 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("Module");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.CapstoneProject", b =>
+                {
+                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Exam", b =>
