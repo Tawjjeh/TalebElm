@@ -38,7 +38,7 @@ service outage returns `503` and leaves the learner's state unchanged.
 |---|---|
 | Solution builds with 0 warnings and every test passes | Registration, login, JWT issuance, and role policies |
 | Domain entities, EF Core configurations, and the SQLite migration chain | Wired controllers for modules, lessons, exams, progress, and users |
-| Password hashing (PBKDF2) | Next-Module unlock after a passed exam |
+| Password hashing (PBKDF2) and the Decision 32 unlock after a passing exam | The problem-verified trigger for that unlock |
 | Track listing (`GET /api/tracks`) and track creation in `TrackService` | Codeforces and GitHub automated problem verification |
 | Module and lesson reads with ordered content | Public Resource Hub endpoints |
 | Exam read and server-side grading (`ExamService.SubmitAsync`) | Capstone milestone verification and derived Track completion |
