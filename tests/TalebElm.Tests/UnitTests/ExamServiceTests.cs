@@ -46,8 +46,8 @@ public class ExamServiceTests
         _nextModule = new Module { Id = Guid.NewGuid(), TrackId = trackId, Order = 2 };
         _progress.UserId = _learnerId;
         _progress.ModuleId = _module.Id;
-        _progress.Module = _module; // the service reads progress.Module.TrackId / .Order
 
+        _modules.Setup(r => r.GetByIdAsync(_module.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_module);
         _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_exam);
         _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(_progress);
         _unitOfWork.SetupGet(u => u.Exams).Returns(_exams.Object);

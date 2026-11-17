@@ -82,8 +82,13 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         // Make checks for unlocking the next module
         if (progress.PassedExam && progress.CompletedRequiredProblems)
         {
+            // The progress row is loaded without its Module navigation, so read the
+            // Module explicitly instead of dereferencing progress.Module.
+            var module = await unitOfWork.Modules.GetByIdAsync(exam.ModuleId, ct)
+                ?? throw new NotFoundException($"Module {exam.ModuleId} was not found.");
+
             Module? nextModule = await unitOfWork.Modules
-                .GetNextModuleAsync(progress.Module.TrackId, progress.Module.Order, ct);
+                .GetNextModuleAsync(module.TrackId, module.Order, ct);
 
             if (nextModule is not null)
             {
