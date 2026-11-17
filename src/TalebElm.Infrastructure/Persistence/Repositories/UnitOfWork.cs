@@ -27,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
 
     public IExamRepository Exams { get; }
     public ITrackEnrollmentRepository TrackEnrollments { get; }
+    public IUserExternalAccountRepository UserExternalAccounts { get; }
 
     public ITechnologyRepository Technologies { get; }
     public IResourceRepository Resources { get; }
@@ -45,8 +46,7 @@ public class UnitOfWork : IUnitOfWork
         LessonResources = new LessonResourceRepository(_context);
         Technologies = new TechnologyRepository(_context);
         Resources = new ResourceRepository(_context);
-
-
+        UserExternalAccounts = new UserExternalAccountRepository(_context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)

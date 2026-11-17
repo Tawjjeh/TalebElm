@@ -12,5 +12,6 @@ public interface IUnitOfWork
     ILessonResourceRepository LessonResources { get; }
     ITechnologyRepository Technologies { get; }
     IResourceRepository Resources { get; }
+    IUserExternalAccountRepository UserExternalAccounts { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

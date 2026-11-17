@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<ITrackEnrollmentRepository, TrackEnrollmentRepository>();
         services.AddScoped<ITechnologyRepository, TechnologyRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
+        services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
 
         return services;
     }
