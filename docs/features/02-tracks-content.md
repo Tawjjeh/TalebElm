@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Let a learner choose a software-learning Track, then study its Modules and Lessons in order. Enrollment and lesson-source links have persistence contracts now, but their workflows and HTTP endpoints are not implemented.
+Let a learner choose a software-learning Track, then study its Modules and Lessons in order. Track listing is live at `GET /api/tracks`. Enrollment and lesson reads exist as Application services, but their HTTP endpoints are still target.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 

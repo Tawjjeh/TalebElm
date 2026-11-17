@@ -1,7 +1,7 @@
 # Feature Specification: Lessons & Learning Resources
 
 ## Status
-`Lesson` exists with `Title`, `Content`, `Order`, and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
+`Lesson` exists with `Title`, `Content`, `Order`, `Type` (`LessonType`, default `Text`, guarded by `CK_Lessons_Type_Valid`), and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
 
 ## MVP Objective
 Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the content author. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.

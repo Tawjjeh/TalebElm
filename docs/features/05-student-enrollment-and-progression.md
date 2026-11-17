@@ -60,7 +60,7 @@ The unique index on `(UserId, TrackId)` is implemented. Payment and attendance a
 - Add `ITrackEnrollmentService.EnrollAsync(Guid userId, Guid trackId)`.
 - Change progress queries to accept `userId` explicitly. Application must not read `HttpContext` or JWT claims.
 
-**Current status:** `TrackEnrollment` persistence (entity, repository, migration) exists, but no enrollment service/endpoint is wired. `IUserProgressService.GetMyProgressAsync()` still takes no user id and its implementation is a placeholder.
+**Current status:** `TrackEnrollment` persistence and `TrackEnrollmentService.EnrollAsync` exist: it checks the user and Track, rejects a duplicate enrollment with `409`, rejects a Track with no Modules with `400`, and creates the first Module's `UserProgress` row as unlocked. The enrollment endpoint is still target. `IUserProgressService.GetMyProgressAsync(userId)` reads the learner's rows; `ProgressController` still returns `501`.
 
 ## 4. API Contract
 

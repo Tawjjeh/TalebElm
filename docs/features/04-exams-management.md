@@ -2,7 +2,7 @@
 
 ## 1. MVP Scope & Objective
 
-Attach an exam to a Module and grade the learner's answers against its pass threshold. A passing result is intended to update that learner's progress and satisfy the exam gate for the next Module (which is governed by Decision 32); question storage and answer grading are not implemented yet.
+Attach an exam to a Module and grade the learner's answers against its pass threshold. `ExamQuestion` and `ExamOption` are stored, and `ExamService.SubmitAsync` grades a submission on the server from the stored answer key (Decision 37), then writes `Score` and the sticky `PassedExam` flag to the learner's `UserProgress` row. Wiring the controller and the next-Module unlock (Decision 32) are still target.
 
 ## 2. Database & Domain Contract (Owned by DB/Domain Team)
 
