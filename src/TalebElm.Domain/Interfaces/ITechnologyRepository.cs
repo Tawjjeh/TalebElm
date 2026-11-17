@@ -8,5 +8,3 @@ public interface ITechnologyRepository : IRepository<Technology>
 
     Task<Technology?> GetBySlugPathAsync(IReadOnlyList<string> slugs, CancellationToken ct = default);
 }
-
-

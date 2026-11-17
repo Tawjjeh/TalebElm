@@ -57,10 +57,17 @@ public class ResourceRepository(AppDbContext context) : IResourceRepository
 
         var totalCount = await query.CountAsync(ct);
 
+        // Guard the multiplication: (pageNumber - 1) * pageSize overflows int for a
+        // large page number, and SQLite clamps the resulting negative OFFSET to 0,
+        // which silently returns the first page instead of an empty one.
+        var offset = (long)(pageNumber - 1) * pageSize;
+        if (offset >= totalCount || offset > int.MaxValue)
+            return ([], totalCount);
+
         var items = await query
             .OrderBy(r => r.Title)
             .ThenBy(r => r.Id)
-            .Skip((pageNumber - 1) * pageSize)
+            .Skip((int)offset)
             .Take(pageSize)
             .ToListAsync(ct);
 

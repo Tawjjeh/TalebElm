@@ -106,6 +106,33 @@ public class ResourceRepositoryTests : SqliteTestBase
     }
 
     [Fact]
+    public async Task GetApprovedPagedAsync_WhenPageOverflows_ReturnsEmptyPage()
+    {
+        DbContext.Resources.AddRange(NewResource("A"), NewResource("B"));
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var (items, total) = await _repository.GetApprovedPagedAsync(
+            null, null, null, null, null, null, int.MaxValue, 20);
+
+        Assert.Empty(items);
+        Assert.Equal(2, total);
+    }
+
+    [Fact]
+    public async Task GetApprovedPagedAsync_WhenPageIsPastTheEnd_ReturnsEmptyPage()
+    {
+        DbContext.Resources.AddRange(NewResource("A"), NewResource("B"));
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var (items, total) = await _repository.GetApprovedPagedAsync(null, null, null, null, null, null, 5, 20);
+
+        Assert.Empty(items);
+        Assert.Equal(2, total);
+    }
+
+    [Fact]
     public async Task GetForHealthCheckAsync_ReturnsOnlyApproved()
     {
         DbContext.Resources.AddRange(
