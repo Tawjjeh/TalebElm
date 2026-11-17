@@ -31,6 +31,7 @@ public class CapstoneConfigurationTests
         Assert.Equal(150, milestone.FindProperty(nameof(ProjectMilestone.Title))!.GetMaxLength());
         Assert.Equal(2000, milestone.FindProperty(nameof(ProjectMilestone.Instructions))!.GetMaxLength());
         Assert.Equal(100, milestone.FindProperty(nameof(ProjectMilestone.WorkflowJobName))!.GetMaxLength());
+        Assert.False(milestone.FindProperty(nameof(ProjectMilestone.WorkflowJobName))!.IsNullable);
         AssertRestrictForeignKeys(milestone);
         AssertUnique(milestone, nameof(ProjectMilestone.ProjectId), nameof(ProjectMilestone.Order));
         AssertUnique(milestone, nameof(ProjectMilestone.ProjectId), nameof(ProjectMilestone.WorkflowJobName));
