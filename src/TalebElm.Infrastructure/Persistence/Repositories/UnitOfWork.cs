@@ -29,6 +29,9 @@ public class UnitOfWork : IUnitOfWork
     public ITrackEnrollmentRepository TrackEnrollments { get; }
     public IUserExternalAccountRepository UserExternalAccounts { get; }
 
+    public ITechnologyRepository Technologies { get; }
+    public IResourceRepository Resources { get; }
+
     public UnitOfWork(AppDbContext context, ILogger<UnitOfWork>? logger = null)
     {
         _context = context;
@@ -41,8 +44,9 @@ public class UnitOfWork : IUnitOfWork
         UserProgresses = new UserProgressRepository(_context);
         TrackEnrollments = new TrackEnrollmentRepository(_context);
         LessonResources = new LessonResourceRepository(_context);
+        Technologies = new TechnologyRepository(_context);
+        Resources = new ResourceRepository(_context);
         UserExternalAccounts = new UserExternalAccountRepository(_context);
-
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
