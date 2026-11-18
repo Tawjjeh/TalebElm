@@ -86,7 +86,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Full-graph DI integration test passes in Release and Debug modes.
   - Existing endpoints return valid JSON or correct HTTP status codes instead of `501 Not Implemented`.
   - `BlankDatabaseMigrationTests` stays green, proving a blank database reaches the latest schema.
-- **Issue Areas:** `architecture`, `layer:infrastructure`, `layer:application`, `layer:api`, `database`.
+- **Issue Areas:** `layer:infrastructure`, `layer:application`, `layer:api`, `layer:tests`, `database`.
 
 ---
 
@@ -107,7 +107,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Forbidden actions (e.g., student calling admin endpoints) return `403 Forbidden`.
   - Registration rejects duplicate emails with `409 Conflict`.
   - Login returns signed JWTs with verified claims; passwords are never logged or stored in plaintext.
-- **Issue Areas:** `feature:auth`, `layer:application`, `layer:api`, `security`.
+- **Issue Areas:** `layer:domain`, `layer:application`, `layer:api`, `security`.
 
 ---
 
@@ -128,7 +128,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Passing score (`score >= PassThreshold`) sets `PassedExam = true` and unlocks the next Module in the Track.
   - Retaking a passed exam with a lower score never clears `PassedExam` (sticky).
   - Locked modules return `403 Forbidden`, never `404 Not Found`.
-- **Issue Areas:** `feature:tracks`, `feature:exams`, `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`.
+- **Issue Areas:** `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`.
 
 ---
 
@@ -151,7 +151,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Learner completes framework task by pushing to GitHub default branch; platform automatically verifies test success and SHA integrity.
   - A learner with a passing exam but incomplete practice problems remains locked out of the next module.
   - Zero human-in-the-loop manual review or checklist gating.
-- **Issue Areas:** `feature:problems` (proposed label), `layer:domain`, `layer:infrastructure`, `layer:application`, `layer:api`.
+- **Issue Areas:** `layer:domain`, `layer:infrastructure`, `layer:application`, `layer:api`.
 
 ---
 
@@ -177,7 +177,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Admin can curate and publish resources.
   - Lesson resources and Hub resources share one underlying `Resource` entity.
   - Broken links are automatically detected and hidden from public views.
-- **Issue Areas:** `feature:resources` (proposed label), `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`.
+- **Issue Areas:** `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`.
 
 ---
 
@@ -197,7 +197,7 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Learners can view project milestones in order and submit repository names for automated verification.
   - Milestone unlock is forward-only, sticky, and 100% automated.
   - Track completion is derived automatically upon completion of the final milestone.
-- **Issue Areas:** `feature:capstone` (proposed label), `layer:domain`, `layer:application`, `layer:api`.
+- **Issue Areas:** `layer:domain`, `layer:application`, `layer:api`.
 
 ---
 
