@@ -1,6 +1,6 @@
 # User Stories and Acceptance Criteria
 
-These stories describe the MVP target. They are not a claim that the behavior exists. Current status per feature is in [FEATURE_INDEX.md](FEATURE_INDEX.md).
+These stories describe the MVP target. They are not a claim that the behavior exists. Current status per feature is in [FEATURE_INDEX.md](FEATURE_INDEX.md). Milestone assignments and scope boundaries are defined in [business/ROADMAP.md](business/ROADMAP.md).
 
 
 ## Actors
