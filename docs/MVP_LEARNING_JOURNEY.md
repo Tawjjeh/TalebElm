@@ -43,9 +43,9 @@ TalebElm helps a learner study software development through an ordered Track. Th
 | Track structure | Track, Module, Lesson entities; `TrackService` paging and creation; Module/Lesson read services; `GET /api/tracks` live | The remaining browse endpoints, wired to the existing services |
 | Lesson sources | Lesson text with `Type`, `LessonResource` entity/configuration/repository/migration, Lesson read services | Authoring and URL validation, lesson endpoints, shared Resource Hub |
 | Enrollment | `TrackEnrollment` persistence and `TrackEnrollmentService.EnrollAsync`, which unlocks the first Module; no endpoint | An enroll endpoint and the progress endpoints |
-| Exams | `Exam`, `ExamQuestion`, `ExamOption`; `ExamService.SubmitAsync` grades on the server and records `Score` / `PassedExam` | Admin authoring, controller wiring, and the exam gate unlock |
+| Exams | `Exam`, `ExamQuestion`, `ExamOption`; `ExamService.SubmitAsync` grades on the server, records `Score` / `PassedExam`, and unlocks the next Module when both stored gates already hold | Admin authoring and controller wiring |
 | Practice problems | `ModuleProblem`, `GitHubTask`, `UserExternalAccount`, `UserProblemCompletion` persistence; `ICodeforcesClient` / `IGitHubClient` contracts without implementations | Handle verification, solve verification, and automated GitHub task verification |
-| Progression | `UserProgress` with `PassedExam` and `CompletedRequiredProblems`, plus read services | The dual-gated unlock transaction and progress queries |
+| Progression | `UserProgress` with `PassedExam` and `CompletedRequiredProblems`, plus read services and the exam-side unlock | The shared gate (#444) and progress queries |
 | Resource Hub | `Technology` / `Resource` persistence and their repositories | 3-click anonymous public directory of curated resources across languages and topics |
 | Capstone | `CapstoneProject` / `ProjectMilestone` persistence | Milestone verification and derived track completion |
 | API | `GET /api/tracks` and `/api/health` are live; the other controllers return `501`; DI, validators, and exception middleware are registered; auth is not | Endpoints wired to Application service interfaces |
@@ -54,7 +54,7 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 1. Wire authentication and authorization policies so protected routes can resolve the current learner (Phase 1).
 2. Expose the existing Track, Module, Lesson, enrollment, exam, and progress services over HTTP (Phase 2).
-3. Implement practice-problem verification, handle verification, and the dual-gated unlock (Phase 3).
+3. Implement practice-problem verification, handle verification, and the problem-side unlock trigger (Phase 3).
 4. Deploy the public read-only Resource Hub (Phase 4, running in parallel).
 5. Implement capstone milestone verification and derived track completion (Phase 5).
 

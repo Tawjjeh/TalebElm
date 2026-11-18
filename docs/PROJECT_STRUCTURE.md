@@ -54,12 +54,12 @@ TalebElm/
 
 ## Remaining MVP Work (Tracked in Milestones M0 to M5)
 
-- **M0 Foundations:** Remaining `CancellationToken` propagation (`#432`, `#435`), content-rule enforcement (`#251`, `#422`), and optional `X-Correlation-ID` header (`#325`).
+- **M0 Foundations:** Remaining `CancellationToken` propagation (`#432`, `#435`), content-rule enforcement (`#251`), and optional `X-Correlation-ID` header (`#325`).
 - **M1 Identity:** Auth service, JWT configuration/validation, login throttling, `StudentOnly`/`AdminOnly` policies, Users endpoints, and auth integration tests.
-- **M2 Learning flow:** Remaining controller wiring, next-module unlock on exam pass (`#208`), `ExamService.CreateAsync`, `LessonType` column (`#446`), and admin authoring endpoints.
-- **M3 Automated Verification:** `TaskVersion` entity, remaining EF configurations/repositories (`#343`, `#345`, `#346`, `#415`), `CodeforcesClient`, `GitHubClient`, test fakes, verifiers, dual-gate unlock (`#444`), and endpoints.
-- **M4 Public Resource Hub:** `ITechnologyRepository` / `IResourceRepository` (`#418`), Hub read/admin services and endpoints, safe link-health checker, and shared `Resource` migration.
-- **M5 Capstone Projects:** EF mapping/migration (`#374`, `#388`), automated milestone verification, derived track completion evaluator, and learner Capstone endpoints.
+- **M2 Learning flow:** Remaining controller wiring, `ExamService.CreateAsync` (`#273`), and admin authoring endpoints.
+- **M3 Automated Verification:** `TaskVersion` entity, remaining EF mapping (`#343`, `#345`), `CodeforcesClient`, `GitHubClient`, test fakes, verifiers, the shared dual gate (`#444`), and endpoints.
+- **M4 Public Resource Hub:** Hub read/admin services and endpoints, safe link-health checker, and the two-step `Resource` migration.
+- **M5 Capstone Projects:** Automated milestone verification, derived track completion evaluator, and learner Capstone endpoints.
 
 ## Architecture Boundaries
 

@@ -100,7 +100,7 @@ public interface IExamService
 }
 ```
 
-**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `ExamService.SubmitAsync` validates submitted answers against `Exam.Questions`, grades strictly on the server, updates `UserProgress.Score` (latest wins) and `UserProgress.PassedExam` (sticky), and returns `ExamResultResponse` without `IsCorrect`. `CreateAsync` (#273) still throws domain `NotImplementedException`, and next-module unlock (#208) is not wired yet. `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
+**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `ExamService.SubmitAsync` validates submitted answers against `Exam.Questions`, grades strictly on the server, updates `UserProgress.Score` (latest wins) and `UserProgress.PassedExam` (sticky), and returns `ExamResultResponse` without `IsCorrect`. `CreateAsync` (#273) still throws domain `NotImplementedException`. The exam path unlocks the next Module when `CompletedRequiredProblems` already holds; the shared gate and the problem-side trigger remain target (#444). `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 
