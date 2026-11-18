@@ -7,20 +7,51 @@
 
 ## MVP boundary
 
-The MVP is a complete, self-contained backend platform covering the full learner and content-authoring lifecycle:
+TalebElm is an open-source .NET 10 Clean Architecture learning-platform backend that enforces genuine, verified progress through zero manual gating.
+
+The MVP covers the full learner and content-authoring lifecycle:
 
 > register or log in → browse and enroll in a published Track → study its Lessons → submit a server-graded Exam → complete the required Codeforces and GitHub practice problems → unlock the next Module → complete the Track Capstone project → browse or curate the public Resource Hub.
 
+### Scope boundaries and rationale
+
+| Area | In MVP | Out of MVP | Rationale |
+|---|---|---|---|
+| **Identity & Access** | Email + PBKDF2 password registration, login, signed JWT bearer tokens, `StudentOnly` and `AdminOnly` authorization policies. | Social sign-in, MFA, password reset emails, user profile pictures. | Secure email/password authentication is sufficient for learner progress tracking and policy enforcement; secondary auth features add integration surface without improving core learning flow. |
+| **Learning Path Delivery** | Hierarchical Track → Module → Lesson delivery, ordered display, published-only visibility, explicit enrollment (`TrackEnrollment`). | Dynamic prerequisite graphs, multi-track branching, non-linear module paths, course recommendations. | Linear ordered tracks provide clear, unambiguous progression without graph scheduling complexity. |
+| **Assessment & Grading** | Multiple-choice Exams graded strictly server-side from stored answer keys, unlimited retakes without cooldown, latest score recorded, sticky `PassedExam`. | Timed exams, cooldown windows, essay/free-form grading, exam attempt history tables. | Unlimited retakes with sticky pass encourage mastery; storing full historical attempts adds data volume without changing current progression state. |
+| **Practice Verification** | 100% automated verification: Codeforces algorithmic solves via public API (`user.status`) + practical framework tasks verified via GitHub REST API (template provenance, default-branch workflow CI success, Git blob/tree SHA matches against `TaskVersion`). | In-browser code editor/compiler, live contest hosting, platform-hosted test runner sandboxes. | Real software engineers work in local IDEs, git repositories, and specialized judges; hosting compilers or sandboxes creates high operational cost and unnecessary security attack surfaces. |
+| **Progression Gating** | Dual-gated sticky forward-only module unlock: next Module unlocks only when both exam passed (if present) and required practice problems solved (if present). Admin manual unlock for support. | Manual checklist approvals, peer reviews as blocking gates, time-delayed module drip, automatic re-locking. | Zero manual gating ensures consistent progression standards for every learner; sticky unlock guarantees achieved progress is never lost. |
+| **Resource Hub** | Anonymous 3-click hierarchy (`Language` → `Framework/Technology` → `Topic`), keyword search, filters, Admin curation, scheduled SSRF-safe link health checker. | Unmoderated community submissions, upvoting/ranking algorithms, user bookmark collections. | Curated high-signal index provides immediate utility without account friction; open unmoderated submissions risk spam and broken links before curation tooling matures. |
+| **Capstone Projects** | Cumulative portfolio project per Track across ordered `ProjectMilestone`s verified automatically via GitHub tasks; derived Track completion. | Human mentor project reviews, issued PDF/blockchain certificates, multi-student team projects. | Automated milestone verification proves hands-on competence without subjective grading bottlenecks; certificates remain out of scope for the MVP backend. |
+| **Commercial Features** | 100% Free and Open Source under GPL-3.0. | Paid tiers, subscriptions, paywalls, checkout, payment gateway integrations. | TalebElm is built as open public educational infrastructure. |
+
+### Verifiable exit criteria
+
+The MVP is complete when all of the following conditions are satisfied:
+
+1. **Milestones closed:** All 6 milestones ([M0](https://github.com/Tawjjeh/TalebElm/milestone/1) through [M5](https://github.com/Tawjjeh/TalebElm/milestone/6)) have all their assigned issues implemented and closed on GitHub.
+2. **Clean build:** `dotnet build TalebElm.slnx` compiles with 0 warnings and 0 errors in both Debug and Release configurations.
+3. **Comprehensive test suite:** `dotnet test TalebElm.slnx` passes with 0 failures and 0 skipped tests, covering unit tests, integration tests, DI full-graph resolution, and blank-database migration chains.
+4. **Documentation audit:** `python3 scripts/check-docs.py` passes across all public documentation files with zero broken links, invalid anchors, or table column mismatches.
+5. **End-to-end learning loop verified:** A complete automated end-to-end integration test proves that a learner registers, logs in, enrolls in a published track, reads lessons, submits a passing exam, completes required practice problems, unlocks the subsequent module via the dual gate, completes all capstone milestones, and attains derived track completion with zero manual intervention.
+
+### Milestone mapping
+
 | Milestone | Scope | Done when |
 |---|---|---|
-| **M0 Foundations** | DI baseline, validation errors, content guards, cancellation tokens, logging, API wiring, CI health | The API starts cleanly, returns real responses, and the build, tests, and blank-database migration check are green. |
-| **M1 Identity** | Registration, login, JWT, `StudentOnly` / `AdminOnly`, users API, login throttling | A learner can register, log in, and reach a protected route; 401/403/409 behave correctly. |
-| **M2 Learning flow** | Tracks, Modules, Lessons, Exams, Progress, server-side grading, sticky unlocking, lesson type and authoring fields | The full study loop works and a pass unlocks only the next Module. |
-| **M3 Automated Verification** | External accounts, Codeforces handle and solve verification, GitHub OAuth, `GitHubTask` and `TaskVersion` SHA integrity checks, `ModuleProblem`, `UserProblemCompletion`, dual-gate unlock | Required Codeforces problems and GitHub tasks are verified automatically and the dual gate blocks or unlocks correctly. |
-| **M4 Public Resource Hub** | Technology tree, `Resource` persistence and repositories, anonymous browse/search/filters, Admin curation, safe link-health checker with SSRF rules, shared `LessonResource` migration | Visitors browse and filter resources without logging in, broken links are flagged automatically, and Admins curate unified resources. |
-| **M5 Capstone Projects** | `CapstoneProject` and `ProjectMilestone` persistence, milestone verification via GitHub tasks, derived Track completion, learner Capstone endpoints | Learners complete ordered capstone milestones automatically and Track completion derives cleanly with zero manual gating. |
+| [**M0 Foundations**](https://github.com/Tawjjeh/TalebElm/milestone/1) | DI baseline, validation errors, content guards, cancellation tokens, logging, API wiring, CI health | The API starts cleanly, returns real responses, and the build, tests, and blank-database migration check are green. |
+| [**M1 Identity**](https://github.com/Tawjjeh/TalebElm/milestone/2) | Registration, login, JWT, `StudentOnly` / `AdminOnly`, users API, login throttling | A learner can register, log in, and reach a protected route; 401/403/409 behave correctly. |
+| [**M2 Learning flow**](https://github.com/Tawjjeh/TalebElm/milestone/3) | Tracks, Modules, Lessons, Exams, Progress, server-side grading, sticky unlocking, lesson type and authoring fields | The full study loop works and a pass unlocks only the next Module. |
+| [**M3 Automated Verification**](https://github.com/Tawjjeh/TalebElm/milestone/4) | External accounts, Codeforces handle and solve verification, GitHub OAuth, `GitHubTask` and `TaskVersion` SHA integrity checks, `ModuleProblem`, `UserProblemCompletion`, dual-gate unlock | Required Codeforces problems and GitHub tasks are verified automatically and the dual gate blocks or unlocks correctly. |
+| [**M4 Public Resource Hub**](https://github.com/Tawjjeh/TalebElm/milestone/5) | Technology tree, `Resource` persistence and repositories, anonymous browse/search/filters, Admin curation, safe link-health checker with SSRF rules, shared `LessonResource` migration | Visitors browse and filter resources without logging in, broken links are flagged automatically, and Admins curate unified resources. |
+| [**M5 Capstone Projects**](https://github.com/Tawjjeh/TalebElm/milestone/6) | `CapstoneProject` and `ProjectMilestone` persistence, milestone verification via GitHub tasks, derived Track completion, learner Capstone endpoints | Learners complete ordered capstone milestones automatically and Track completion derives cleanly with zero manual gating. |
 
 The milestone names above match the GitHub milestones (`M0` through `M5`). Every open issue belongs to one of these six MVP milestones.
+
+### Progression unlock rule
+
+A Module unlocks its successor if and only if both its exam gate and its problem gate hold, evaluated inside an atomic UnitOfWork transaction as specified in [Decision 32](../OPEN_DECISIONS.md) and [Business Rule P-2](BUSINESS_RULES.md#6-progress-tracking-unlock).
 
 ---
 
@@ -167,3 +198,29 @@ Phase 0 includes the DI baseline, content guards, validation errors, cancellatio
   - Milestone unlock is forward-only, sticky, and 100% automated.
   - Track completion is derived automatically upon completion of the final milestone.
 - **Issue Areas:** `feature:capstone` (proposed label), `layer:domain`, `layer:application`, `layer:api`.
+
+---
+
+## After the MVP
+
+The MVP boundary above is intentionally closed. Once all MVP exit criteria are met and the six milestones are closed, future work will expand platform breadth, supported languages, and automation depth based on community feedback.
+
+### Proposed directions
+
+- **Expanded Starter Task Library:** Add new framework task templates covering microservices, caching, message queues, relational database migrations, and resilient HTTP clients.
+- **Additional Learning Tracks:** Introduce official tracks following .NET 10, such as Go (systems and backend services), Python (backend engineering and data platforms), or TypeScript/Node.js.
+- **Additional Problem Verification Platforms:** Expand `IProblemVerifier` to support additional competitive and practice platforms (such as LeetCode or AtCoder) once reliable public APIs or verification contracts exist.
+- **Community Resource Submissions:** Allow authenticated community members to propose links for the Resource Hub, guarded by automated SSRF filtering, domain blocklists, and reachability probes before entering an Admin curation queue.
+- **Platform-Owned Ephemeral Runners:** Provide webhook-triggered ephemeral runner sandboxes (isolated containers or microVMs) for tamper-proof GitHub task verification when advanced security guarantees are needed.
+- **Offline Exports & Verifiable Records:** Provide cryptographically signed completion records and exportable offline documentation packages for learners who complete a Track.
+
+### Active community discussions
+
+Join the discussion on these post-MVP directions:
+
+- [After the MVP: what should we build first?](https://github.com/Tawjjeh/TalebElm/discussions/538)
+- [Which tracks should follow .NET?](https://github.com/Tawjjeh/TalebElm/discussions/539)
+- [Resource Hub: which languages should seed the index?](https://github.com/Tawjjeh/TalebElm/discussions/483)
+- [Resource Hub: which source types and curation rules matter most?](https://github.com/Tawjjeh/TalebElm/discussions/540)
+- [Practice verification feedback: Codeforces and repository tasks](https://github.com/Tawjjeh/TalebElm/discussions/541)
+
