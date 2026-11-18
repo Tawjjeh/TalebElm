@@ -8,6 +8,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "docs" / "README.md"
 MD_LINK = re.compile(r"(?<!\!)\[[^\]]*\]\(([^)]+)\)")
+REPO_PATH = re.compile(r"`((?:docs/|src/|tests/|scripts/|\.github/)[^`\s]+)`")
+EXTERNAL_TEMPLATE_PATHS = {
+    ".github/workflows/test.yml",
+}
 
 errors = []
 
@@ -131,6 +135,14 @@ for path in public_files:
                 errors.append(f"{path}:{idx}: forbidden private term referenced")
         if "$\\" in line:
             errors.append(f"{path}:{idx}: LaTeX token detected")
+        for m in REPO_PATH.finditer(line):
+            candidate = m.group(1).rstrip(":,.;()\"'")
+            if any(c in candidate for c in ["*", "<", ">", "{", "}", "$"]):
+                continue
+            if candidate in EXTERNAL_TEMPLATE_PATHS:
+                continue
+            if not (ROOT / candidate).exists():
+                errors.append(f"{path}:{idx}: backticked repository path does not exist: {candidate}")
         for m in MD_LINK.finditer(line):
             target = m.group(1).strip()
             # handle angle-bracketed links
