@@ -6,18 +6,18 @@ This directory contains visual brand assets for the TalebElm project repository.
 
 | File | Type | Dimensions | Purpose |
 |---|---|---|---|
-| `banner-light.svg` | Vector (outline SVG) | 900 x 240 | Centered light-theme calligraphy banner for README |
-| `banner-dark.svg` | Vector (outline SVG) | 900 x 240 | Centered dark-theme calligraphy banner for README |
-| `banner-light.png` | Raster (PNG) | 900 x 240 | Rendered light-theme banner |
-| `banner-dark.png` | Raster (PNG) | 900 x 240 | Rendered dark-theme banner |
+| `banner-light.svg` | Vector (outline SVG) | 1800 x 480 | Centered light-theme Ruq'ah calligraphy banner for README |
+| `banner-dark.svg` | Vector (outline SVG) | 1800 x 480 | Centered dark-theme Ruq'ah calligraphy banner for README |
+| `banner-light.png` | Raster (PNG) | 1800 x 480 | Rendered light-theme banner (#f8fafc background) |
+| `banner-dark.png` | Raster (PNG) | 1800 x 480 | Rendered dark-theme banner (#0d1117 background) |
 | `banner-1800x480.svg` | Vector (outline SVG) | 1800 x 480 | Wide minimalist banner in pure Ruq'ah script |
 | `banner-1800x480.png` | Raster (PNG) | 1800 x 480 | Rendered wide minimalist banner (aspect ratio 3.75:1) |
-| `social-preview.svg` | Vector (SVG) | 1280 x 640 | Social card layout |
-| `social-preview.png` | Raster (PNG) | 1280 x 640 | GitHub Open Graph social preview (1280 x 640) |
+| `social-preview.svg` | Vector (SVG) | 1280 x 640 | Open Graph social card layout |
+| `social-preview.png` | Raster (PNG) | 1280 x 640 | GitHub Open Graph social preview (uploaded via Settings > General > Social preview) |
 
 ## Typography & Calligraphy Attribution
 
-The Arabic calligraphy "طالب علم" (TalebElm, meaning "seeker of knowledge") is rendered in the traditional Ruq'ah style using the open-source **Aref Ruqaa** font:
+The Arabic calligraphy طالب علم (TalebElm) is rendered in the traditional Ruq'ah style using the open-source **Aref Ruqaa** font:
 
 - **Font:** Aref Ruqaa Bold (`ArefRuqaa-Bold.ttf`)
 - **Author:** Khaled Hosny and The Aref Ruqaa Project Authors (<https://github.com/alif-type/aref-ruqaa>)

@@ -1,89 +1,70 @@
 # Contributing to TalebElm
 
-This page covers setup, the path from issue to merge, and what a pull request must contain. Coding
-rules live in [`docs/development/coding-standards.md`](docs/development/coding-standards.md), and
-"done" is defined in [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md).
+We are glad you want to help build TalebElm. Every contribution helps make open-source software engineering education more rigorous and accessible.
 
-## 1. Set up
+## Your first contribution
 
-You need Git, the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Python 3.
+Follow these five steps from finding an issue to submitting your change:
 
-```bash
-git clone https://github.com/Tawjjeh/TalebElm.git
-cd TalebElm
-dotnet restore TalebElm.slnx && dotnet build TalebElm.slnx && dotnet test TalebElm.slnx
-python3 scripts/check-docs.py
-```
+1. **Find an open issue:** Look for issues labeled `help wanted`, or filter by [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee) if you are new to the repository.
+2. **Ask to take it:** Leave a comment on the issue describing your planned approach, which layer you will touch, and what test you will add.
+3. **Wait for assignment:** Work begins only after an owner assigns the issue to you and confirms your plan. Check that nobody else is assigned before starting.
+4. **Create a small branch with tests:** Fork the repository, create a branch from latest `upstream/main`, write your code and tests, and run local verification:
+   ```bash
+   git fetch upstream
+   git switch -c feat/module-unlock upstream/main
+   dotnet build TalebElm.slnx
+   dotnet test TalebElm.slnx
+   python3 scripts/check-docs.py
+   ```
+   To test the API locally in development:
+   ```bash
+   dotnet run --project src/TalebElm.Api
+   curl http://localhost:5236/api/health
+   ```
+5. **Submit your pull request:** Commit with a conventional prefix (`feat:`, `fix:`, `docs:`, `test:`), push to your fork, and open a PR:
+   ```bash
+   git commit -m "feat(application): implement module unlock rule (#123)"
+   git push -u origin feat/module-unlock
+   ```
 
-All of them must pass on a fresh clone. If one fails, say so in an issue instead of working around
-it. Database setup, migration commands, and common errors are in
-[`docs/development/getting-started.md`](docs/development/getting-started.md).
+## The green-light rule
 
-## 2. Get the green light
+Work begins only after an issue is assigned to you.
+Unassigned pull requests will be closed kindly without review so contributors do not spend time on duplicate or overlapping work.
+If you notice a bug or want to propose a change that does not have an open issue yet, open an issue first and wait for discussion.
 
-Work starts only when an issue has `help wanted` and is assigned to you.
+## What a good pull request looks like
 
-1. Find an open issue. Start with
-   [`good first issue` + `help wanted`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22+no%3Aassignee).
-2. Comment with your plan: what you will change, which files you expect to touch, and the test you
-   will add.
-3. Wait for a reply and an assignment, and check that nobody else is assigned.
+- **Focused topic:** One slice of work per pull request, touching only the files required for that change.
+- **Small footprint:** Keep the diff under about 200 lines including tests so reviews can be timely and thorough.
+- **Automated tests:** Every logic change includes unit or integration tests that prove the behavior and would fail without it.
+- **Passing checks:** `dotnet build`, `dotnet test`, and `python3 scripts/check-docs.py` pass cleanly with zero warnings or errors.
+- **Linked issue:** The description includes `Closes #N` so the corresponding issue closes automatically upon squash-merge.
 
-If the issue is unclear, ask in the issue. If you found a bug that has no issue, open one with the
-steps to reproduce it. A pull request for work nobody approved may be closed without review.
+## What happens next
 
-## 3. Branch and commit
+- Automated CI runs the test suite and verifies documentation formatting on every commit pushed to your branch.
+- A maintainer reviews your code, checks architectural boundaries, and leaves actionable line comments if changes are needed.
+- Once checks pass and the review is approved, an owner squash-merges your branch into `main` as a single commit.
+- Contributors do not merge their own pull requests; maintainers handle squashing and closing.
 
-Work on a fork; `main` is protected.
+## Ask for help
 
-```bash
-git clone https://github.com/<YourUsername>/TalebElm.git
-cd TalebElm
-git remote add upstream https://github.com/Tawjjeh/TalebElm.git
-git fetch upstream
-git switch -c feat/track-enrollment-endpoint upstream/main
+If you have questions about architecture or need help with a failing test, ask directly on your issue thread or start a topic in [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
 
-git commit -m "feat: add track enrollment endpoint"
-git push --set-upstream origin feat/track-enrollment-endpoint
-```
+## Please don't
 
-Use one of these branch prefixes: `feat/`, `fix/`, `docs/`, `test/`, `refactor/`, `chore/`,
-`ci/`. Commit subjects use the same prefixes and the imperative mood, for example
-`fix: reject an empty exam title`.
+- Do not open unsolicited refactoring pull requests, reformatting changes, or cosmetic rewrites of existing code.
+- Do not modify files under `.github/workflows` without explicit maintainer agreement on an issue first.
+- Do not open promotional, marketing, or machine-generated placeholder pull requests.
 
-## 4. What the pull request must contain
+## Standards and references
 
-- **One slice of work.** One endpoint, one fix, one migration. Around 200 changed lines, tests
-  included, is easy to review.
-- **Tests that prove the behavior** and would fail without the change. Use SQLite for EF Core
-  mapping. Never call a real external API in a test.
-- **No secrets and no database files.** No tokens, passwords, connection strings, or `*.db` files.
-- **Docs updated in the same pull request** when behavior, a route, a rule, or a status marker
-  changes.
-- **The issue linked** with `Closes #N` in the description, so it closes when the pull request is
-  squashed.
-- **The template filled in honestly:** summary, layer, related issue, and the checklist.
-
-## 5. Review and merge
-
-Opening a pull request that is not a draft asks one reviewer to look at it automatically; you do
-not need to request anyone. `main` requires a passing `build-and-test` check, one approving review,
-and all conversations resolved.
-
-Push more commits to the same branch when you get feedback. Do not force-push while a review is
-open; it erases the reviewer's line notes. Merging is a squash, so one pull request becomes one
-commit on `main`.
-
-## 6. Where to ask
-
-- Questions and ideas: [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
-- Bugs and documentation errors: the issue templates.
-- Security problems: [`SECURITY.md`](SECURITY.md), never a public issue.
-- Unfriendly behavior: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
-
-## Do not
-
-- Start work before the issue is assigned to you.
-- Mix unrelated changes into one pull request.
-- Commit secrets, connection strings, or `*.db` files.
-- Reformat files you did not need to change.
+- **Coding standards:** [`docs/development/coding-standards.md`](docs/development/coding-standards.md) details layer boundaries and validation patterns.
+- **Definition of done:** [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) covers PR acceptance criteria.
+- **Labeling rules:** [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md) documents the 14-label scheme and categorization conventions.
+- **Local environment:** [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md) provides database connection strings and migration instructions.
+- **Getting started:** [`docs/development/getting-started.md`](docs/development/getting-started.md) walks through the full local dev environment setup.
+- **Security:** Report vulnerabilities privately according to [`SECURITY.md`](SECURITY.md).
+- **Code of Conduct:** All participation is governed by our [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).

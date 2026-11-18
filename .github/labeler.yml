@@ -1,0 +1,41 @@
+layer:domain:
+  - changed-files:
+      - any-glob-to-any-file: 'src/TalebElm.Domain/**/*'
+
+layer:application:
+  - changed-files:
+      - any-glob-to-any-file: 'src/TalebElm.Application/**/*'
+
+layer:infrastructure:
+  - changed-files:
+      - any-glob-to-any-file: 'src/TalebElm.Infrastructure/**/*'
+
+layer:api:
+  - changed-files:
+      - any-glob-to-any-file: 'src/TalebElm.Api/**/*'
+
+layer:tests:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**/*'
+          - '*.md'
+          - '.github/**/*.md'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/TalebElm.Infrastructure/Data/**/*'
+          - 'src/TalebElm.Infrastructure/Configurations/**/*'
+          - 'src/TalebElm.Infrastructure/Migrations/**/*'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/Security/**/*'
+          - 'src/**/Auth*/**/*'
+          - 'src/**/Password*/**/*'
+          - 'src/**/Password*.cs'
