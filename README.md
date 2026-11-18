@@ -1,69 +1,62 @@
 # TalebElm
 
 [![.NET CI](https://github.com/Tawjjeh/TalebElm/actions/workflows/ci.yml/badge.svg)](https://github.com/Tawjjeh/TalebElm/actions/workflows/ci.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/download)
 
-TalebElm is an open-source backend for a software engineering learning platform that enforces
-real progress. A learner studies ordered Modules inside a Track and cannot move forward until the
-server verifies two things independently: the Module exam was passed and every required practice
-problem was solved on an external platform (Codeforces or GitHub).
+A software engineering learning platform where the server, not a checkbox, decides when you unlock the next module.
 
-No self-reporting. No "mark as done" button. The same rule applies to every learner, enforced by
-the same server code, so a completed Module always means the same thing.
+## What it is
 
-The stack is .NET 10, ASP.NET Core, Entity Framework Core with SQLite, and Clean Architecture
-across four layers: Domain, Application, Infrastructure, and Api.
+TalebElm is an open-source backend for learning software engineering in a fixed order. A learner
+enrolls in a Track: a sequence of Modules, each with ordered Lessons, an optional Exam, and optional
+practice problems. Progress is earned, not declared: exams are graded on the server, and practice
+solves are checked against the learner's linked Codeforces or GitHub account. A finished Module
+therefore means the same thing for every learner.
 
-## How verification works
+## How it works
 
-A learner cannot unlock the next Module until both gates clear in the same transaction:
+1. Enroll in a Track and start at its first Module.
+2. Study the Module's Lessons in order.
+3. Submit the Module Exam; the server grades every answer and stores the score and pass flag.
+4. Solve the Module's required practice problems on the linked external account.
+5. When both gates hold, the next Module unlocks. Unlocks are forward-only and sticky.
 
-```
-examGate    = no exam on this Module  OR  exam score >= PassThreshold
-problemGate = no required problems    OR  all required problems solved externally
-```
+The unlock rule, in one sentence: a Module unlocks its successor only when there is a next Module,
+the exam is passed or the Module has none, and every required problem is verified or the Module has
+none ([Business Rule P-2](docs/business/BUSINESS_RULES.md), section 6). The
+exam side is implemented and covered by `ExamProgressionTests`; the problem-side trigger is still
+open in [#444](https://github.com/Tawjjeh/TalebElm/issues/444).
 
-For Codeforces problems, the server calls the Codeforces API and checks for an `OK` verdict on
-the learner's linked account. For GitHub tasks, it checks that the linked repository was created
-from the official template, that the latest CI run succeeded, and that the workflow file and test
-tree SHA match a registered version — so editing the tests to force a pass is detected.
+## The idea
 
-A pass is sticky: retaking the exam and scoring lower does not revert the unlock. An external
-service outage returns `503` and leaves the learner's state unchanged.
-
-## What works today
-
-| Working | Still to build |
+| Part | One line |
 |---|---|
-| Solution builds with 0 warnings and every test passes | Registration, login, JWT issuance, and role policies |
-| Domain entities, EF Core configurations, and the SQLite migration chain | Wired controllers for modules, lessons, exams, progress, and users |
-| Password hashing (PBKDF2) and the Decision 32 unlock after a passing exam | The problem-verified trigger for that unlock |
-| Track listing (`GET /api/tracks`) and track creation in `TrackService` | Codeforces and GitHub automated problem verification |
-| Module and lesson reads with ordered content | Public Resource Hub endpoints |
-| Exam read and server-side grading (`ExamService.SubmitAsync`) | Capstone milestone verification and derived Track completion |
-| Track enrollment and progress services | |
-| Field-keyed validation errors, exception middleware, and `traceId` in every error response | |
-| `GET /api/health`, OpenAPI/Swagger in Development | |
+| **Tracks** | Ordered Modules and Lessons, with at most one Exam per Module. |
+| **Verified problems** | Codeforces solves and GitHub tasks, checked against a linked account instead of self-reported. |
+| **Resource Hub** | A public, browsable Technology tree of curated resources. Planned. |
+| **Capstone** | One project per Track, delivered in milestones that CI verifies. Planned. |
 
-[`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) tracks every feature one by one.
+## Status
 
-## MVP milestones
+| Area | Works today | Next |
+|---|---|---|
+| Identity | Password hashing (PBKDF2), unique email, repositories | Register, login, JWT, role policies |
+| Tracks and lessons | Ordered read services, `GET /api/tracks` | Module, lesson, and authoring endpoints |
+| Exams | Server-side grading, score and pass persisted, the exam-side unlock | Exam endpoints, admin authoring, the problem-side trigger ([#444](https://github.com/Tawjjeh/TalebElm/issues/444)) |
+| Enrollment and progress | `TrackEnrollment` and `UserProgress` persistence, the enroll service | Enroll and progress endpoints, the shared gate |
+| Verification | Entities, configurations, repositories, Codeforces and GitHub contracts | Clients, verifiers, endpoints |
+| Resource Hub | Entities, configurations, repositories | Read and admin endpoints, link health |
+| Capstone | Entities, configurations | Milestone verification, track completion, endpoints |
+| Platform | Health check, exception mapping, field-keyed validation errors, Swagger, CI | Replacing the `501` controllers as features land |
 
-Six milestones, each finished when tests pass and docs are updated.
-
-| Milestone | Scope |
-|---|---|
-| **M0 Foundations** | DI composition, validation errors, `CancellationToken` pipeline, logging, test and migration baseline |
-| **M1 Identity** | Registration, login, JWT, password policy, throttling, `StudentOnly` and `AdminOnly` policies |
-| **M2 Learning flow** | Tracks, Modules, Lessons, Exams, Progress, enrollment, sticky unlock, admin authoring |
-| **M3 Automated verification** | External account linking, Codeforces solve checks, GitHub OAuth, task SHA integrity, dual-gated unlock |
-| **M4 Resource Hub** | Technology tree, anonymous browse and filters, admin curation, safe link-health checks |
-| **M5 Capstone projects** | One capstone project per Track, milestone verification via GitHub Actions, derived Track completion |
+Every feature, with its exact state, is in [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md). The
+work is grouped into six milestones: M0 Foundations, M1 Identity, M2 Learning flow, M3 Automated
+Verification, M4 Public Resource Hub, M5 Capstone Projects. See the
+[milestones page](https://github.com/Tawjjeh/TalebElm/milestones).
 
 ## Quick start
 
-You need the [.NET 10 SDK](https://dotnet.microsoft.com/download), Git, and Python 3.
+You need Git and the [.NET 10 SDK](https://dotnet.microsoft.com/download). There is no
+`global.json`; every project targets `net10.0`. Python 3 is only needed for the docs check.
 
 ```bash
 git clone https://github.com/Tawjjeh/TalebElm.git
@@ -71,44 +64,74 @@ cd TalebElm
 dotnet restore TalebElm.slnx
 dotnet build TalebElm.slnx
 dotnet test TalebElm.slnx
+```
+
+Run the API in one terminal:
+
+```bash
 dotnet run --project src/TalebElm.Api
 ```
+
+Then call it from another:
 
 ```bash
 curl http://localhost:5236/api/health
 # healthy
 ```
 
-Swagger UI is at `/swagger` while the app runs in Development. The database file is
-`talebelm.db` next to the app binary; set `ConnectionStrings__TalebElm` to change it.
+In Development (the default) the app reads `appsettings.Development.json` and writes
+`talebelm.db` under `src/TalebElm.Api/`. Set `ConnectionStrings__TalebElm` to use another database
+file; see [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md). Swagger UI is at
+<http://localhost:5236/swagger>.
 
-Before opening a pull request, run the documentation link check:
+Before pushing Markdown changes, run the documentation check:
 
 ```bash
 python3 scripts/check-docs.py
 ```
 
-Full setup notes, migration commands, and troubleshooting are in
-[`docs/development/getting-started.md`](docs/development/getting-started.md).
+## Architecture
+
+Dependencies point inward; an outer layer may use an inner layer, never the other way round.
+
+| Layer | Project | May depend on |
+|---|---|---|
+| Api | `src/TalebElm.Api` | Infrastructure, Application, Domain |
+| Infrastructure | `src/TalebElm.Infrastructure` | Application, Domain |
+| Application | `src/TalebElm.Application` | Domain |
+| Domain | `src/TalebElm.Domain` | nothing |
+
+[`ARCHITECTURE.md`](ARCHITECTURE.md) covers the responsibilities, project references, and the
+rules each layer must respect.
 
 ## Documentation
 
-| Topic | Document |
+| To read about | Document |
 |---|---|
-| Feature status (implemented vs. planned) | [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) |
-| Layers, patterns, and conventions | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| Roadmap and milestones | [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md) |
-| Product rules and decisions | [`docs/business/BUSINESS_RULES.md`](docs/business/BUSINESS_RULES.md), [`docs/OPEN_DECISIONS.md`](docs/OPEN_DECISIONS.md) |
-| API endpoints and database schema | [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md), [`docs/DATABASE_ERD.md`](docs/DATABASE_ERD.md) |
-| How to contribute | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Full docs index | [`docs/README.md`](docs/README.md) |
+| The full docs index | [`docs/README.md`](docs/README.md) |
+| Feature status | [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) |
+| Layers, patterns, conventions | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Product rules and open decisions | [`docs/business/BUSINESS_RULES.md`](docs/business/BUSINESS_RULES.md), [`docs/OPEN_DECISIONS.md`](docs/OPEN_DECISIONS.md) |
+| Current and target routes | [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md) |
+| Local database setup | [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md) |
 
 ## Contributing
 
-Read [`CONTRIBUTING.md`](CONTRIBUTING.md), pick an open issue labeled `help wanted`, describe
-your approach in a comment, and open a pull request against `main` with a test for the new
-behavior.
+1. Pick an open issue with `help wanted`, plus `good first issue` if this is your first
+   contribution: [beginner issues](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22+no%3Aassignee).
+2. Comment with your plan and wait until the issue is assigned to you. The assignment is the green
+   light; do not start before it.
+3. Branch from `main` with a `feat/`, `fix/`, `docs/`, `test/`, `refactor/`, `chore/`, or `ci/`
+   prefix, and write conventional commits.
+4. Open a pull request against `main` with `Closes #N` in the description, tests, and the template
+   filled in. CI and one approval are required before merge.
 
-## License
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the commands, the review rules, and what to avoid.
+Coding standards are in [`docs/development/coding-standards.md`](docs/development/coding-standards.md);
+"done" is defined in [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md).
 
-GNU General Public License v3.0. See [LICENSE](LICENSE).
+## License and community
+
+TalebElm means "seeker of knowledge". The code is licensed under the
+[GNU General Public License v3.0](LICENSE). Report vulnerabilities privately as described in
+[`SECURITY.md`](SECURITY.md), and follow the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).

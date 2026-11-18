@@ -9,6 +9,8 @@
 
 ## Checklist
 
+The full list is in the [definition of done](https://github.com/Tawjjeh/TalebElm/blob/main/docs/development/definition-of-done.md).
+
 - [ ] `dotnet build TalebElm.slnx` passes with 0 errors and 0 warnings
 - [ ] `dotnet test TalebElm.slnx` passes with tests covering the change
 - [ ] `python3 scripts/check-docs.py` passes (if Markdown files changed)
