@@ -1,4 +1,6 @@
-﻿namespace TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
+
+namespace TalebElm.Domain.Entities;
 
 public class Lesson : BaseEntity
 {
@@ -9,6 +11,8 @@ public class Lesson : BaseEntity
     public int Order { get; set; }
 
     public Guid ModuleId { get; set; }
+
+    public LessonType Type { get; set; } = LessonType.Text;
 
     public Module Module { get; set; } = default!;
 }

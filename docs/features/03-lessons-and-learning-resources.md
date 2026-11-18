@@ -1,7 +1,7 @@
 # Feature Specification: Lessons & Learning Resources
 
 ## Status
-`Lesson` exists with `Title`, `Content`, `Order`, and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
+`Lesson` exists with `Title`, `Content`, `Order`, `Type` (`LessonType`, default `Text`, guarded by `CK_Lessons_Type_Valid`), and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
 
 ## MVP Objective
 Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the content author. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.
@@ -16,6 +16,7 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | Lesson | Content | string | No | Required lesson explanation |
 | Lesson | Order | int | No | Display order within a Module |
 | Lesson | ModuleId | Guid | No | Parent Module identifier |
+| Lesson | Type | LessonType | No | Lesson format; `Text = 1`, `Video = 2`, `Exercise = 3`; defaults to `Text`; `CHECK (Type IN (1, 2, 3))` |
 
 ### Relationship
 - `Lesson.ModuleId` is a required FK to `Module.Id` with `DeleteBehavior.Restrict`; `Lesson.Module` is the navigation.
@@ -35,7 +36,7 @@ Let a learner study an authored explanation for each Lesson and open the books, 
 | LessonResource | Citation | string | Yes | Author/title/edition/page for a book or other non-URL reference |
 | LessonResource | Order | int | No | Display order within the Lesson |
 
-Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format and is stored on Lesson (Decision 13); the latter describes a cited source. Do not claim `LessonType` is currently stored on Lesson; the column is not yet implemented.
+Keep `LessonType` separate from `LessonResourceKind`: the former describes lesson format and is stored on Lesson (Decision 13); the latter describes a cited source. `Lesson.Type` is implemented with a default of `Text` and rejects values outside 1–3 at the database level.
 
 ### Application Contract (Implemented)
 

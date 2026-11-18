@@ -9,7 +9,7 @@ body:
     attributes:
       label: Location
       description: File or section path that needs work.
-      placeholder: "docs/business/BUSINESS_RULES.md §Track or docs/ARCHITECTURE.md"
+      placeholder: "docs/business/BUSINESS_RULES.md §Track or ARCHITECTURE.md"
     validations:
       required: true
   - type: textarea

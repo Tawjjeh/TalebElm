@@ -1,6 +1,6 @@
 # Feature Specification: Automated GitHub Task Verification
 
-> **Status discipline:** All entities, contracts, and endpoints in this specification are marked **Target** (decided for implementation in Phase 3). None are currently Implemented in code.
+> **Status discipline:** The `GitHubTask` entity, the `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, and the `IGitHubClient` contract are **Implemented**. An `IGitHubClient` implementation, `TaskVersion`, the verification services, GitHub OAuth, and the endpoints remain **Target** (Phase 3).
 > Adheres strictly to the **Zero Manual Gating** principle: all verification is executed automatically by the server.
 
 ---
@@ -73,7 +73,7 @@ To avoid schema duplication between Codeforces algorithmic problems and GitHub t
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Target |
 | `ModuleProblemId` | `Guid` | No | Required FK to `ModuleProblem.Id`. Delete behavior: `Restrict`. `UNIQUE(UserId, ModuleProblemId)`. | Target |
 | `CompletedAt` | `DateTimeOffset` | No | Verification timestamp. | Target |
-| `ExternalSubmissionId` | `string?` | Yes | Codeforces submission ID OR GitHub repository full name (`owner/repo`). Max length **150**. | Target |
+| `ExternalSubmissionId` | `string?` | Yes | Codeforces submission ID OR GitHub repository full name (`owner/repo`). Max length **200**. | Target |
 | `VerifiedHeadCommitSha` | `string?` | Yes | Git commit SHA at which the test suite passed and SHAs matched. | Target |
 | `TaskVersionId` | `Guid?` | Yes | FK to `TaskVersion.Id` evaluated during verification. | Target |
 

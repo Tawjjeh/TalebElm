@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using TalebElm.Domain.Entities;
 
 namespace TalebElm.Tests.UnitTests;

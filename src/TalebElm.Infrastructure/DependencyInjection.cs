@@ -16,6 +16,7 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new InvalidOperationException(
                 "Connection string 'TalebElm' does not exist or is empty. See docs/LOCAL_SETUP.md for details");
+
         services.AddDbContext<AppDbContext>(o => o.UseSqlite(connectionString));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -27,6 +28,9 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserProgressRepository, UserProgressRepository>();
         services.AddScoped<ITrackEnrollmentRepository, TrackEnrollmentRepository>();
+        services.AddScoped<ITechnologyRepository, TechnologyRepository>();
+        services.AddScoped<IResourceRepository, ResourceRepository>();
+        services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
 
         return services;
     }
