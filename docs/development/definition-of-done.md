@@ -10,14 +10,14 @@ A TalebElm change is done when **all** of the following hold:
 - [ ] `dotnet build TalebElm.slnx` succeeds with **zero errors and zero new warnings**.
 - [ ] `dotnet test TalebElm.slnx` passes; all new behavior is covered by tests (see [`testing.md`](testing.md)).
 - [ ] Architecture boundaries are respected: Application depends only on `IUnitOfWork`, controllers only call service interfaces, Infrastructure contains no business logic.
-- [ ] No new EF Core configuration is missing a corresponding migration, and the migration is reviewed as code.
+- [ ] No new EF Core configuration is missing a corresponding migration (`MigrationGuardTests.Model_HasNoPendingModelChanges` fails when the model and the snapshot disagree), and the migration is reviewed as code.
 
 ---
 
 ## Documentation
 
 - [ ] `docs/FEATURE_INDEX.md` status markers are accurate (`Implemented` / `Target` / `Proposed`) after the change lands.
-- [ ] `docs/ARCHITECTURE.md` or `docs/development/` are updated if a new convention, layer rule, or pattern is introduced.
+- [ ] [`ARCHITECTURE.md`](../../ARCHITECTURE.md) or `docs/development/` are updated if a new convention, layer rule, or pattern is introduced.
 - [ ] `docs/business/BUSINESS_RULES.md` or `docs/OPEN_DECISIONS.md` are updated if a business rule is added, changed, or resolved.
 - [ ] `python3 scripts/check-docs.py` passes (no broken relative links in `docs/`).
 - [ ] Docs are updated in the **same PR** as the code change — not in a follow-up.
