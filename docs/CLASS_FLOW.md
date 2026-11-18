@@ -16,7 +16,7 @@ Register / Sign in
   → Deliver Track Capstone project
 ```
 
-This is the target MVP flow, not a claim that every step currently works. Authentication, most HTTP endpoints, the dual-gated progression-lock transaction, practice problem verification, and capstone milestone verification are not implemented yet. User/password persistence, the entity and configuration layers, Track/Module/Lesson read services, server-side exam grading, and Track enrollment are implemented.
+This is the target MVP flow, not a claim that every step currently works. Authentication, most HTTP endpoints, the shared progression gate and problem-side unlock trigger, practice problem verification, and capstone milestone verification are not implemented yet. User/password persistence, the entity and configuration layers, Track/Module/Lesson read services, server-side exam grading, the exam-side unlock, and Track enrollment are implemented.
 
 ## 2. Clean Architecture Request Path
 

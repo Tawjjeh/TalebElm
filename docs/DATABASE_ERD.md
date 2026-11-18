@@ -1,6 +1,6 @@
 # TalebElm Data Model: Current and Proposed
 
-This document distinguishes Domain entities that exist in code from the relational rules the MVP still needs. `AppDbContext` applies a configuration for every current entity, and the committed migrations reflect that model.
+This document distinguishes Domain entities that exist in code from the relational rules the MVP still needs. `AppDbContext` applies a configuration for every entity except `GitHubTask`, which is mapped by convention, and the committed migrations match that model.
 
 ## 1. Current Domain Entities
 
