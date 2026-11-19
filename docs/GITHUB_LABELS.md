@@ -1,50 +1,47 @@
-# TalebElm — GitHub Labels Catalog
+# TalebElm labels
 
-TalebElm uses a streamlined 15-label catalog organized into types, architectural layers, triage states, resolutions, and specialized boundaries.
+Fifteen labels, in four groups. Every issue and pull request carries at most one type and one
+layer. Work is grouped by the six MVP milestones (M0–M5), not by feature labels: the milestone
+says where the work fits, the layer says where the code goes.
 
-## 1. Type labels
+## Type: what kind of change is this?
 
-| Label | Description | Color |
-|---|---|---|
-| `bug` | Something is broken, throwing an unexpected error, or failing a test. | `d73a4a` |
-| `enhancement` | A new capability, feature, or improvement to existing functionality. | `a2eeef` |
-| `documentation` | Additions, corrections, or structure improvements in documentation. | `0075ca` |
-| `question` | Inquiries about architecture, design decisions, or implementation clarification. | `d876e3` |
+| Label | Use when |
+|---|---|
+| `bug` | Something is broken: a failing test, a wrong response, a crash. |
+| `enhancement` | New behavior, a new endpoint, a refactor, or a test that adds coverage. |
+| `documentation` | A change to Markdown, templates, or the docs check. Needs no layer. |
+| `question` | A decision or clarification is needed before code is written. |
 
-## 2. Layer labels
+## Layer: where does the code live?
 
-| Label | Description | Color |
-|---|---|---|
-| `layer:domain` | Core business models: entities, enums, exceptions, and repository interfaces. | `1D76DB` |
-| `layer:application` | Application services, DTOs, FluentValidation validators, and client contracts. | `5319E7` |
-| `layer:infrastructure` | EF Core `AppDbContext`, migrations, configurations, repositories, and HTTP clients. | `0E8A16` |
-| `layer:api` | Web layer: ASP.NET Core controllers, middleware, Program.cs, and Swagger. | `FB8C00` |
-| `layer:tests` | Unit tests, integration tests, DI resolution tests, and test helpers. | `008672` |
+| Label | Use when the change touches |
+|---|---|
+| `layer:domain` | Entities, enums, exceptions, repository interfaces, `IUnitOfWork`. |
+| `layer:application` | Services, DTOs, validators, and client interfaces. |
+| `layer:infrastructure` | EF Core, configurations, migrations, repositories, HTTP clients. |
+| `layer:api` | Controllers, middleware, `Program.cs`, Swagger. |
+| `layer:tests` | Unit, integration, and migration tests. |
 
-## 3. State labels
+## State: can someone pick it up?
 
-| Label | Description | Color |
-|---|---|---|
-| `good first issue` | Well-scoped, beginner-friendly task with clear boundaries and existing examples. | `7057ff` |
-| `help wanted` | Open for community contribution; waiting for a contributor to claim. | `008672` |
+| Label | Use when |
+|---|---|
+| `help wanted` | The issue is approved and free for a contributor to claim. |
+| `good first issue` | It is also small, contained, and safe for a first contribution. |
 
-## 4. Resolution labels
+## Resolution and boundaries
 
-| Label | Description | Color |
-|---|---|---|
-| `duplicate` | Work or report that is already tracked in an existing issue or pull request. | `cfd3d7` |
-| `wontfix` | Proposed work that is out of MVP scope or contradicted by project decisions. | `ffffff` |
+| Label | Use when |
+|---|---|
+| `duplicate` | The same work exists elsewhere; link the survivor. |
+| `wontfix` | The work is out of MVP scope or contradicts a recorded decision. |
+| `security` | Authentication, hashing, tokens, or a vulnerability report. |
+| `database` | A schema change, a migration, or a data constraint. |
 
-## 5. Specialized labels
+## Rules
 
-| Label | Description | Color |
-|---|---|---|
-| `security` | Authentication, password hashing, token validation, and vulnerability reports. | `b60205` |
-| `database` | Schema changes, EF Core configurations, migrations, and database indexing. | `116329` |
-
----
-
-## Rules for contributors
-
-Every issue or pull request carries at most one type label and one layer label.
-State labels apply when open for contributors; `security` and `database` apply only when the change directly touches those boundaries.
+- One type and one layer per item. A documentation-only item needs no layer; `security` and
+  `database` are added only when the change directly touches them.
+- Add the milestone that owns the work, and `help wanted` only when the issue is ready to claim.
+  Never invent a label; propose a change in an issue first.

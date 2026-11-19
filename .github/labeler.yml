@@ -28,14 +28,12 @@ documentation:
 database:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/TalebElm.Infrastructure/Data/**/*'
-          - 'src/TalebElm.Infrastructure/Configurations/**/*'
+          - 'src/TalebElm.Infrastructure/Persistence/Configurations/**/*'
           - 'src/TalebElm.Infrastructure/Migrations/**/*'
 
 security:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/Security/**/*'
-          - 'src/**/Auth*/**/*'
-          - 'src/**/Password*/**/*'
           - 'src/**/Password*.cs'
+          - 'src/**/Auth*.cs'
+          - 'src/**/*Security*.cs'
