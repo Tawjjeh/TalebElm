@@ -39,11 +39,11 @@ HTTP request
 ## 3. Current Code Paths
 
 - `GET /api/health` returns `healthy` directly from `HealthController`.
-- Track list/create behavior exists in `TrackService`, but `TracksController` actions still throw `NotImplementedException`.
-- `ExamService.GetByIdAsync` loads an Exam through `IUnitOfWork` and throws `NotFoundException` when missing. Create and Submit are placeholders.
-- `UserService` methods and `UserProgressService.GetMyProgressAsync` are placeholders.
-- User, Module, Lesson, Exams, and Progress controllers are placeholders; Exams actions throw `NotImplementedException` and Progress currently returns 501.
-- `Program.cs` registers persistence, Track/Exam/User/UserProgress services, `AddApplication`, and `ExceptionHandlingMiddleware`. Authentication and authorization are not registered.
+- `GET /api/tracks` is wired, calls `ITrackService.GetPagedAsync`, and returns paged track summaries. `POST /api/tracks` binds `CreateTrackRequest` and throws `NotImplementedException`.
+- `ExamService.GetByIdAsync` loads an Exam through `IUnitOfWork` and throws `NotFoundException` when missing. Server-side grading is implemented in `ExamService.SubmitAsync`. `ExamsController` endpoints remain placeholders.
+- `TrackEnrollmentService.EnrollAsync` validates and records track enrollment, creating the first module's progress row. The HTTP enrollment endpoint is not yet wired.
+- `UserProgressService` reads per-module and per-track progress. Controller actions currently return 501.
+- `Program.cs` composition root calls `AddInfrastructure(builder.Configuration)` and `AddApplication()`, registering SQLite, repositories, services, validators, and OpenAPI in development. Authentication and authorization middleware are not registered.
 
 ## 4. Target Exam & Problem Progression Path
 
