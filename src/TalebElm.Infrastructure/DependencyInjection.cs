@@ -31,6 +31,8 @@ public static class DependencyInjection
         services.AddScoped<ITechnologyRepository, TechnologyRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
+        services.AddScoped<IModuleProblemRepository, ModuleProblemRepository>();
+        services.AddScoped<IUserProblemCompletionRepository, UserProblemCompletionRepository>();
 
         return services;
     }

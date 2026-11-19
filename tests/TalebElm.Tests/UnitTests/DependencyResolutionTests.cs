@@ -61,6 +61,8 @@ public class DependencyResolutionTests
         Assert.NotNull(sp.GetRequiredService<IUserRepository>());
         Assert.NotNull(sp.GetRequiredService<IUserProgressRepository>());
         Assert.NotNull(sp.GetRequiredService<ITrackEnrollmentRepository>());
+        Assert.NotNull(sp.GetRequiredService<IModuleProblemRepository>());
+        Assert.NotNull(sp.GetRequiredService<IUserProblemCompletionRepository>());
     }
 
     [Fact]
