@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TalebElm.Domain.Entities;
 
@@ -22,5 +22,13 @@ public class LessonResourceConfiguration : IEntityTypeConfiguration<LessonResour
             .HasForeignKey(r => r.LessonId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(r => r.Resource)
+            .WithMany()
+            .HasForeignKey(r => r.ResourceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(r => new { r.LessonId, r.Order })
+            .IsUnique();
     }
 }
