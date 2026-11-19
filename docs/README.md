@@ -57,8 +57,6 @@ This is the documentation index for `Tawjjeh/TalebElm`.
 - [`business/ROADMAP.md`](business/ROADMAP.md)
 - [`business/SUSTAINABILITY.md`](business/SUSTAINABILITY.md)
 - [`business/WORKFLOWS.md`](business/WORKFLOWS.md)
-- [`decisions/0000-adr-template.md`](decisions/0000-adr-template.md)
-- [`decisions/README.md`](decisions/README.md)
 - [`development/coding-standards.md`](development/coding-standards.md)
 - [`development/definition-of-done.md`](development/definition-of-done.md)
 - [`development/getting-started.md`](development/getting-started.md)
