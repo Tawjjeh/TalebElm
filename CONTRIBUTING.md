@@ -1,89 +1,66 @@
 # Contributing to TalebElm
 
-This page covers setup, the path from issue to merge, and what a pull request must contain. Coding
-rules live in [`docs/development/coding-standards.md`](docs/development/coding-standards.md), and
-"done" is defined in [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md).
+We are glad you want to contribute to طالب علم (TalebElm). Every accepted change helps build a clear, open path for anyone learning software engineering.
 
-## 1. Set up
+## Your first contribution
 
-You need Git, the [.NET 10 SDK](https://dotnet.microsoft.com/download), and Python 3.
+Follow these five steps to find an issue, set up your branch, and submit your change:
 
-```bash
-git clone https://github.com/Tawjjeh/TalebElm.git
-cd TalebElm
-dotnet restore TalebElm.slnx && dotnet build TalebElm.slnx && dotnet test TalebElm.slnx
-python3 scripts/check-docs.py
-```
+1. **Fork the repository:** Fork TalebElm to your personal GitHub account:
+   ```bash
+   gh repo fork Tawjjeh/TalebElm --clone=false
+   ```
+2. **Clone your fork:** Clone your fork locally and configure the upstream remote:
+   ```bash
+   git clone https://github.com/<your-username>/TalebElm.git
+   cd TalebElm
+   git remote add upstream https://github.com/Tawjjeh/TalebElm.git
+   ```
+3. **Build and test:** Confirm the solution builds and all existing tests pass:
+   ```bash
+   dotnet build TalebElm.slnx
+   dotnet test TalebElm.slnx
+   python3 scripts/check-docs.py
+   ```
+4. **Pick a good first issue:** Find an unassigned issue labeled `help wanted`, or start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee).
+5. **Create a branch:** Fetch latest changes and create a branch from `upstream/main`:
+   ```bash
+   git fetch upstream
+   git switch -c feat/my-topic upstream/main
+   ```
 
-All of them must pass on a fresh clone. If one fails, say so in an issue instead of working around
-it. Database setup, migration commands, and common errors are in
-[`docs/development/getting-started.md`](docs/development/getting-started.md).
+## The green-light rule
 
-## 2. Get the green light
+Work begins only after an issue is assigned to you on GitHub.
+Leave a comment on the open issue describing what you plan to touch; once assigned, the issue is yours.
+Pull requests opened without an assigned issue will be closed kindly without review to avoid duplicate work.
 
-Work starts only when an issue has `help wanted` and is assigned to you.
+## A good pull request
 
-1. Find an open issue. Start with
-   [`good first issue` + `help wanted`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22+no%3Aassignee).
-2. Comment with your plan: what you will change, which files you expect to touch, and the test you
-   will add.
-3. Wait for a reply and an assignment, and check that nobody else is assigned.
+- **One focused change:** Touch only the files needed for that single task, keeping diffs under about 200 lines.
+- **Automated tests:** Include unit or integration tests proving the new behavior that would fail without your change.
+- **Docs updated:** Update relevant guides or index tables if behavior, arguments, or contracts changed.
+- **Linked issue:** Write `Closes #N` in the pull request description so the issue closes on merge.
+- **Conventional title:** Prefix the title with a conventional type such as `feat:`, `fix:`, `docs:`, or `test:`.
 
-If the issue is unclear, ask in the issue. If you found a bug that has no issue, open one with the
-steps to reproduce it. A pull request for work nobody approved may be closed without review.
+## What happens next
 
-## 3. Branch and commit
+- Automated CI builds the code, runs the test suite, and checks doc formatting on every push.
+- An assigned reviewer reads your change, checks architecture rules, and leaves actionable comments.
+- Once all checks pass and the review is approved, an owner merges your pull request.
+- We squash-merge each branch into `main` as a single clean commit.
 
-Work on a fork; `main` is protected.
+## Ask for help
 
-```bash
-git clone https://github.com/<YourUsername>/TalebElm.git
-cd TalebElm
-git remote add upstream https://github.com/Tawjjeh/TalebElm.git
-git fetch upstream
-git switch -c feat/track-enrollment-endpoint upstream/main
+If you run into an unexpected build failure or have a question about architecture, ask on your assigned issue thread or open a topic in [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
 
-git commit -m "feat: add track enrollment endpoint"
-git push --set-upstream origin feat/track-enrollment-endpoint
-```
+## Please don't
 
-Use one of these branch prefixes: `feat/`, `fix/`, `docs/`, `test/`, `refactor/`, `chore/`,
-`ci/`. Commit subjects use the same prefixes and the imperative mood, for example
-`fix: reject an empty exam title`.
+- Do not open unsolicited refactoring, code reformatting, or cosmetic changes.
+- Do not edit files under `.github/workflows` without prior agreement on an issue.
+- Do not open promotional PRs or submit changes without tests proving their correctness.
 
-## 4. What the pull request must contain
+## Standards and labels
 
-- **One slice of work.** One endpoint, one fix, one migration. Around 200 changed lines, tests
-  included, is easy to review.
-- **Tests that prove the behavior** and would fail without the change. Use SQLite for EF Core
-  mapping. Never call a real external API in a test.
-- **No secrets and no database files.** No tokens, passwords, connection strings, or `*.db` files.
-- **Docs updated in the same pull request** when behavior, a route, a rule, or a status marker
-  changes.
-- **The issue linked** with `Closes #N` in the description, so it closes when the pull request is
-  squashed.
-- **The template filled in honestly:** summary, layer, related issue, and the checklist.
-
-## 5. Review and merge
-
-Opening a pull request that is not a draft asks one reviewer to look at it automatically; you do
-not need to request anyone. `main` requires a passing `build-and-test` check, one approving review,
-and all conversations resolved.
-
-Push more commits to the same branch when you get feedback. Do not force-push while a review is
-open; it erases the reviewer's line notes. Merging is a squash, so one pull request becomes one
-commit on `main`.
-
-## 6. Where to ask
-
-- Questions and ideas: [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
-- Bugs and documentation errors: the issue templates.
-- Security problems: [`SECURITY.md`](SECURITY.md), never a public issue.
-- Unfriendly behavior: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
-
-## Do not
-
-- Start work before the issue is assigned to you.
-- Mix unrelated changes into one pull request.
-- Commit secrets, connection strings, or `*.db` files.
-- Reformat files you did not need to change.
+Read [`docs/development/coding-standards.md`](docs/development/coding-standards.md) for architectural boundaries and [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) for completion criteria.
+Issues and pull requests use the project labels: `bug`, `enhancement`, `documentation`, `question`, `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`, `layer:tests`, `good first issue`, and `help wanted`.

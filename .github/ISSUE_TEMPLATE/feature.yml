@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         TalebElm follows Clean Architecture (Domain → Application → Infrastructure → Api) and strict domain rules.
-        Features must respect zero manual gating and server-side verification.
+        Features must respect server-side verification and progression rules.
   - type: textarea
     id: problem
     attributes:

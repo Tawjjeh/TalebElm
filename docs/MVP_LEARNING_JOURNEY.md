@@ -52,6 +52,8 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 ## Suggested Delivery Order
 
+Phase deliverables, dependencies, and milestone criteria are detailed in [business/ROADMAP.md](business/ROADMAP.md).
+
 1. Wire authentication and authorization policies so protected routes can resolve the current learner (Phase 1).
 2. Expose the existing Track, Module, Lesson, enrollment, exam, and progress services over HTTP (Phase 2).
 3. Implement practice-problem verification, handle verification, and the problem-side unlock trigger (Phase 3).
