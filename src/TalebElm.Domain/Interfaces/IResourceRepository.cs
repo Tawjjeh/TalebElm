@@ -17,4 +17,8 @@ public interface IResourceRepository : IRepository<Resource>
          CancellationToken ct = default);
 
     Task<IReadOnlyList<Resource>> GetForHealthCheckAsync(CancellationToken ct = default);
+
+    Task<IReadOnlyDictionary<Guid, int>> GetApprovedResourceCountsAsync(
+        IReadOnlyCollection<Guid> technologyIds,
+        CancellationToken ct = default);
 }
