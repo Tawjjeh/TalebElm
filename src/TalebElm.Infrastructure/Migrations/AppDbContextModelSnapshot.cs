@@ -252,6 +252,9 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid?>("ResourceId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -262,7 +265,10 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LessonId");
+                    b.HasIndex("ResourceId");
+
+                    b.HasIndex("LessonId", "Order")
+                        .IsUnique();
 
                     b.ToTable("LessonResources", t =>
                         {
@@ -866,7 +872,14 @@ namespace TalebElm.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TalebElm.Domain.Entities.Resource", "Resource")
+                        .WithMany()
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Lesson");
+
+                    b.Navigation("Resource");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Module", b =>
