@@ -5,6 +5,7 @@ using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
 using TalebElm.Infrastructure;
+using TalebElm.Infrastructure.Authentication;
 using TalebElm.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,6 +54,13 @@ builder.Services.AddSwaggerGen(options =>
             [new OpenApiSecuritySchemeReference("Bearer", document)] = []
         });
 });
+
+//. JWT Options Configuration Binding
+builder.Services
+    .AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();

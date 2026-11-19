@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\TalebElm.Infrastructure\TalebElm.Infrastructure.csproj" />
@@ -19,6 +19,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Public members are documented incrementally; do not fail the build on missing comments. -->
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <UserSecretsId>3668afee-97cf-4f51-ab8e-d9a4b36e1b35</UserSecretsId>
   </PropertyGroup>
 
 </Project>
