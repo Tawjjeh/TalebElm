@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
-  <!-- Flat dark background #0d1117 -->
+  <!-- Dark background #0d1117 with very subtle border -->
   <rect width="1280" height="640" fill="#0d1117" />
+  <rect x="24" y="24" width="1232" height="592" rx="16" fill="none" stroke="#21262d" stroke-width="1.5" />
 
-  <!-- Arabic Calligraphy "طالب علم" -->
-  <g transform="translate(340.33, 250.41) scale(0.17173, -0.17173)">
+  <!-- Arabic Calligraphy "طالب علم" (Centered at X=640) -->
+  <g transform="translate(360.80, 230.00) scale(0.16, -0.16)">
     <g fill="#f8fafc">
       <path d="M475 458Q480 487 464.0 499.0Q448 511 415 511Q411 511 409.5 511.0Q408 511 404 511Q377 511 360 506Q342 504 329 490Q322 483 315.0 472.0Q308 461 301 446L267 370Q238 361 208.0 353.0Q178 345 150 335Q111 322 83.0 306.5Q55 291 33 258Q16 218 4.0 167.0Q-8 116 -8 60Q-7 4 -0.5 -46.0Q6 -96 17 -143Q28 -189 37.5 -237.5Q47 -286 54 -337Q55 -347 64.5 -347.0Q74 -347 77 -339Q86 -308 90.0 -276.5Q94 -245 94 -211Q94 -194 93.0 -176.5Q92 -159 90 -143L50 110Q49 113 49 116Q49 118 49.0 119.5Q49 121 49 122Q49 137 58 146Q84 169 119.5 184.0Q155 199 195 207Q261 221 319.5 251.5Q378 282 416 324Q439 350 452.5 383.5Q466 417 475 458Z" transform="translate(0, 0)" />
       <path d="M100 351Q62 321 36.5 277.5Q11 234 -6 180Q-15 151 6 148Q17 147 28 161Q54 203 79.0 230.5Q104 258 126 271Q158 289 194.5 304.0Q231 319 273 333L301 11Q302 3 310.0 0.5Q318 -2 323 5L396 105L348 690Q347 698 338.5 700.5Q330 703 326 695L253 575L262 453Q216 430 176.0 405.0Q136 380 100 351Z" transform="translate(303, 233)" />
@@ -16,9 +17,16 @@
     </g>
   </g>
 
-  <!-- Title: TalebElm -->
-  <text x="640.0" y="390" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="2" fill="#ffffff">TalebElm</text>
+  <!-- Title: TalebElm in clean bold style -->
+  <text x="640" y="360" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="2" fill="#ffffff">TalebElm</text>
+
+  <!-- Hairline rule with centered diamond echoing the dot -->
+  <g>
+    <line x1="480" y1="415" x2="624" y2="415" stroke="#2dd4bf" stroke-width="1" stroke-opacity="0.6" />
+    <polygon points="640,410 645,415 640,420 635,415" fill="#2dd4bf" />
+    <line x1="656" y1="415" x2="800" y2="415" stroke="#2dd4bf" stroke-width="1" stroke-opacity="0.6" />
+  </g>
 
   <!-- Tagline: Learn software engineering. Earn every step. -->
-  <text x="640.0" y="450" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="500" fill="#94a3b8">Learn software engineering. Earn every step.</text>
+  <text x="640" y="465" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" letter-spacing="1.5" fill="#94a3b8">Learn software engineering. Earn every step.</text>
 </svg>

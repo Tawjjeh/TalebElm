@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 480" width="1800" height="480">
-  <rect width="1800" height="480" fill="#f8fafc" />
-  <g transform="translate(450.50, 315.62) scale(0.25759, -0.25759)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 520" width="1800" height="520">
+  <!-- Arabic Calligraphy "طالب علم" (Centered: X in [514.34, 1285.66], Y in [70.08, 352.34]) -->
+  <g transform="translate(516.10, 276.00) scale(0.22, -0.22)">
     <g fill="#0f172a">
       <path d="M475 458Q480 487 464.0 499.0Q448 511 415 511Q411 511 409.5 511.0Q408 511 404 511Q377 511 360 506Q342 504 329 490Q322 483 315.0 472.0Q308 461 301 446L267 370Q238 361 208.0 353.0Q178 345 150 335Q111 322 83.0 306.5Q55 291 33 258Q16 218 4.0 167.0Q-8 116 -8 60Q-7 4 -0.5 -46.0Q6 -96 17 -143Q28 -189 37.5 -237.5Q47 -286 54 -337Q55 -347 64.5 -347.0Q74 -347 77 -339Q86 -308 90.0 -276.5Q94 -245 94 -211Q94 -194 93.0 -176.5Q92 -159 90 -143L50 110Q49 113 49 116Q49 118 49.0 119.5Q49 121 49 122Q49 137 58 146Q84 169 119.5 184.0Q155 199 195 207Q261 221 319.5 251.5Q378 282 416 324Q439 350 452.5 383.5Q466 417 475 458Z" transform="translate(0, 0)" />
       <path d="M100 351Q62 321 36.5 277.5Q11 234 -6 180Q-15 151 6 148Q17 147 28 161Q54 203 79.0 230.5Q104 258 126 271Q158 289 194.5 304.0Q231 319 273 333L301 11Q302 3 310.0 0.5Q318 -2 323 5L396 105L348 690Q347 698 338.5 700.5Q330 703 326 695L253 575L262 453Q216 430 176.0 405.0Q136 380 100 351Z" transform="translate(303, 233)" />
@@ -12,4 +12,14 @@
       <path d="M183 502 204 188Q205 179 213.0 177.5Q221 176 226 183L298 300L278 613Q277 622 269.0 624.5Q261 627 256 619ZM14 138 -7 14Q-8 9 -4.5 4.5Q-1 0 4 0Q10 0 12 1Q80 7 143.0 20.5Q206 34 267 52Q338 73 391 107Q437 137 469.0 178.0Q501 219 527 268V267Q537 284 537 305Q537 333 517 357Q495 384 458 384Q428 384 402.0 372.5Q376 361 362 349Q316 305 273.0 260.5Q230 216 188 167Q151 160 112.0 156.0Q73 152 24 148Q16 146 14 138ZM416 226Q383 210 346.0 199.5Q309 189 268 181Q287 200 307.5 218.0Q328 236 352 249Q361 254 372 254Q389 254 401.0 246.0Q413 238 416 226Z" transform="translate(2961, 0)" />
     </g>
   </g>
+
+  <!-- Restrained teal hairline rule with centered diamond echoing the dot (43.66 px below lowest point) -->
+  <g>
+    <line x1="680" y1="396" x2="884" y2="396" stroke="#0d9488" stroke-width="1" stroke-opacity="0.6" />
+    <polygon points="900,391 905,396 900,401 895,396" fill="#0d9488" />
+    <line x1="916" y1="396" x2="1120" y2="396" stroke="#0d9488" stroke-width="1" stroke-opacity="0.6" />
+  </g>
+
+  <!-- Tagline: Learn software engineering. Earn every step. -->
+  <text x="900" y="442" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="500" letter-spacing="3" fill="#475569">Learn software engineering. Earn every step.</text>
 </svg>
