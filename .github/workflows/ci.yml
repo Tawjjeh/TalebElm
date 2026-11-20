@@ -25,7 +25,10 @@ jobs:
         run: dotnet restore TalebElm.slnx
 
       - name: Build
-        run: dotnet build TalebElm.slnx --no-restore
+        run: dotnet build TalebElm.slnx --no-restore --configuration Debug
+
+      - name: Build (Release)
+        run: dotnet build TalebElm.slnx --no-restore --configuration Release
 
       - name: Start API for OpenAPI validation
         env:
