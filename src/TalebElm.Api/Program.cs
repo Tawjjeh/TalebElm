@@ -1,9 +1,12 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using TalebElm.Api.Authentication;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
+using TalebElm.Domain.Enums;
 using TalebElm.Infrastructure;
 using TalebElm.Infrastructure.Persistence;
 
@@ -57,6 +60,22 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
+// Authentication scheme consumed by the AdminOnly policy in authorization.
+builder.Services
+    .AddAuthentication(NoopAuthenticationHandler.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, NoopAuthenticationHandler>(
+        NoopAuthenticationHandler.SchemeName,
+        _ => { });
+
+//. Policy implentation 
+builder.Services.AddAuthorization(option =>
+{
+    option.AddPolicy("AdminOnly", policy =>
+    {
+        policy.RequireRole(nameof(UserRole.Admin));
+    });
+});
+
 var app = builder.Build();
 
 // Enable Swagger only in the Development environment.
@@ -73,6 +92,7 @@ if (app.Environment.IsDevelopment())
 // Configure the HTTP request pipeline.
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
