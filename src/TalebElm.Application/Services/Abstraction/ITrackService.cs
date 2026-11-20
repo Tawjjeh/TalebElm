@@ -1,4 +1,4 @@
-﻿using TalebElm.Application.DTOs;
+using TalebElm.Application.DTOs;
 
 namespace TalebElm.Application.Services.Abstraction
 {
@@ -10,5 +10,8 @@ namespace TalebElm.Application.Services.Abstraction
             int page = 1,
             int pageSize = 20,
             CancellationToken cancellationToken = default);
+        Task PublishAsync(Guid id, CancellationToken ct = default);
+
+        Task ArchiveAsync(Guid id, CancellationToken ct = default);
     }
 }
