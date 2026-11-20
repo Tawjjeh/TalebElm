@@ -19,13 +19,17 @@ public class UserExternalAccountRepositoryTests : SqliteTestBase
         return user;
     }
 
-    private static UserExternalAccount NewAccount(Guid userId, string handle, ExternalPlatform platform = ExternalPlatform.Codeforces)
+    private static UserExternalAccount NewAccount(
+        Guid userId,
+        string handle,
+        ExternalPlatform platform = ExternalPlatform.Codeforces,
+        AccountVerificationStatus status = AccountVerificationStatus.Pending)
         => new()
         {
             UserId = userId,
             Platform = platform,
             Handle = handle,
-            Status = AccountVerificationStatus.Pending
+            Status = status
         };
 
     [Fact]
@@ -75,6 +79,34 @@ public class UserExternalAccountRepositoryTests : SqliteTestBase
     public async Task GetByPlatformAndHandleAsync_WhenHandleIsMissing_ReturnsNull()
     {
         var result = await _repository.GetByPlatformAndHandleAsync(ExternalPlatform.Codeforces, "nobody");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetVerifiedByPlatformAndHandleAsync_ReturnsVerifiedAccount()
+    {
+        var user = await AddUserAsync("e@test.com");
+        var account = NewAccount(user.Id, "tourist", status: AccountVerificationStatus.Verified);
+        DbContext.UserExternalAccounts.Add(account);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetVerifiedByPlatformAndHandleAsync(ExternalPlatform.Codeforces, "tourist");
+
+        Assert.NotNull(result);
+        Assert.Equal(account.Id, result!.Id);
+    }
+
+    [Fact]
+    public async Task GetVerifiedByPlatformAndHandleAsync_IgnoresPendingAccounts()
+    {
+        var user = await AddUserAsync("f@test.com");
+        DbContext.UserExternalAccounts.Add(NewAccount(user.Id, "tourist"));
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetVerifiedByPlatformAndHandleAsync(ExternalPlatform.Codeforces, "tourist");
 
         Assert.Null(result);
     }
