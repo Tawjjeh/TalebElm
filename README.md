@@ -16,7 +16,6 @@
 ---
 
 **Learn software engineering. Earn every step.**
-
 TalebElm is an open-source learning path for software engineers with ordered tracks, real exams, and practice that gets checked before the next step opens.
 
 ## How it works
@@ -104,7 +103,7 @@ Dependencies point strictly inward. Outer layers depend on inner layers; inner l
 | [`docs/FEATURE_INDEX.md`](docs/FEATURE_INDEX.md) | Current implementation state versus MVP target per feature |
 | [`docs/business/ROADMAP.md`](docs/business/ROADMAP.md) | Definitive MVP boundaries, milestone exit criteria, and post-MVP directions |
 | [`docs/business/BUSINESS_RULES.md`](docs/business/BUSINESS_RULES.md) | Binding product rules with implementation status |
-| [`docs/OPEN_DECISIONS.md`](docs/OPEN_DECISIONS.md) | Architectural and product decisions (Decisions 1 through 40) |
+| [`docs/OPEN_DECISIONS.md`](docs/OPEN_DECISIONS.md) | Architectural and product decisions |
 | [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md) | Local database setup, connection strings, and EF Core migrations |
 
 ## Roadmap
@@ -113,13 +112,8 @@ The MVP scope is defined in [`docs/business/ROADMAP.md`](docs/business/ROADMAP.m
 
 ## Contributing
 
-1. **Pick an issue:** Find an open issue with `help wanted`, or [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22+no%3Aassignee) if you are new.
-2. **Wait for the green light:** Comment on the issue to claim it. Work begins only after an owner assigns the issue to you (the green light is the `help wanted` label plus an assignment).
-3. **Make a focused change:** Keep the change under about 200 lines with automated tests proving the behavior.
-4. **Open a pull request:** Reference the issue with `Closes #N` and verify build, tests, and doc checks pass.
-
-Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for full guidelines.
+Pick an issue with the `help wanted` label that nobody has taken (or [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22+no%3Aassignee)), comment that you want it, and start once it is assigned to you. Keep changes under about 200 lines with automated tests proving the behavior. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for full guidelines.
 
 ## License and security
 
-TalebElm is licensed under [GPL-3.0](LICENSE). Brand assets in `.github/assets/` are governed by their respective licenses (see [`.github/assets/README.md`](.github/assets/README.md)). Report security vulnerabilities privately following [`SECURITY.md`](SECURITY.md). Community interactions follow our [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+TalebElm is licensed under [GPL-3.0 with the notes in LICENSE](LICENSE). Brand assets in `.github/assets/` are governed by their respective licenses (see [`.github/assets/README.md`](.github/assets/README.md)). Report security vulnerabilities privately following [`SECURITY.md`](SECURITY.md). Community interactions follow our [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
