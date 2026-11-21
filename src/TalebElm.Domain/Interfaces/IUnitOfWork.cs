@@ -13,5 +13,7 @@ public interface IUnitOfWork
     ITechnologyRepository Technologies { get; }
     IResourceRepository Resources { get; }
     IUserExternalAccountRepository UserExternalAccounts { get; }
+    IModuleProblemRepository ModuleProblems { get; }
+    IUserProblemCompletionRepository UserProblemCompletions { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
