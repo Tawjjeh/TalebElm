@@ -73,12 +73,12 @@ public interface ILessonRepository : IRepository<Lesson> { }
 | `CreateModuleRequest` | Input | `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
 | `UpdateModuleRequest` | Input | `string Title`, `string? Summary`, `int Order`, `Guid TrackId` |
 | `ModuleResponse` | Output | `Guid Id`, `string Title`, `string Summary`, `int Order`, `Guid TrackId` |
-| `CreateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order` |
-| `UpdateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order` |
+| `CreateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order`, `string Content`, `LessonType Type` |
+| `UpdateLessonRequest` | Input | `string Title`, `Guid ModuleId`, `int Order`, `string Content`, `LessonType Type` |
 | `LessonResponse` | Output | `Guid Id`, `string Title`, `Guid ModuleId` |
 | `LessonDetailResponse` | Output | Lesson fields plus ordered `LessonResourceResponse` items |
 
-> `UpdateTrackRequest` is still planned. `CreateLessonRequest`/`UpdateLessonRequest` do not yet carry `Content`; that gap is tracked with the Lesson authoring work (#284).
+> `UpdateTrackRequest` is still planned. Lesson authoring (write methods on `ILessonService`) is still Target; the remaining work is tracked in #284.
 
 ### Service Interfaces
 
@@ -137,7 +137,7 @@ public interface ILessonService
 
 - `CreateTrackRequestValidator` validates that `Name` and `Description` are not empty. Maximum-length rules are database-enforced for Track input today.
 - `CreateModuleRequestValidator` / `UpdateModuleRequestValidator` enforce title, summary, order, and track id rules.
-- `CreateLessonRequestValidator` / `UpdateLessonRequestValidator` enforce title, module id, and order rules. They do not yet validate `Content` because the DTO does not carry it.
+- `CreateLessonRequestValidator` / `UpdateLessonRequestValidator` enforce title, module id, order, content, and type rules. Invoking these validators from HTTP controllers is still target work (#284).
 - All validators are registered by `AddApplication()`.
 
 ## 4. API Endpoints Contract (Owned by API Team)

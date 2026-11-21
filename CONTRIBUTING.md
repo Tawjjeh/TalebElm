@@ -22,25 +22,24 @@ Follow these five steps to find an issue, set up your branch, and submit your ch
    dotnet test TalebElm.slnx
    python3 scripts/check-docs.py
    ```
-4. **Pick a good first issue:** Find an unassigned issue labeled `help wanted`, or start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee).
+4. **Pick an issue:** Pick an issue with the `help wanted` label that nobody has taken (or start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee)), comment that you want it, and start once it is assigned to you.
 5. **Create a branch:** Fetch latest changes and create a branch from `upstream/main`:
    ```bash
    git fetch upstream
    git switch -c feat/my-topic upstream/main
    ```
 
-## The green-light rule
+## Contribution rule
 
-Work begins only after an issue is assigned to you on GitHub.
-Leave a comment on the open issue describing what you plan to touch; once assigned, the issue is yours.
-Pull requests opened without an assigned issue will be closed kindly without review to avoid duplicate work.
+Pick an issue with the help wanted label that nobody has taken, comment that you want it, and start once it is assigned to you.
+Please link the issue with `Closes #N` in your pull request description to keep work organized and avoid duplicate effort.
 
 ## A good pull request
 
 - **One focused change:** Touch only the files needed for that single task, keeping diffs under about 200 lines.
 - **Automated tests:** Include unit or integration tests proving the new behavior that would fail without your change.
 - **Docs updated:** Update relevant guides or index tables if behavior, arguments, or contracts changed.
-- **Linked issue:** Write `Closes #N` in the pull request description so the issue closes on merge.
+- **Linked issue:** Include `Closes #N` in the description so the issue closes on merge.
 - **Conventional title:** Prefix the title with a conventional type such as `feat:`, `fix:`, `docs:`, or `test:`.
 
 ## What happens next
@@ -63,4 +62,4 @@ If you run into an unexpected build failure or have a question about architectur
 ## Standards and labels
 
 Read [`docs/development/coding-standards.md`](docs/development/coding-standards.md) for architectural boundaries and [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) for completion criteria.
-Issues and pull requests use the project labels: `bug`, `enhancement`, `documentation`, `question`, `layer:domain`, `layer:application`, `layer:infrastructure`, `layer:api`, `layer:tests`, `good first issue`, and `help wanted`.
+Available issue and pull request labels are documented in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md).
