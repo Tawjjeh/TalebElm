@@ -669,7 +669,8 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Property<string>("Handle")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<int>("Platform")
                         .HasColumnType("INTEGER");

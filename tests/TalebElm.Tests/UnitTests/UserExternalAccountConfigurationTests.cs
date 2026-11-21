@@ -46,6 +46,18 @@ public class UserExternalAccountConfigurationTests : SqliteTestBase
     }
 
     [Fact]
+    public void UserExternalAccount_Handle_ShouldUseCaseInsensitiveCollation()
+    {
+        var designTimeModel = DbContext.GetService<IDesignTimeModel>().Model;
+        var entityType = designTimeModel.FindEntityType(typeof(UserExternalAccount));
+
+        Assert.NotNull(entityType);
+        var handleProp = entityType.FindProperty(nameof(UserExternalAccount.Handle));
+        Assert.NotNull(handleProp);
+        Assert.Equal("NOCASE", handleProp.GetCollation());
+    }
+
+    [Fact]
     public void UserExternalAccount_ForeignKeyToUser_ShouldUseRestrictDelete()
     {
         var context = DbContext;

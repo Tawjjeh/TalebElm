@@ -162,17 +162,25 @@ public class CodeforcesChallengeServicePersistenceTests : SqliteTestBase
         Assert.Equal("other_token", Assert.Single(await ReadAccountsAsync(other.Id)).VerificationToken);
     }
 
-    [Fact]
-    public async Task GenerateChallengeAsync_VerifiedHandleComparisonIsCaseSensitive()
+    [Theory]
+    [InlineData("Tourist", "tourist")]
+    [InlineData("tourist", "TOURIST")]
+    public async Task GenerateChallengeAsync_VerifiedHandleComparisonIsCaseInsensitive(
+        string verifiedHandle,
+        string attemptedHandle)
     {
-        var target = await AddUserAsync("target-d@example.com");
-        var other = await AddUserAsync("other-d@example.com");
-        await AddAccountAsync(other.Id, "Tourist", AccountVerificationStatus.Verified);
+        var target = await AddUserAsync($"target-{attemptedHandle.ToLowerInvariant()}@example.com");
+        var other = await AddUserAsync($"other-{verifiedHandle.ToLowerInvariant()}@example.com");
+        var verified = await AddAccountAsync(other.Id, verifiedHandle, AccountVerificationStatus.Verified);
 
-        var response = await CreateService().GenerateChallengeAsync(target.Id, "tourist");
+        await Assert.ThrowsAsync<ConflictException>(
+            () => CreateService().GenerateChallengeAsync(target.Id, attemptedHandle));
 
-        Assert.Equal("tourist", response.Handle);
-        Assert.Equal("tourist", Assert.Single(await ReadAccountsAsync(target.Id)).Handle);
+        Assert.Empty(await ReadAccountsAsync(target.Id));
+        var unchanged = Assert.Single(await ReadAccountsAsync(other.Id));
+        Assert.Equal(verified.Id, unchanged.Id);
+        Assert.Equal(verifiedHandle, unchanged.Handle);
+        Assert.Equal(AccountVerificationStatus.Verified, unchanged.Status);
     }
 
     [Fact]

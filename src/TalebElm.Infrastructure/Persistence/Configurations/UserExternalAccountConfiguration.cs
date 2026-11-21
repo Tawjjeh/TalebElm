@@ -8,9 +8,12 @@ public class UserExternalAccountConfiguration : IEntityTypeConfiguration<UserExt
 {
     public void Configure(EntityTypeBuilder<UserExternalAccount> builder)
     {
+        // Codeforces and GitHub handles are case-insensitive. The collation makes
+        // the filtered unique index below reject "Tourist" and "tourist" as duplicates.
         builder.Property(x => x.Handle)
             .IsRequired()
-            .HasMaxLength(64);
+            .HasMaxLength(64)
+            .UseCollation("NOCASE");
 
         builder.Property(x => x.ExternalNumericId)
             .HasMaxLength(64);

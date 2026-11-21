@@ -98,6 +98,40 @@ public class UserExternalAccountRepositoryTests : SqliteTestBase
         Assert.Equal(account.Id, result!.Id);
     }
 
+    [Theory]
+    [InlineData("Tourist", "tourist")]
+    [InlineData("tourist", "TOURIST")]
+    public async Task GetVerifiedByPlatformAndHandleAsync_IsCaseInsensitive(string storedHandle, string queryHandle)
+    {
+        var user = await AddUserAsync("g@test.com");
+        var account = NewAccount(user.Id, storedHandle, status: AccountVerificationStatus.Verified);
+        DbContext.UserExternalAccounts.Add(account);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetVerifiedByPlatformAndHandleAsync(ExternalPlatform.Codeforces, queryHandle);
+
+        Assert.NotNull(result);
+        Assert.Equal(account.Id, result!.Id);
+    }
+
+    [Theory]
+    [InlineData("Tourist", "tourist")]
+    [InlineData("tourist", "TOURIST")]
+    public async Task GetByPlatformAndHandleAsync_IsCaseInsensitive(string storedHandle, string queryHandle)
+    {
+        var user = await AddUserAsync("h@test.com");
+        var account = NewAccount(user.Id, storedHandle);
+        DbContext.UserExternalAccounts.Add(account);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetByPlatformAndHandleAsync(ExternalPlatform.Codeforces, queryHandle);
+
+        Assert.NotNull(result);
+        Assert.Equal(account.Id, result!.Id);
+    }
+
     [Fact]
     public async Task GetVerifiedByPlatformAndHandleAsync_IgnoresPendingAccounts()
     {

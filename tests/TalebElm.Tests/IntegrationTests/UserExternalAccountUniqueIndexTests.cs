@@ -110,6 +110,38 @@ public class UserExternalAccountUniqueIndexTests : SqliteTestBase
         await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
     }
 
+    [Theory]
+    [InlineData("Tourist", "tourist")]
+    [InlineData("tourist", "TOURIST")]
+    public async Task VerifiedHandles_DifferingOnlyByCase_OnSamePlatform_ThrowsDbUpdateException(
+        string handle1,
+        string handle2)
+    {
+        var user1 = await CreateUserAsync("Learner 3a", "learner3a@example.com");
+        var user2 = await CreateUserAsync("Learner 4a", "learner4a@example.com");
+
+        var account1 = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user1.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = handle1,
+            Status = AccountVerificationStatus.Verified
+        };
+
+        var account2 = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user2.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = handle2,
+            Status = AccountVerificationStatus.Verified
+        };
+
+        DbContext.UserExternalAccounts.AddRange(account1, account2);
+        await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
+    }
+
     [Fact]
     public async Task PendingHandles_DuplicateOnSamePlatform_AreAllowed()
     {
