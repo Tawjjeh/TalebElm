@@ -80,7 +80,7 @@ Records one verified solve per learner and problem: the external submission id, 
 
 ### Technology and Resource (Implemented)
 
-`Technology` is a self-referencing tree (language → framework → topic) with a filtered unique `Slug` and `Order` per level. `Resource` stores one curated learning source with its kind, language, level, paid flag, approval status, and link-health counters. Entities, configurations, the `AddTechnologyAndResource` migration, and the `ITechnologyRepository` / `IResourceRepository` implementations exist; the Hub services and endpoints are target behavior.
+`Technology` is a self-referencing tree (language → framework → topic) with a filtered unique `Slug` and `Order` per level. `Resource` stores one curated learning source with its kind, language, level, paid flag, approval status, and link-health counters. Entities, configurations, the `AddTechnologyAndResource` migration, the `ITechnologyRepository` / `IResourceRepository` implementations, and the public read service exist; the Hub admin services and endpoints are target behavior.
 
 ### CapstoneProject and ProjectMilestone (Implemented)
 
