@@ -13,7 +13,7 @@ This index separates current code from planned product behavior. A feature docum
 | [07-module-problems-and-verification.md](features/07-module-problems-and-verification.md) | Practice problems and external verification | `ModuleProblem`, `UserExternalAccount`, `UserProblemCompletion` entities, their configurations/migrations, `IUserExternalAccountRepository`, and the `ICodeforcesClient` contract exist; a Codeforces client, the verification services, and endpoints are target |
 | [08-health-and-error-handling.md](features/08-health-and-error-handling.md) | Health endpoint and exception mapping | Health route and registered exception middleware exist, including `409 Conflict` and `503` external outage mapping; most feature controllers still return `501` |
 | [09-capstone-project.md](features/09-capstone-project.md) | Capstone projects & track completion | `CapstoneProject` and `ProjectMilestone` entities and their EF Core configurations/migration exist; milestone verification, derived completion, and endpoints are target |
-| [10-automated-task-verification.md](features/10-automated-task-verification.md) | Automated GitHub task verification | `GitHubTask` entity, `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, and the `IGitHubClient` contract exist; a GitHub client, `TaskVersion`, the SHA integrity service, GitHub OAuth, and endpoints are target |
+| [10-automated-task-verification.md](features/10-automated-task-verification.md) | Automated GitHub task verification | `GitHubTask` entity, `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, the `IGitHubClient` contract, and its Infrastructure implementation exist; `TaskVersion`, the SHA integrity service, GitHub OAuth, and endpoints are target |
 
 ## Other Documents
 
