@@ -5,6 +5,10 @@ using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Infrastructure.Repositories;
+using Microsoft.Extensions.Http.Resilience;
+using TalebElm.Application.Services.Abstraction;
+using TalebElm.Infrastructure.Services;
+using Microsoft.Extensions.Options;
 
 namespace TalebElm.Infrastructure;
 
@@ -31,6 +35,18 @@ public static class DependencyInjection
         services.AddScoped<ITechnologyRepository, TechnologyRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
+
+        services.Configure<CodeforcesOptions>(configuration.GetSection(CodeforcesOptions.SectionName));
+
+        services.AddHttpClient<ICodeforcesClient, CodeforcesClient>()
+            .ConfigureHttpClient((sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<CodeforcesOptions>>().Value;
+                client.BaseAddress = new Uri(options.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("TalebElm/1.0");
+            })
+            .AddStandardResilienceHandler();
 
         return services;
     }
