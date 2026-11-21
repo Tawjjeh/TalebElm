@@ -13,11 +13,12 @@ A signed-in learner chooses a Track and enrolls once. Enrollment opens the first
 | UserProgress | CreatedAt | DateTimeOffset | No | Inherited UTC timestamp |
 | UserProgress | UserId | Guid | No | Learner id; unique with ModuleId |
 | UserProgress | ModuleId | Guid | No | Module id; unique with UserId |
+| UserProgress | TrackId | Guid | No | Derived from the Module's Track |
 | UserProgress | IsUnlocked | bool | No | Whether the learner may open this Module; sticky — never auto re-locked once `true` |
 | UserProgress | PassedExam | bool | No | Whether this learner passed the Module exam; sticky — never reset by a later failed retake |
 | UserProgress | Score | int | No | Latest attempt score on the `0–100` scale (latest-wins) |
 
-The EF configuration enforces a unique index on `(UserId, ModuleId)` (exactly one row per learner + Module), `Restrict` delete behavior on both FKs, and plain-CLR navigation properties (`UserProgress.User`, `UserProgress.Module`).
+The EF configuration enforces a unique index on `(UserId, ModuleId)` (exactly one row per learner + Module) and `Restrict` delete behavior. Composite foreign keys match `(ModuleId, TrackId)` to the Module and `(UserId, TrackId)` to the learner's enrollment.
 
 ### Current Entity: TrackEnrollment (Persistence Implemented)
 
@@ -40,7 +41,7 @@ The unique index on `(UserId, TrackId)` is implemented. Payment and attendance a
 - On a passing Exam, mark the current Module passed and unlock only the next Module in the same Track.
 - On failure, record the latest score and keep later Modules locked.
 - A later failed retake never clears `PassedExam` or re-locks a Module that is already unlocked (both flags are sticky).
-- An `Admin` may manually unlock any Module for a learner (creates the row if missing, sets `IsUnlocked = true`, leaves `Score` / `PassedExam` untouched).
+- An `Admin` may manually unlock a Module for a learner enrolled in its Track (creates the row if missing, sets `IsUnlocked = true`, leaves `Score` / `PassedExam` untouched).
 - Reject enrollment in a Track with no Modules without creating partial records.
 - Reject duplicate enrollment with `409 Conflict`; there is no un-enroll in the MVP.
 - Modules without an Exam never set `PassedExam`; they progress only via the explicit unlock rule.

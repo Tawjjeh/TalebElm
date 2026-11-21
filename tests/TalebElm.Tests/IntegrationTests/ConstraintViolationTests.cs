@@ -35,11 +35,12 @@ public class ConstraintViolationTests : SqliteTestBase
     [Fact]
     public async Task DuplicateProgress_ThrowsConflict_AndWritesNothing()
     {
-        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = _user.Id, TrackId = _track.Id });
+        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id, TrackId = _track.Id });
         await _unitOfWork.SaveChangesAsync();
         ClearTracker();
 
-        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
+        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id, TrackId = _track.Id });
 
         await Assert.ThrowsAsync<ConflictException>(() => _unitOfWork.SaveChangesAsync());
         await using var check = CreateContext();
@@ -96,9 +97,10 @@ public class ConstraintViolationTests : SqliteTestBase
     [Fact]
     public async Task Middleware_ReturnsConflictWithoutTheProviderMessage()
     {
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = _user.Id, TrackId = _track.Id });
         DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = _user.Id, ModuleId = _module.Id },
-            new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
+            new UserProgress { UserId = _user.Id, ModuleId = _module.Id, TrackId = _track.Id },
+            new UserProgress { UserId = _user.Id, ModuleId = _module.Id, TrackId = _track.Id });
 
         var (status, body) = await RunThroughMiddleware(async _ => await _unitOfWork.SaveChangesAsync());
 

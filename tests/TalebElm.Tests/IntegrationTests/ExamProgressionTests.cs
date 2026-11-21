@@ -41,11 +41,13 @@ public class ExamProgressionTests : SqliteTestBase
         DbContext.Tracks.Add(_track);
         DbContext.Modules.AddRange(_firstModule, _secondModule);
         DbContext.Users.Add(_learner);
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = _learner.Id, TrackId = _track.Id });
         DbContext.Exams.Add(_exam);
         DbContext.UserProgresses.Add(new UserProgress
         {
             UserId = _learner.Id,
             ModuleId = _firstModule.Id,
+            TrackId = _track.Id,
             IsUnlocked = true,
             CompletedRequiredProblems = true
         });
@@ -71,5 +73,6 @@ public class ExamProgressionTests : SqliteTestBase
 
         Assert.NotNull(next);
         Assert.True(next.IsUnlocked);
+        Assert.Equal(_track.Id, next.TrackId);
     }
 }

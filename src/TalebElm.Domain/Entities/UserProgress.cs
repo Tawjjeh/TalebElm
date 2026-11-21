@@ -4,6 +4,7 @@ public class UserProgress : BaseEntity
 {
     public Guid UserId { get; set; }
     public Guid ModuleId { get; set; }
+    public Guid TrackId { get; set; }
     public bool IsUnlocked { get; set; }
     public bool PassedExam { get; set; }
     public bool CompletedRequiredProblems { get; set; }

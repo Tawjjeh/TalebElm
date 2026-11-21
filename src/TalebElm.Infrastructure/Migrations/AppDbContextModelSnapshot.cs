@@ -779,15 +779,20 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModuleId");
+                    b.HasIndex("ModuleId", "TrackId");
 
                     b.HasIndex("UserId", "ModuleId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "TrackId");
 
                     b.ToTable("UserProgresses", t =>
                         {
@@ -990,15 +995,23 @@ namespace TalebElm.Infrastructure.Migrations
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProgress", b =>
                 {
-                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
-                        .WithMany()
-                        .HasForeignKey("ModuleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("TalebElm.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.Module", "Module")
+                        .WithMany()
+                        .HasForeignKey("ModuleId", "TrackId")
+                        .HasPrincipalKey("Id", "TrackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.TrackEnrollment", null)
+                        .WithMany()
+                        .HasForeignKey("UserId", "TrackId")
+                        .HasPrincipalKey("UserId", "TrackId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

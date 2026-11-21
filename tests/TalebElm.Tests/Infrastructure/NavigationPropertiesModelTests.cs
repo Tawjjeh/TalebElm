@@ -98,10 +98,22 @@ public class NavigationPropertiesModelTests : SqliteTestBase
             fk => fk.Properties.Any(p => p.Name == nameof(UserProgress.ModuleId))
                 && fk.PrincipalEntityType.ClrType == typeof(Module));
 
-        Assert.Equal(nameof(UserProgress.ModuleId), Assert.Single(fk.Properties).Name);
-        Assert.Equal(nameof(Module.Id), Assert.Single(fk.PrincipalKey.Properties).Name);
+        Assert.Equal([nameof(UserProgress.ModuleId), nameof(UserProgress.TrackId)], fk.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(Module.Id), nameof(Module.TrackId)], fk.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.All(fk.Properties, p => Assert.False(p.IsShadowProperty()));
         Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior);
         Assert.Equal(nameof(UserProgress.Module), fk.DependentToPrincipal?.Name);
+    }
+
+    [Fact]
+    public void UserProgress_RequiresMatchingEnrollment()
+    {
+        var fk = Assert.Single(DbContext.Model.FindEntityType(typeof(UserProgress))!.GetForeignKeys(),
+            key => key.PrincipalEntityType.ClrType == typeof(TrackEnrollment));
+        Assert.Equal([nameof(UserProgress.UserId), nameof(UserProgress.TrackId)], fk.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(TrackEnrollment.UserId), nameof(TrackEnrollment.TrackId)], fk.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior);
+        Assert.All(fk.Properties, p => Assert.False(p.IsShadowProperty()));
     }
 
     [Fact]
@@ -134,10 +146,13 @@ public class NavigationPropertiesModelTests : SqliteTestBase
         var m2 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Title = "M2", Order = 1 };
         var other = new Module { Id = Guid.NewGuid(), TrackId = otherTrack.Id, Title = "Other", Order = 1 };
         DbContext.Modules.AddRange(m1, m2, other);
+        DbContext.TrackEnrollments.AddRange(
+            new TrackEnrollment { UserId = user.Id, TrackId = track.Id },
+            new TrackEnrollment { UserId = user.Id, TrackId = otherTrack.Id });
         DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = user.Id, ModuleId = m1.Id },
-            new UserProgress { UserId = user.Id, ModuleId = m2.Id },
-            new UserProgress { UserId = user.Id, ModuleId = other.Id });
+            new UserProgress { UserId = user.Id, ModuleId = m1.Id, TrackId = track.Id },
+            new UserProgress { UserId = user.Id, ModuleId = m2.Id, TrackId = track.Id },
+            new UserProgress { UserId = user.Id, ModuleId = other.Id, TrackId = otherTrack.Id });
         await SaveChangesAsync();
         ClearTracker();
 

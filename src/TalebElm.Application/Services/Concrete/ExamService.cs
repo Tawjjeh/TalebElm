@@ -101,6 +101,7 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
                     {
                         UserId = userId,
                         ModuleId = nextModule.Id,
+                        TrackId = nextModule.TrackId,
                         IsUnlocked = true
                     }, ct);
                 }
