@@ -21,7 +21,14 @@ public class UserProblemCompletionConfiguration : IEntityTypeConfiguration<UserP
 
         builder.HasOne(c => c.ModuleProblem)
             .WithMany()
-            .HasForeignKey(c => c.ModuleProblemId)
+            .HasForeignKey(c => new { c.ModuleProblemId, c.ModuleId })
+            .HasPrincipalKey(p => new { p.Id, p.ModuleId })
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<UserProgress>()
+            .WithMany()
+            .HasForeignKey(c => new { c.UserId, c.ModuleId })
+            .HasPrincipalKey(p => new { p.UserId, p.ModuleId })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(c => new { c.UserId, c.ModuleProblemId })

@@ -61,7 +61,9 @@ Defines an assigned practice problem associated with a Module.
 | `IsRequired` | `bool` | No | If `true`, must be completed to unlock the next module. If `false`, optional bonus. Default `true`. | Target |
 | `DifficultyRating` | `int?` | Yes | Cached Codeforces rating (e.g., 800, 1000). Soft validation warning if Module 1 problem has rating > 800. | Target |
 
-### 2.3 Entity: UserProblemCompletion (Unified Model) (Target)
+### 2.3 Entity: UserProblemCompletion (Unified Model)
+
+The database requires matching `UserProgress(UserId, ModuleId)`. `ModuleId` is derived from the assigned `ModuleProblem`. Previously accepted Codeforces submissions remain eligible when verification records a completion after Module progress exists.
 
 Records that a learner has verified completion of a specific `ModuleProblem`.
 

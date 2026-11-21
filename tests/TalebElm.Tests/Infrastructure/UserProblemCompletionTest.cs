@@ -58,7 +58,14 @@ public class UserProblemCompletionTest
 
         var foreignKeys = entityType.GetForeignKeys().ToList();
 
-        Assert.Equal(2, foreignKeys.Count);
+        Assert.Equal(3, foreignKeys.Count);
+        var progressKey = Assert.Single(foreignKeys, fk => fk.PrincipalEntityType.ClrType == typeof(UserProgress));
+        var problemKey = Assert.Single(foreignKeys, fk => fk.PrincipalEntityType.ClrType == typeof(ModuleProblem));
+        Assert.Equal([nameof(UserProblemCompletion.UserId), nameof(UserProblemCompletion.ModuleId)], progressKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(UserProgress.UserId), nameof(UserProgress.ModuleId)], progressKey.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(UserProblemCompletion.ModuleProblemId), nameof(UserProblemCompletion.ModuleId)], problemKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(ModuleProblem.Id), nameof(ModuleProblem.ModuleId)], problemKey.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.All(foreignKeys.SelectMany(fk => fk.Properties), p => Assert.False(p.IsShadowProperty()));
         Assert.All(foreignKeys, foreignKey =>
             Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior));
     }

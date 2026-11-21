@@ -726,6 +726,9 @@ namespace TalebElm.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("ModuleId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("ModuleProblemId")
                         .HasColumnType("TEXT");
 
@@ -744,7 +747,9 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModuleProblemId");
+                    b.HasIndex("ModuleProblemId", "ModuleId");
+
+                    b.HasIndex("UserId", "ModuleId");
 
                     b.HasIndex("UserId", "ModuleProblemId")
                         .IsUnique();
@@ -973,15 +978,23 @@ namespace TalebElm.Infrastructure.Migrations
 
             modelBuilder.Entity("TalebElm.Domain.Entities.UserProblemCompletion", b =>
                 {
-                    b.HasOne("TalebElm.Domain.Entities.ModuleProblem", "ModuleProblem")
-                        .WithMany()
-                        .HasForeignKey("ModuleProblemId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("TalebElm.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.ModuleProblem", "ModuleProblem")
+                        .WithMany()
+                        .HasForeignKey("ModuleProblemId", "ModuleId")
+                        .HasPrincipalKey("Id", "ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TalebElm.Domain.Entities.UserProgress", null)
+                        .WithMany()
+                        .HasForeignKey("UserId", "ModuleId")
+                        .HasPrincipalKey("UserId", "ModuleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

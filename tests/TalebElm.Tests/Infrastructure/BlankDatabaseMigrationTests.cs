@@ -104,7 +104,8 @@ public class BlankDatabaseMigrationTests : IAsyncLifetime
         Assert.Contains("IX_TrackEnrollments_UserId_TrackId", indexes);
         Assert.Contains("IX_Users_Email", indexes);
         Assert.Contains("IX_Exams_ModuleId", indexes);
-        Assert.Contains("IX_UserProblemCompletions_ModuleProblemId", indexes);
+        Assert.Contains("IX_UserProblemCompletions_ModuleProblemId_ModuleId", indexes);
+        Assert.Contains("IX_UserProblemCompletions_UserId_ModuleProblemId", indexes);
     }
 
     [Fact]

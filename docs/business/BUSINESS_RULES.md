@@ -115,6 +115,7 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | X-4 | Automated GitHub tasks (CodeCrafters-style): learner links GitHub via OAuth (numeric ID stored), generates repo from official template, pushes to default branch. Platform verifies repo owner, template provenance, Actions workflow success, and blob/tree SHAs against `TaskVersion`. Zero manual gating. | Target (Decision 24/35) |
 | X-5 | Problem difficulty calibration: `ModuleProblem` caches Codeforces rating. First Module problems must be rated ≤800, rising gradually. Content guideline and soft validator warning. | Target (Decision 28) |
 | X-6 | External service outages (Codeforces or GitHub down/throttled) return a fail-safe 503 response and alter NO learner state. | Target (Decision 31) |
+| X-7 | A stored `UserProblemCompletion` must match a `UserProgress` row for the learner and the problem's Module. Accepted solves from before the learner started the Module still count under Decision 29. | Implemented (database constraint) |
 
 ## 9. Cumulative capstone projects
 
