@@ -27,4 +27,12 @@ public class UserExternalAccountRepository(AppDbContext context) : IUserExternal
         return await context.UserExternalAccounts
             .FirstOrDefaultAsync(a => a.Platform == platform && a.Handle == handle, ct);
     }
+
+    public async Task<UserExternalAccount?> GetVerifiedByPlatformAndHandleAsync(ExternalPlatform platform, string handle, CancellationToken ct = default)
+    {
+        return await context.UserExternalAccounts
+            .FirstOrDefaultAsync(a => a.Platform == platform
+                && a.Status == AccountVerificationStatus.Verified
+                && a.Handle == handle, ct);
+    }
 }

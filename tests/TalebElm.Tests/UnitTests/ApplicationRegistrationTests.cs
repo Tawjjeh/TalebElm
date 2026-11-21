@@ -41,5 +41,6 @@ public class ApplicationRegistrationTests
         Assert.NotNull(scope.ServiceProvider.GetService<IUserService>());
         Assert.NotNull(scope.ServiceProvider.GetService<IUserProgressService>());
         Assert.NotNull(scope.ServiceProvider.GetService<ITrackEnrollmentService>());
+        Assert.NotNull(scope.ServiceProvider.GetService<ICodeforcesChallengeService>());
     }
 }

@@ -22,6 +22,8 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserProgressService, UserProgressService>();
         services.AddScoped<ITrackEnrollmentService, TrackEnrollmentService>();
+        services.AddScoped<IResourceHubReadService, ResourceHubReadService>();
+        services.AddScoped<ICodeforcesChallengeService, CodeforcesChallengeService>();
 
         return services;
     }
