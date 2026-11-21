@@ -37,7 +37,7 @@ Stores a learner's linked profile on an external platform and tracks its ownersh
 | `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Implemented |
 | `UserId` | `Guid` | No | Required FK to `User.Id`. Delete behavior: `Restrict`. | Implemented |
 | `Platform` | `ExternalPlatform` | No | Enum: `Codeforces = 1`, `GitHub = 2`. `UNIQUE(UserId, Platform)`. | Implemented |
-| `Handle` | `string` | No | Platform username / handle. Max length **64**, non-blank (`CK_UserExternalAccounts_Handle_NotEmpty`). Filtered `UNIQUE(Platform, Handle)` for verified accounts (`Status = 1`). | Implemented |
+| `Handle` | `string` | No | Platform username / handle. Max length **64**, non-blank (`CK_UserExternalAccounts_Handle_NotEmpty`), `NOCASE` collation. Filtered `UNIQUE(Platform, Handle)` for verified accounts (`Status = 1`); the uniqueness is case-insensitive. | Implemented |
 | `ExternalNumericId` | `string?` | Yes | Numeric user id (used by GitHub). Max length **64**. Filtered `UNIQUE(Platform, ExternalNumericId)` where not null. | Implemented |
 | `Status` | `AccountVerificationStatus` | No | Enum: `Pending = 0`, `Verified = 1`, `Expired = 2`. | Implemented |
 | `VerificationToken` | `string?` | Yes | Cryptographically random single-use token (≥128 bits hex string). Max length **64**. | Implemented |

@@ -10,7 +10,8 @@ public class UserExternalAccountConfiguration : IEntityTypeConfiguration<UserExt
     {
         builder.Property(x => x.Handle)
             .IsRequired()
-            .HasMaxLength(64);
+            .HasMaxLength(64)
+            .UseCollation("NOCASE");
 
         builder.Property(x => x.ExternalNumericId)
             .HasMaxLength(64);
