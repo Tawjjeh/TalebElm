@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Infrastructure.Repositories;
 using Microsoft.Extensions.Http.Resilience;
-using TalebElm.Application.Services.Abstraction;
 using TalebElm.Infrastructure.Services;
 using Microsoft.Extensions.Options;
 
@@ -47,6 +47,8 @@ public static class DependencyInjection
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("TalebElm/1.0");
             })
             .AddStandardResilienceHandler();
+      
+        services.AddHttpClient<IGitHubClient, GitHubClient>();
 
         return services;
     }

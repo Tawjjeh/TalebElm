@@ -1,6 +1,6 @@
 # Feature Specification: Automated GitHub Task Verification
 
-> **Status discipline:** The `GitHubTask` entity, the `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, and the `IGitHubClient` contract are **Implemented**. An `IGitHubClient` implementation, `TaskVersion`, the verification services, GitHub OAuth, and the endpoints remain **Target** (Phase 3).
+> **Status discipline:** The `GitHubTask` entity, the `ModuleProblem.GitHubTaskId` constraint, `UserProblemCompletion`, the `IGitHubClient` contract, and its Infrastructure implementation are **Implemented**. `TaskVersion`, the verification services, GitHub OAuth, and the endpoints remain **Target** (Phase 3).
 > Adheres strictly to the **Zero Manual Gating** principle: all verification is executed automatically by the server.
 
 ---
