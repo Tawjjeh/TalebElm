@@ -63,7 +63,7 @@ public class GitHubClientTests
     [InlineData(HttpStatusCode.ServiceUnavailable)]
     public async Task GetRepositoryAsync_UnavailableStatus_ThrowsWithoutLeakingResponseOrToken(HttpStatusCode status)
     {
-        const string token = "ghp_supersecret-token";
+        const string token = "test-token";
         const string rawBody = "raw-secret-error-body";
         var handler = new FakeHandler(_ => TextResponse(status, rawBody));
         var client = CreateClient(handler, token);
@@ -108,7 +108,7 @@ public class GitHubClientTests
     [Fact]
     public async Task GetRepositoryAsync_UsesUserAgentAndOptionalBearerToken()
     {
-        const string token = "ghp_test-token";
+        const string token = "test-token";
         var withTokenHandler = new FakeHandler(_ => JsonResponse(HttpStatusCode.OK, RepositoryJson));
         var withTokenClient = CreateClient(withTokenHandler, token);
 
@@ -222,6 +222,7 @@ public class GitHubClientTests
         var configuration = BuildConfiguration();
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
 
         services.AddInfrastructure(configuration);
 

@@ -19,7 +19,6 @@ public static class DependencyInjection
             throw new InvalidOperationException(
                 "Connection string 'TalebElm' does not exist or is empty. See docs/LOCAL_SETUP.md for details");
 
-        services.AddSingleton(configuration);
         services.AddDbContext<AppDbContext>(o => o.UseSqlite(connectionString));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
