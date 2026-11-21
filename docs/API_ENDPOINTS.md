@@ -11,6 +11,10 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
 | GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
+| GET | `/api/hub/technologies` | Public, anonymous; returns top-level categories. |
+| GET | `/api/hub/technologies/{**slugPath}` | Public, anonymous; resolves nested technology paths and returns children plus approved resources. |
+| GET | `/api/hub/topics/{id}/resources` | Public, anonymous; returns approved resources for a technology/topic, with paging and filters. |
+| GET | `/api/hub/resources` | Public, anonymous; returns paged, filtered, approved resources. |
 | POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
@@ -79,11 +83,14 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 | HTTP | Route | Request | Response | Target status |
 |---|---|---|---|---|
 | GET | `/api/hub/technologies` | None | Top-level languages & categories | 200 |
-| GET | `/api/hub/technologies/{slug}` | Query filters (language, level, cost) | Technology detail with children & resources | 200, 404 |
-| GET | `/api/hub/resources` | Query filters (search, language, level, cost, kind, page, size) | Paginated curated resources | 200 |
+| GET | `/api/hub/technologies/{**slugPath}` | `search`, `language`, `level`, `isPaid`, `kind`, `page`, `size` | Technology detail with children and approved resources | 200, 400, 404 |
+| GET | `/api/hub/topics/{id}/resources` | Same filters; `id` is a technology/topic GUID | Paged approved resources; `404` for an unknown topic | 200, 400, 404 |
+| GET | `/api/hub/resources` | Same filters (all optional) | Paged approved resources; empty matches return `200` with an empty `Items` list | 200, 400 |
 | POST | `/api/admin/hub/resources` | Resource creation DTO | Created resource DTO | 201, 400, 401, 403 |
 | PUT | `/api/admin/hub/resources/{id}` | Resource update DTO | Updated resource DTO | 200, 400, 401, 403, 404 |
 | DELETE | `/api/admin/hub/resources/{id}` | None | None | 204, 401, 403, 404, 409 |
+
+The four public Resource Hub GET routes are implemented and anonymous. `page` defaults to 1; `size` defaults to 20 (maximum 100). `page < 1` and `size` outside 1–100 return `400`. Only `Approved` resources are returned. The Admin Hub routes remain targets.
 
 ### Capstone projects
 
@@ -93,7 +100,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 | GET | `/api/tracks/{trackId}/project/milestones` | None | Ordered milestones with completion status | 200, 401, 403, 404 |
 | POST | `/api/tracks/{trackId}/project/milestones/{id}/verify` | Verify milestone request (repoName) | Milestone completion & track unlock state | 200, 400, 401, 403, 429, 503 |
 | POST | `/api/admin/tracks/{trackId}/project` | Project creation DTO | Created capstone project DTO | 201, 400, 401, 403 |
-| POST | `/api/admin/projects/{id}/milestones` | Milestone creation DTO | Created milestone DTO | 201, 400, 401, 403 |
+| POST | `/api/admin/projects/{id}/milestones` | Project milestone creation DTO | Created milestone DTO | 201, 400, 401, 403 |
 
 ### Who may call (proposed)
 
