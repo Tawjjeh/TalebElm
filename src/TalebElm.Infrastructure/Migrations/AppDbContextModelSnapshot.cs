@@ -387,6 +387,9 @@ namespace TalebElm.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowJobName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -394,10 +397,12 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModuleId");
+                    b.HasIndex("ModuleId", "TrackId");
 
                     b.HasIndex("ProjectId", "Order")
                         .IsUnique();
+
+                    b.HasIndex("ProjectId", "TrackId");
 
                     b.HasIndex("ProjectId", "WorkflowJobName")
                         .IsUnique();
@@ -902,12 +907,14 @@ namespace TalebElm.Infrastructure.Migrations
                 {
                     b.HasOne("TalebElm.Domain.Entities.Module", "Module")
                         .WithMany()
-                        .HasForeignKey("ModuleId")
+                        .HasForeignKey("ModuleId", "TrackId")
+                        .HasPrincipalKey("Id", "TrackId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TalebElm.Domain.Entities.CapstoneProject", "Project")
                         .WithMany("Milestones")
-                        .HasForeignKey("ProjectId")
+                        .HasForeignKey("ProjectId", "TrackId")
+                        .HasPrincipalKey("Id", "TrackId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

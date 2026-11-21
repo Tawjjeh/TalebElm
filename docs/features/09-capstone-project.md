@@ -31,20 +31,21 @@ Represents the cumulative project definition attached to a Track.
 | `Description` | `string` | No | Architectural overview, technology stack, and high-level requirements. Max length **4000**. | Target |
 | `TaskId` | `Guid` | No | Required FK to `GitHubTask.Id`. Decision 36a replaced `StarterTemplateRepo`: one template repository, one locked workflow, and one tests tree. `UNIQUE(TaskId)`. | Target |
 
-### 2.2 Entity: ProjectMilestone (Target)
+### 2.2 Entity: ProjectMilestone (Implemented)
 
-Defines an ordered deliverable checkpoint within the cumulative project.
+Defines an ordered deliverable checkpoint within the cumulative project. When linked to a Module, the database requires the Module and project to belong to the same Track.
 
 | Field | Type | Nullable | Constraints / Notes | Status |
 |---|---|---|---|---|
-| `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Target |
-| `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Target |
-| `ProjectId` | `Guid` | No | Required FK to `CapstoneProject.Id`. Delete behavior: `Restrict`. | Target |
-| `ModuleId` | `Guid?` | Yes | Optional link to the corresponding Track `Module.Id` if the milestone is tackled alongside that module. | Target |
-| `Title` | `string` | No | Milestone title (e.g., "Milestone 2: Relational Persistence"). Max length **150**. | Target |
-| `Instructions` | `string` | No | Specific milestone requirements and test suite guide. Max length **2000**. | Target |
-| `WorkflowJobName` | `string` | No | Exact GitHub Actions workflow job name that proves this milestone. Max length **100**. `UNIQUE(ProjectId, WorkflowJobName)`. | Target |
-| `Order` | `int` | No | Sequence number (1, 2, 3...). `UNIQUE(ProjectId, Order)`. | Target |
+| `Id` | `Guid` | No | PK, inherited from `BaseEntity` | Implemented |
+| `CreatedAt` | `DateTimeOffset` | No | Inherited from `BaseEntity`, UTC | Implemented |
+| `ProjectId` | `Guid` | No | Required composite FK `(ProjectId, TrackId)` to the Capstone project. Delete behavior: `Restrict`. | Implemented |
+| `TrackId` | `Guid` | No | Derived from the parent Capstone project's Track. | Implemented |
+| `ModuleId` | `Guid?` | Yes | Optional composite FK `(ModuleId, TrackId)` to a Module in that Track. Delete behavior: `Restrict`. | Implemented |
+| `Title` | `string` | No | Milestone title (e.g., "Milestone 2: Relational Persistence"). Max length **150**. | Implemented |
+| `Instructions` | `string` | No | Specific milestone requirements and test suite guide. Max length **2000**. | Implemented |
+| `WorkflowJobName` | `string` | No | Exact GitHub Actions workflow job name that proves this milestone. Max length **100**. `UNIQUE(ProjectId, WorkflowJobName)`. | Implemented |
+| `Order` | `int` | No | Sequence number (1, 2, 3...). `UNIQUE(ProjectId, Order)`. | Implemented |
 
 ### 2.3 Milestone Progress: UserMilestoneProgress (Target)
 

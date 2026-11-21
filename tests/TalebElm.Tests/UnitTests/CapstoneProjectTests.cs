@@ -42,7 +42,7 @@ public class CapstoneProjectTests
     {
         var project = new CapstoneProject();
 
-        project.Milestones.Add(new ProjectMilestone { Order = 1 });
+        project.Milestones.Add(new ProjectMilestone(project) { Order = 1 });
 
         Assert.Single(project.Milestones);
     }
