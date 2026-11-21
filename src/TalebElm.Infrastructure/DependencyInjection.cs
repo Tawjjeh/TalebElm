@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Infrastructure.Repositories;
+using TalebElm.Infrastructure.Services;
 
 namespace TalebElm.Infrastructure;
 
@@ -17,6 +19,7 @@ public static class DependencyInjection
             throw new InvalidOperationException(
                 "Connection string 'TalebElm' does not exist or is empty. See docs/LOCAL_SETUP.md for details");
 
+        services.AddSingleton(configuration);
         services.AddDbContext<AppDbContext>(o => o.UseSqlite(connectionString));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -31,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<ITechnologyRepository, TechnologyRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
+
+        services.AddHttpClient<IGitHubClient, GitHubClient>();
 
         return services;
     }
