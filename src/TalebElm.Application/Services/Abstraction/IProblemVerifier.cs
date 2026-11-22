@@ -4,6 +4,6 @@ namespace TalebElm.Application.Services.Abstraction;
 
 public interface IProblemVerifier
 {
-    Task<ProblemVerificationResult> VerifyAsync(
+    Task<VerificationOutcome> VerifyAsync(
         Guid userId, Guid moduleProblemId, CancellationToken ct = default);
 }

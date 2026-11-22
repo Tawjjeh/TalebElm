@@ -2,7 +2,7 @@ using TalebElm.Domain.Enums;
 
 namespace TalebElm.Application.DTOs;
 
-public sealed record ProblemVerificationResult(
+public sealed record VerificationOutcome(
     bool Success,
     VerificationFailureReason Reason,
     Guid? TaskVersionId,

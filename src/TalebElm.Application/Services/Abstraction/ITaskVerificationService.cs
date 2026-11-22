@@ -4,7 +4,7 @@ namespace TalebElm.Application.Services.Abstraction;
 
 public interface ITaskVerificationService
 {
-    Task<TaskVerificationResult> VerifyRepositoryAsync(
+    Task<VerificationOutcome> VerifyRepositoryAsync(
         Guid userId, Guid gitHubTaskId, string repositoryName,
         string? requiredJobName = null, CancellationToken ct = default);
 }

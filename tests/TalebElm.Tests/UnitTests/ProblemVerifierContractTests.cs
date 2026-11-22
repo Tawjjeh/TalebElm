@@ -11,7 +11,7 @@ public class ProblemVerifierContractTests
     {
         var versionId = Guid.NewGuid();
 
-        var result = new ProblemVerificationResult(
+        var result = new VerificationOutcome(
             true, VerificationFailureReason.None, versionId, "abc123");
 
         Assert.True(result.Success);
@@ -35,11 +35,11 @@ public class ProblemVerifierContractTests
     {
         public CancellationToken ReceivedToken;
 
-        public Task<ProblemVerificationResult> VerifyAsync(
+        public Task<VerificationOutcome> VerifyAsync(
             Guid userId, Guid moduleProblemId, CancellationToken ct = default)
         {
             ReceivedToken = ct;
-            return Task.FromResult(new ProblemVerificationResult(
+            return Task.FromResult(new VerificationOutcome(
                 true, VerificationFailureReason.None, null, null));
         }
     }

@@ -11,7 +11,7 @@ public class TaskVerificationServiceContractTests
     {
         var versionId = Guid.NewGuid();
 
-        var result = new TaskVerificationResult(
+        var result = new VerificationOutcome(
             true, VerificationFailureReason.None, versionId, "abc123");
 
         Assert.True(result.Success);
@@ -36,12 +36,12 @@ public class TaskVerificationServiceContractTests
     {
         public CancellationToken ReceivedToken;
 
-        public Task<TaskVerificationResult> VerifyRepositoryAsync(
+        public Task<VerificationOutcome> VerifyRepositoryAsync(
             Guid userId, Guid gitHubTaskId, string repositoryName,
             string? requiredJobName = null, CancellationToken ct = default)
         {
             ReceivedToken = ct;
-            return Task.FromResult(new TaskVerificationResult(
+            return Task.FromResult(new VerificationOutcome(
                 true, VerificationFailureReason.None, null, null));
         }
     }

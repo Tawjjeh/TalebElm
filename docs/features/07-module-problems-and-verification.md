@@ -173,8 +173,13 @@ public record VerifySolvesResponse(
 ```csharp
 public interface IProblemVerifier
 {
-    ProblemKind Kind { get; }
-    Task<bool> VerifyCompletionAsync(Guid userId, ModuleProblem problem);
+    // No `Kind` property, use GetFor factory in the IProblemVerifierFactory to pick the verifier based on `ModuleProblem.Kind`
+    Task<ProblemVerificationResult> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default)
+}
+
+public interface IProblemVerifierFactory
+{
+    IProblemVerifier GetFor(ProblemKind kind);
 }
 
 public interface ICodeforcesClient
