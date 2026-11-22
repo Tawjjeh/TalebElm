@@ -133,6 +133,41 @@ public class ResourceRepositoryTests : SqliteTestBase
     }
 
     [Fact]
+    public async Task GetApprovedResourceCountsAsync_WhenTechnologyIdsAreEmpty_ReturnsEmpty()
+    {
+        var result = await _repository.GetApprovedResourceCountsAsync([]);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetApprovedResourceCountsAsync_ReturnsOnlyApprovedDirectCounts()
+    {
+        var csharp = new Technology { Name = "C#", Slug = "csharp", Order = 1, Kind = TechnologyKind.Language };
+        var python = new Technology { Name = "Python", Slug = "python", Order = 2, Kind = TechnologyKind.Language };
+        DbContext.Technologies.AddRange(csharp, python);
+        await SaveChangesAsync();
+
+        DbContext.Resources.AddRange(
+            NewResource("C# one", technologyId: csharp.Id),
+            NewResource("C# two", technologyId: csharp.Id),
+            NewResource("C# pending", ResourceStatus.PendingApproval, technologyId: csharp.Id),
+            NewResource("C# rejected", ResourceStatus.Rejected, technologyId: csharp.Id),
+            NewResource("C# broken", ResourceStatus.Broken, technologyId: csharp.Id),
+            NewResource("Python one", technologyId: python.Id),
+            NewResource("No technology"));
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetApprovedResourceCountsAsync(
+            [csharp.Id, python.Id, Guid.NewGuid()]);
+
+        Assert.Equal(2, result[csharp.Id]);
+        Assert.Equal(1, result[python.Id]);
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
     public async Task GetForHealthCheckAsync_ReturnsOnlyApproved()
     {
         DbContext.Resources.AddRange(

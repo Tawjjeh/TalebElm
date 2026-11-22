@@ -42,7 +42,7 @@ Keep `LessonType` separate from `LessonResourceKind`: the former describes lesso
 
 - `LessonResourceResponse` carries `Id`, `Title`, `Kind`, `Url`, `Citation`, and `Order`.
 - `LessonDetailResponse` carries `Id`, `ModuleId`, `Title`, `Content`, `Order`, and an ordered resource list.
-- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. `CreateLessonRequest` and `UpdateLessonRequest` exist but do not yet carry `Content` (#284).
+- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. `CreateLessonRequest` and `UpdateLessonRequest` carry `Title`, `ModuleId`, `Order`, `Content`, and `Type`; write methods on `ILessonService` are still Target (#284).
 
 ### Suggested API Contract (Not Implemented)
 

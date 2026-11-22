@@ -83,6 +83,7 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Implemented (service) / Target (unlock & API) |
 | A-5 | Each exam question (`ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Implemented (entities/service) / Target (create validator & API) |
 
+<a id="6-progress-tracking-unlock"></a>
 ## 6. Progress tracking & unlock
 
 | ID | Rule | Status |
