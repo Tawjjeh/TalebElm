@@ -11,9 +11,9 @@ public class TrackService(
     IUnitOfWork unitOfWork,
     IValidator<CreateTrackRequest> validator) : ITrackService
 {
-    public async Task<IReadOnlyList<TrackResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<TrackResponse>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var tracks = await unitOfWork.Tracks.GetAllAsync();
+        var tracks = await unitOfWork.Tracks.GetAllAsync(cancellationToken);
 
         if (tracks.Count == 0)
             return [];
@@ -27,9 +27,9 @@ public class TrackService(
             .ToList();
     }
 
-    public async Task<TrackResponse> CreateAsync(CreateTrackRequest request)
+    public async Task<TrackResponse> CreateAsync(CreateTrackRequest request, CancellationToken cancellationToken = default)
     {
-        var validationResult = await validator.ValidateAsync(request);
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
@@ -41,9 +41,9 @@ public class TrackService(
             Status = TrackStatus.Draft
         };
 
-        await unitOfWork.Tracks.AddAsync(track);
+        await unitOfWork.Tracks.AddAsync(track, cancellationToken);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new TrackResponse(
             track.Id,
