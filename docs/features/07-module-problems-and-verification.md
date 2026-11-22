@@ -173,8 +173,8 @@ public record VerifySolvesResponse(
 ```csharp
 public interface IProblemVerifier
 {
-    // No `Kind` property, use GetFor factory in the IProblemVerifierFactory to pick the verifier based on `ModuleProblem.Kind`
-    Task<ProblemVerificationResult> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default)
+    // No `Kind` here: verifier selection lives in IProblemVerifierFactory.
+    Task<ProblemVerificationResult> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default);
 }
 
 public interface IProblemVerifierFactory
@@ -204,6 +204,8 @@ public interface IModuleProblemService
     Task<VerifySolvesResponse> VerifyModuleSolvesAsync(Guid moduleId, Guid userId);
 }
 ```
+
+Verifiers no longer expose a `Kind`. The caller asks `IProblemVerifierFactory.GetFor` for the verifier matching the problem's `ModuleProblem.Kind`.
 
 ---
 
