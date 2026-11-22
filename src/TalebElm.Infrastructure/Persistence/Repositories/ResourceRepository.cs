@@ -77,8 +77,8 @@ public class ResourceRepository(AppDbContext context) : IResourceRepository
     public async Task<IReadOnlyList<Resource>> GetForHealthCheckAsync(CancellationToken ct = default)
     {
         return await context.Resources
-            .AsNoTracking()
-            .Where(r => r.Status == ResourceStatus.Approved)
+            .Where(r => (r.Status == ResourceStatus.Approved || r.Status == ResourceStatus.Broken)
+                && !string.IsNullOrWhiteSpace(r.Url))
             .ToListAsync(ct);
     }
 

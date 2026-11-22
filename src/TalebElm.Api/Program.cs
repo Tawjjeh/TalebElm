@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using TalebElm.Api.BackgroundServices;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
@@ -56,6 +57,9 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+builder.Services.Configure<LinkHealthCheckOptions>(
+    builder.Configuration.GetSection(LinkHealthCheckOptions.SectionName));
+builder.Services.AddHostedService<LinkHealthCheckHostedService>();
 
 var app = builder.Build();
 
