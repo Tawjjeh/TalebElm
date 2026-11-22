@@ -51,6 +51,37 @@ public class TechnologyRepositoryTests : SqliteTestBase
     }
 
     [Fact]
+    public async Task GetChildCountsAsync_WhenParentIdsAreEmpty_ReturnsEmpty()
+    {
+        var result = await _repository.GetChildCountsAsync([]);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetChildCountsAsync_ReturnsDirectChildCountsPerParent()
+    {
+        var csharp = NewTech("csharp", 1);
+        var python = NewTech("python", 2);
+        var aspnet = NewTech("aspnet-core", 1, csharp.Id, TechnologyKind.Framework);
+        var efCore = NewTech("ef-core", 2, csharp.Id, TechnologyKind.Framework);
+        var django = NewTech("django", 1, python.Id, TechnologyKind.Framework);
+        var dependencyInjection = NewTech("dependency-injection", 1, aspnet.Id, TechnologyKind.Topic);
+
+        DbContext.Technologies.AddRange(csharp, python, aspnet, efCore, django, dependencyInjection);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetChildCountsAsync(
+            [csharp.Id, python.Id, dependencyInjection.Id]);
+
+        Assert.Equal(2, result[csharp.Id]);
+        Assert.Equal(1, result[python.Id]);
+        Assert.False(result.ContainsKey(dependencyInjection.Id));
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
     public async Task GetBySlugPathAsync_ResolvesNestedPath()
     {
         var csharp = NewTech("csharp", 1);

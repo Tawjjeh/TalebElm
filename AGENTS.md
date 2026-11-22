@@ -53,14 +53,14 @@ memory) before editing.
 - Zero manual gating: learner progression is verified by the server, not by
   humans.
 - Existing progress markers (`Implemented` / `Target` / `Proposed`) stay accurate.
-- The private owner workspace is never committed, pushed, exposed, or linked in public docs.
 
-## AI assistant session protocol
+## Labels and issues
 
-- Start: read the private workspace state file (if present), then this file.
-- End: write or update the Arabic explanation in `[private-workspace]/learn/NNN-<topic>.ar.md`
-  for code changes; update `[private-workspace]/progress.md` and `[private-workspace]/handoff/claude-handoff.md`
-  for a phase close; keep them local.
+- Every issue and pull request carries at most one type, one layer, and the
+  milestone that owns it. The scheme is in `docs/GITHUB_LABELS.md`.
+- Work is grouped by the six MVP milestones (M0–M5); there are no feature
+  labels.
+
 ## Unlock and external services
 
 Unlock follows Decision 32 (`docs/business/BUSINESS_RULES.md` P-2): a Module unlocks its successor only when `examGate` and `problemGate` hold and the next Module exists. External clients are Application interfaces with fakes in tests; new async methods accept `CancellationToken`.

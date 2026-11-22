@@ -52,7 +52,22 @@ public class TechnologyRepository(AppDbContext context) : ITechnologyRepository
 
     }
 
+    public async Task<IReadOnlyDictionary<Guid, int>> GetChildCountsAsync(
+        IReadOnlyCollection<Guid> parentIds,
+        CancellationToken ct = default)
+    {
+        if (parentIds.Count == 0)
+            return new Dictionary<Guid, int>();
 
+        var counts = await context.Technologies
+            .AsNoTracking()
+            .Where(t => t.ParentId != null && parentIds.Contains(t.ParentId.Value))
+            .GroupBy(t => t.ParentId)
+            .Select(g => new { ParentId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
 
-
+        return counts
+            .Where(x => x.ParentId is not null)
+            .ToDictionary(x => x.ParentId!.Value, x => x.Count);
+    }
 }

@@ -6,8 +6,7 @@ body:
     attributes:
       value: |
         Thanks for offering to take this on.
-        This form is a request, not an assignment. Comment on the issue itself with your plan, wait for a go-ahead reply, and only then start. `CONTRIBUTING.md` explains the whole process.
-        Please check that nobody else is already assigned to the issue.
+        This form is a request, not an assignment. Pick an issue with the `help wanted` label that nobody has taken, comment that you want it, and start once it is assigned to you. `CONTRIBUTING.md` explains the whole process.
   - type: input
     id: task-number
     attributes:
@@ -49,7 +48,7 @@ body:
       options:
         - label: I have read `CONTRIBUTING.md` and `ARCHITECTURE.md`.
           required: true
-        - label: I understand that work starts only after a go-ahead reply and an assignment.
+        - label: I understand that work starts once the issue is assigned to me.
           required: true
         - label: I will keep my pull request focused, small (~200 lines target), and include tests.
           required: true
