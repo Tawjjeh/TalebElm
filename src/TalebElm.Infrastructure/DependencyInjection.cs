@@ -35,6 +35,12 @@ public static class DependencyInjection
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
 
         services.AddHttpClient<IGitHubClient, GitHubClient>();
+        services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+        services.AddHttpClient<ILinkHealthChecker, LinkHealthChecker>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
 
         return services;
     }
