@@ -30,10 +30,10 @@ public class ExamRepository(AppDbContext context) : IExamRepository
             .FirstOrDefaultAsync(e => e.Id == examId, ct);
     }
 
-    public async Task<Exam?> GetByModuleIdAsync(Guid moduleId)
+    public async Task<Exam?> GetByModuleIdAsync(Guid moduleId, CancellationToken ct = default)
     {
         return await context.Set<Exam>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.ModuleId == moduleId);
+            .FirstOrDefaultAsync(e => e.ModuleId == moduleId, ct);
     }
 }
