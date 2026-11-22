@@ -14,15 +14,15 @@ public class UserService : IUserService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<UserResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<UserResponse>> GetAllAsync(CancellationToken ct = default)
     {
-        var users = await _unitOfWork.Users.GetAllAsync();
+        var users = await _unitOfWork.Users.GetAllAsync(ct);
         return users
             .Select(user => new UserResponse(user.Id, user.Name, user.Email))
             .ToList();
     }
 
-    public async Task<UserResponse> CreateAsync(CreateUserRequest request)
+    public async Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
     {
         var user = new User
         {
@@ -31,8 +31,8 @@ public class UserService : IUserService
             JoinedAt = DateTime.UtcNow
         };
 
-        await _unitOfWork.Users.AddAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Users.AddAsync(user,ct);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return new UserResponse(user.Id, user.Name, user.Email);
     }

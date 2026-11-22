@@ -52,4 +52,39 @@ public class UserServiceTests
         userRepository.Verify(repository => repository.AddAsync(It.IsAny<User>()), Times.Once);
         unitOfWork.Verify(unit => unit.SaveChangesAsync(), Times.Once);
     }
+    [Fact]
+    public async Task GetAllAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var userRepository = new Mock<IUserRepository>();
+        userRepository.Setup(r => r.GetAllAsync(cts.Token)).ReturnsAsync([]);
+        unitOfWork.Setup(u => u.Users).Returns(userRepository.Object);
+
+        var service = new UserService(unitOfWork.Object);
+
+        await service.GetAllAsync(cts.Token);
+
+        userRepository.Verify(r => r.GetAllAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ForwardsCancellationTokenToRepositoryAndUnitOfWork()
+    {
+        using var cts = new CancellationTokenSource();
+        var request = new CreateUserRequest("Charlie", "charlie@test.com");
+
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var userRepository = new Mock<IUserRepository>();
+        userRepository.Setup(r => r.AddAsync(It.IsAny<User>(), cts.Token)).Returns(Task.CompletedTask);
+        unitOfWork.Setup(u => u.Users).Returns(userRepository.Object);
+        unitOfWork.Setup(u => u.SaveChangesAsync(cts.Token)).ReturnsAsync(1);
+
+        var service = new UserService(unitOfWork.Object);
+
+        await service.CreateAsync(request, cts.Token);
+
+        userRepository.Verify(r => r.AddAsync(It.IsAny<User>(), cts.Token), Times.Once);
+        unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
 }
