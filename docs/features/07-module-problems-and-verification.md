@@ -174,7 +174,7 @@ public record VerifySolvesResponse(
 public interface IProblemVerifier
 {
     // No `Kind` here: verifier selection lives in IProblemVerifierFactory.
-    Task<ProblemVerificationResult> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default);
+    Task<VerificationOutcome> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default);
 }
 
 public interface IProblemVerifierFactory
