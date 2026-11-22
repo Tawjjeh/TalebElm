@@ -83,12 +83,13 @@ Boundary notes: empty string passes `NOT NULL` in SQLite — hence the `CK_Users
 | A-4 | Retakes are unlimited with no cooldown; no per-attempt history is stored. Each submission overwrites `Score` (latest-wins) but `PassedExam`, once `true`, is never cleared by a later failure (sticky-wins). | Implemented (service) / Target (unlock & API) |
 | A-5 | Each exam question (`ExamQuestion`/`ExamOption`) has ≥ 2 options with exactly one correct; `IsCorrect` is server-only and never serialized to learners. | Implemented (entities/service) / Target (create validator & API) |
 
+<a id="6-progress-tracking-unlock"></a>
 ## 6. Progress tracking & unlock
 
 | ID | Rule | Status |
 |---|---|---|
 | P-1 | Exactly one `UserProgress` row per (`UserId`, `ModuleId`), enforced by unique index. | Implemented |
-| P-2 | Unlock is forward-only, sticky, and gated by Decision 32. `UserProgress` uses sticky `PassedExam` and `CompletedRequiredProblems` (stored, default false). `examGate = !hasExam || PassedExam`; `problemGate = !hasReq || CompletedRequiredProblems`. The next Module unlocks only when `(hasExam || hasReq)` and both gates and a next Module exist. A Module with neither exam nor required problems is unlocked only by Admin manual unlock. Adding a required problem later never re-locks anyone. The check runs after both events inside one UnitOfWork transaction, which commits even when nothing unlocks. | Target (Phase 3) |
+| P-2 | Unlock is forward-only, sticky, and gated by Decision 32. `UserProgress` uses sticky `PassedExam` and `CompletedRequiredProblems` (stored, default false). `examGate = !hasExam \|\| PassedExam`; `problemGate = !hasReq \|\| CompletedRequiredProblems`. The next Module unlocks only when `(hasExam \|\| hasReq)` and both gates and a next Module exist. A Module with neither exam nor required problems is unlocked only by Admin manual unlock. Adding a required problem later never re-locks anyone. The check runs after both events inside one UnitOfWork transaction, which commits even when nothing unlocks. | Target (Phase 3) |
 | P-3 | An `Admin` may manually unlock any Module for a learner (row created if missing, `Score`/`PassedExam`/`CompletedRequiredProblems` untouched) as an auditable support action. | Target |
 | P-4 | Locked content returns `403 Forbidden` (exists but not allowed), never `404`. One learner never sees or changes another's progress (`403` on cross-access). | Target (API) |
 | P-5 | Track completion is derived automatically, not stored: all Modules in the Track have `PassedExam = true` and `CompletedRequiredProblems = true`, plus all capstone `ProjectMilestone`s verified. No completion record exists in the MVP. | Target (Decision 27) |

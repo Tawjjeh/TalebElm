@@ -19,6 +19,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestDTO>
 
         RuleFor(x => x.Password)
             .MinimumLength(8)
+            .MaximumLength(128)
             .Matches(@"[a-zA-Z]")
             .WithMessage("Password must contain at least one letter.")
             .Matches(@"[0-9]")

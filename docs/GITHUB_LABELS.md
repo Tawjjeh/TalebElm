@@ -1,96 +1,47 @@
-# TalebElm — GitHub Labels Catalog
+# TalebElm labels
 
-> **Read this first:** tasks are tracked as GitHub issues in this repository.
-> When you open the issue for your task, apply exactly these labels so
-> the team can sort and find the work. Colors below are GitHub hex codes
-> (used without the `#`). Keep the label names exactly as written here so they
-> stay consistent across the whole repository.
+Fifteen labels, in four groups. Every issue and pull request carries at most one type and one
+layer. Work is grouped by the six MVP milestones (M0–M5), not by feature labels: the milestone
+says where the work fits, the layer says where the code goes.
 
----
+## Type: what kind of change is this?
 
-## 1. Layer Labels (where the code lives)
+| Label | Use when |
+|---|---|
+| `bug` | Something is broken: a failing test, a wrong response, a crash. |
+| `enhancement` | New behavior, a new endpoint, a refactor, or a test that adds coverage. |
+| `documentation` | A change to Markdown, templates, or the docs check. Needs no layer. |
+| `question` | A decision or clarification is needed before code is written. |
 
-| Label | Description | Color |
-|---|---|---|
-| `layer:domain` | The code goes in the Domain project — core business rules: entities, enums, exceptions, and repository interfaces. The innermost layer, depends on nothing. | `1D76DB` |
-| `layer:application` | The code goes in the Application project — what the app can do: DTOs, service interfaces and implementations, validators. | `5319E7` |
-| `layer:infrastructure` | The code goes in the Infrastructure project — the "how": EF Core, `AppDbContext`, entity configurations, migrations, and repositories. | `0E8A16` |
-| `layer:api` | The code goes in the Api project — the web door: controllers, middleware, startup. | `FB8C00` |
-| `layer:tests` | The code goes in the Tests project — unit and integration test classes. | `008672` |
+## Layer: where does the code live?
 
-## 2. Component Labels (what kind of artifact it is)
+| Label | Use when the change touches |
+|---|---|
+| `layer:domain` | Entities, enums, exceptions, repository interfaces, `IUnitOfWork`. |
+| `layer:application` | Services, DTOs, validators, and client interfaces. |
+| `layer:infrastructure` | EF Core, configurations, migrations, repositories, HTTP clients. |
+| `layer:api` | Controllers, middleware, `Program.cs`, Swagger. |
+| `layer:tests` | Unit, integration, and migration tests. |
 
-| Label | Description | Color |
-|---|---|---|
-| `entity` | You create a class that represents a core "thing" (User, Track, Module, Lesson, LessonResource, Exam, TrackEnrollment, UserProgress). Inherits `BaseEntity`. | `006B75` |
-| `enum` | You create a fixed list of named choices (TrackStatus, LessonType, LessonResourceKind, UserRole). | `FBCA04` |
-| `exception` | You create an error class that inherits from `Exception` or `DomainException`. | `D93F0B` |
-| `interface` | You create a contract — a list of method names with no bodies. | `0075CA` |
-| `dto` | You create a record used to move data between layers (requests and responses). | `C5DEF5` |
-| `database` | The code is about the database — EF Core context, configurations, or migrations. | `116329` |
-| `controller` | You create a class that handles web requests (receives HTTP, sends HTTP). | `E99695` |
-| `middleware` | You create a pipeline step that every web request passes through. | `8B008B` |
-| `validation` | You create an input-validation class (for example using FluentValidation). | `FF7619` |
-| `testing` | You create a test class with `[Fact]` methods. | `FEF2C0` |
-| `setup` | The task needs a NuGet package or foundational plumbing before any other task can use it. Great for learning the command line. | `BFD4F2` |
+## State: can someone pick it up?
 
-## 3. Feature / Vertical Slice Labels (what the work serves)
+| Label | Use when |
+|---|---|
+| `help wanted` | The issue is approved and free for a contributor to claim. |
+| `good first issue` | It is also small, contained, and safe for a first contribution. |
 
-| Label | Description | Color |
-|---|---|---|
-| `feature:auth` | Work that serves the Authentication & Users slice: register, login, user profiles. | `D4C5F9` |
-| `feature:tracks` | Work that serves the Tracks & Content Management slice: tracks, modules, lessons. | `BFDADC` |
-| `feature:exams` | Work that serves the Assessments & Progress slice: exams, results, user progress, progression lock. | `FAD8D0` |
-| `feature:enrollment` | Work that serves the explicit Track Enrollment slice (separating track enrollment from per-module progress). | `0969DA` |
-| `feature:problems` | Work that serves the Practice Problems & External Verification slice: Codeforces handle challenge, solve checking API, GitHub tasks. | `1F883D` |
-| `feature:resources` | Work that serves the Public Resource Hub slice: technology tree, curated resources, filtering, admin moderation. | `0052CC` |
-| `feature:capstone` | Work that serves the Capstone Projects slice: track-level projects, milestones, repository submissions, mentor reviews. | `8957E5` |
+## Resolution and boundaries
 
-## 4. Difficulty / Onboarding Labels
+| Label | Use when |
+|---|---|
+| `duplicate` | The same work exists elsewhere; link the survivor. |
+| `wontfix` | The work is out of MVP scope or contradicts a recorded decision. |
+| `security` | Authentication, hashing, tokens, or a vulnerability report. |
+| `database` | A schema change, a migration, or a data constraint. |
 
-| Label | Description | Color |
-|---|---|---|
-| `good first issue` | Perfect for a beginner — small, clear, and safe to make mistakes on. Start here if you are new to the project. | `7057FF` |
+## Rules
 
-## 5. Status & Triage Labels (issue health)
-
-| Label | Description | Color |
-|---|---|---|
-| `bug` | Something isn't working. | `D73A4A` |
-| `enhancement` | New feature or request. | `A2EEEF` |
-| `question` | Further information is requested or learner inquiry. | `D876E3` |
-| `help wanted` | Extra attention is needed. | `008672` |
-| `documentation` | Improvements or additions to documentation. | `0075CA` |
-| `duplicate` | This issue or pull request already exists. | `CFD3D7` |
-| `invalid` | This doesn't seem right. | `E4E669` |
-| `wontfix` | This will not be worked on. | `FFFFFF` |
-
-## 6. Priority Labels
-
-| Label | Description | Color |
-|---|---|---|
-| `priority: critical` | Must be done first; blocks the roadmap. | `B60205` |
-| `priority: high` | Needed for the current milestone. | `D93F0B` |
-| `priority: medium` | Important but not blocking. | `FBCA04` |
-| `priority: low` | Nice to have / polish. | `0E8A16` |
-
-## 7. Cross-Cutting & Area Labels
-
-| Label | Description | Color |
-|---|---|---|
-| `backend` | Server-side implementation. | `1D76DB` |
-| `architecture` | Structural / layering decisions. | `5319E7` |
-| `security` | Auth, hashing, tokens, abuse prevention. | `B60205` |
-
----
-
-## Rules for contributors
-
-- Always include **one** `layer:` label and **one or two** `component` labels.
-- Add the matching `feature:` label when you can (`feature:auth`,
-  `feature:tracks`, `feature:exams`, `feature:enrollment`, `feature:problems`,
-  `feature:resources`, or `feature:capstone`).
-- Add `good first issue` if the task is beginner-friendly AND tiny (most
-  Very Easy / Easy tasks qualify).
-- Never invent new label names — propose them in a PR comment first so the
-  catalog stays consistent.
+- One type and one layer per item. A documentation-only item needs no layer; `security` and
+  `database` are added only when the change directly touches them.
+- Add the milestone that owns the work, and `help wanted` only when the issue is ready to claim.
+  Never invent a label; propose a change in an issue first.

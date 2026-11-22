@@ -19,21 +19,6 @@ This is the documentation index for `Tawjjeh/TalebElm`.
 | Look up labels | [`docs/GITHUB_LABELS.md`](GITHUB_LABELS.md) |
 | See how tasks are verified | [`docs/TASK_TEMPLATE_SPEC.md`](TASK_TEMPLATE_SPEC.md) |
 
-## Documentation areas
-
-| Area | Files |
-|---|---|
-| Architecture | [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`docs/PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) |
-| Domain features | [`features/01-auth-identity.md`](features/01-auth-identity.md) through [`features/10-automated-task-verification.md`](features/10-automated-task-verification.md) |
-| Product and business | [`business/PRODUCT_VISION.md`](business/PRODUCT_VISION.md), [`business/BUSINESS_RULES.md`](business/BUSINESS_RULES.md), [`business/WORKFLOWS.md`](business/WORKFLOWS.md), [`business/ROADMAP.md`](business/ROADMAP.md), [`business/SUSTAINABILITY.md`](business/SUSTAINABILITY.md) |
-| Data | [`DATABASE_ERD.md`](DATABASE_ERD.md) |
-| API | [`API_ENDPOINTS.md`](API_ENDPOINTS.md) |
-| Developer setup | [`development/getting-started.md`](development/getting-started.md), [`development/coding-standards.md`](development/coding-standards.md), [`development/definition-of-done.md`](development/definition-of-done.md), [`development/testing.md`](development/testing.md) |
-| Decisions | [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md), [`decisions/README.md`](decisions/README.md), [`decisions/0000-adr-template.md`](decisions/0000-adr-template.md) |
-| Glossary | [`GLOSSARY.md`](GLOSSARY.md) |
-| User stories | [`USER_STORIES.md`](USER_STORIES.md) |
-| Task template spec | [`TASK_TEMPLATE_SPEC.md`](TASK_TEMPLATE_SPEC.md) |
-
 ## Conventions
 
 - New documentation is written in English and linked from this index in the same pull request.
@@ -72,8 +57,6 @@ This is the documentation index for `Tawjjeh/TalebElm`.
 - [`business/ROADMAP.md`](business/ROADMAP.md)
 - [`business/SUSTAINABILITY.md`](business/SUSTAINABILITY.md)
 - [`business/WORKFLOWS.md`](business/WORKFLOWS.md)
-- [`decisions/0000-adr-template.md`](decisions/0000-adr-template.md)
-- [`decisions/README.md`](decisions/README.md)
 - [`development/coding-standards.md`](development/coding-standards.md)
 - [`development/definition-of-done.md`](development/definition-of-done.md)
 - [`development/getting-started.md`](development/getting-started.md)

@@ -1,112 +1,98 @@
-
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
-using TalebElm.Infrastructure.Persistence;
+using TalebElm.Tests.Infrastructure;
 
 namespace TalebElm.Tests.Infrastructure;
 
-public class ProjectMilestoneConfigurationTests
+/// <summary>
+/// Behavioural checks for the capstone milestone constraints. The model metadata and the
+/// migrated schema are asserted in <see cref="CapstoneConfigurationTests"/>; these tests prove
+/// that the database actually rejects the rows those constraints describe.
+/// </summary>
+public class ProjectMilestoneConfigurationTests : SqliteTestBase
 {
-    //. Method to return the connection (SQLLite) and the context
-    private static async Task<(SqliteConnection Connection, AppDbContext Context)>
-      CreateContextAsync()
+    private readonly CapstoneProject _project;
+
+    public ProjectMilestoneConfigurationTests()
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
-        await connection.OpenAsync();
+        var track = new Track { Name = "Backend", Description = "Backend track" };
+        _project = new CapstoneProject
+        {
+            Track = track,
+            Title = "Capstone",
+            Description = "One cumulative project across the track",
+            Task = new GitHubTask { TemplateRepository = "tawjjeh/template" }
+        };
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connection)
-            .Options;
+        DbContext.Tracks.Add(track);
+        DbContext.CapstoneProjects.Add(_project);
+        DbContext.SaveChanges();
+        ClearTracker();
+    }
 
-        var context = new AppDbContext(options);
+    private ProjectMilestone NewMilestone(int order, string workflowJobName) => new()
+    {
+        ProjectId = _project.Id,
+        Title = $"Milestone {order}",
+        Instructions = "Build it.",
+        Order = order,
+        WorkflowJobName = workflowJobName
+    };
 
-        await context.Database.EnsureCreatedAsync();
+    [Fact]
+    public async Task DuplicateWorkflowJobNameInTheSameProject_IsRejected()
+    {
+        DbContext.ProjectMilestones.Add(NewMilestone(1, "build"));
+        await SaveChangesAsync();
+        ClearTracker();
 
-        return (connection, context);
+        DbContext.ProjectMilestones.Add(NewMilestone(2, "build"));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => DbContext.SaveChangesAsync());
     }
 
     [Fact]
-    public async Task WorkflowJobName_ShouldHaveMaxLength100_AndBeRequired()
+    public async Task DuplicateOrderInTheSameProject_IsRejected()
     {
-        var (connection, context) = await CreateContextAsync();
+        DbContext.ProjectMilestones.Add(NewMilestone(1, "build"));
+        await SaveChangesAsync();
+        ClearTracker();
 
-        try
-        {
-            var entityType = context.Model.FindEntityType(
-                typeof(ProjectMilestone));
+        DbContext.ProjectMilestones.Add(NewMilestone(1, "test"));
 
-            Assert.NotNull(entityType);
-
-            var property = entityType.FindProperty(
-                nameof(ProjectMilestone.WorkflowJobName));
-
-            Assert.NotNull(property);
-            Assert.Equal(100, property.GetMaxLength());
-            Assert.False(property.IsNullable);
-        }
-        finally
-        {
-            await context.DisposeAsync();
-            await connection.DisposeAsync();
-        }
+        await Assert.ThrowsAsync<DbUpdateException>(() => DbContext.SaveChangesAsync());
     }
 
     [Fact]
-    public async Task ProjectMilestone_ShouldHaveUniqueProjectIdAndOrderIndex()
+    public async Task SameWorkflowJobNameInAnotherProject_IsAllowed()
     {
-        var (connection, context) = await CreateContextAsync();
+        DbContext.ProjectMilestones.Add(NewMilestone(1, "build"));
+        await SaveChangesAsync();
+        ClearTracker();
 
-        try
+        var otherTrack = new Track { Name = "Frontend", Description = "Frontend track" };
+        var otherProject = new CapstoneProject
         {
-            var entityType = context.Model.FindEntityType(
-                typeof(ProjectMilestone));
+            Track = otherTrack,
+            Title = "Frontend capstone",
+            Description = "One cumulative project across the track",
+            Task = new GitHubTask { TemplateRepository = "tawjjeh/frontend-template" }
+        };
 
-            var index = entityType!.GetIndexes()
-                .SingleOrDefault(i =>
-                    i.Properties.Select(p => p.Name)
-                        .SequenceEqual(new[]
-                        {
-                            nameof(ProjectMilestone.ProjectId),
-                            nameof(ProjectMilestone.Order)
-                        }));
-
-            Assert.NotNull(index);
-            Assert.True(index.IsUnique);
-        }
-        finally
+        DbContext.Tracks.Add(otherTrack);
+        DbContext.CapstoneProjects.Add(otherProject);
+        DbContext.ProjectMilestones.Add(new ProjectMilestone
         {
-            await context.DisposeAsync();
-            await connection.DisposeAsync();
-        }
-    }
+            ProjectId = otherProject.Id,
+            Title = "Milestone 1",
+            Instructions = "Build it.",
+            Order = 1,
+            WorkflowJobName = "build"
+        });
 
-    [Fact]
-    public async Task ProjectMilestone_ShouldHaveUniqueProjectIdAndWorkflowJobNameIndex()
-    {
-        var (connection, context) = await CreateContextAsync();
+        await DbContext.SaveChangesAsync();
 
-        try
-        {
-            var entityType = context.Model.FindEntityType(
-                typeof(ProjectMilestone));
-
-            var index = entityType!.GetIndexes()
-                .SingleOrDefault(i =>
-                    i.Properties.Select(p => p.Name)
-                        .SequenceEqual(new[]
-                        {
-                            nameof(ProjectMilestone.ProjectId),
-                            nameof(ProjectMilestone.WorkflowJobName)
-                        }));
-
-            Assert.NotNull(index);
-            Assert.True(index.IsUnique);
-        }
-        finally
-        {
-            await context.DisposeAsync();
-            await connection.DisposeAsync();
-        }
+        await using var check = CreateContext();
+        Assert.Equal(2, await check.ProjectMilestones.CountAsync());
     }
 }

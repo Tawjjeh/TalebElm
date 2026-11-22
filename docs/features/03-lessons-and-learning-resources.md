@@ -1,7 +1,7 @@
 # Feature Specification: Lessons & Learning Resources
 
 ## Status
-`Lesson` exists with `Title`, `Content`, `Order`, and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
+`Lesson` exists with `Title`, `Content`, `Order`, `Type` (`LessonType`, default `Text`, guarded by `CK_Lessons_Type_Valid`), and `ModuleId`; its EF relationship to `Module` is configured with `Restrict`. `LessonResource`, its configuration, repository, and `AddLessonResources` migration exist, and `LessonService` returns ordered lessons and lesson details with ordered resources. `LessonsController` is still a placeholder, and resource authoring/validation is not implemented.
 
 ## MVP Objective
 Let a learner study an authored explanation for each Lesson and open the books, official documentation, videos, or other sources selected by the content author. Keep lesson content and external resource links as separate data so a lesson can cite more than one source.
@@ -42,7 +42,7 @@ Keep `LessonType` separate from `LessonResourceKind`: the former describes lesso
 
 - `LessonResourceResponse` carries `Id`, `Title`, `Kind`, `Url`, `Citation`, and `Order`.
 - `LessonDetailResponse` carries `Id`, `ModuleId`, `Title`, `Content`, `Order`, and an ordered resource list.
-- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. `CreateLessonRequest` and `UpdateLessonRequest` exist but do not yet carry `Content` (#284).
+- `ILessonService.GetByModuleAsync` returns ordered `LessonResponse` items; `GetByIdAsync` returns the detail with resources. `CreateLessonRequest` and `UpdateLessonRequest` carry `Title`, `ModuleId`, `Order`, `Content`, and `Type`; write methods on `ILessonService` are still Target (#284).
 
 ### Suggested API Contract (Not Implemented)
 

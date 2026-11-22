@@ -1,6 +1,6 @@
 # Feature Specification: Public Resource Hub
 
-> **Status discipline:** Domain entities (`Technology`, `Resource`) and their EF Core configurations/migrations are **Implemented**. Repository interfaces, Hub read/admin services, link-health checker, shared `LessonResource` migration, and API endpoints remain **Target** (Milestone M4).
+> **Status discipline:** Domain entities (`Technology`, `Resource`), their EF Core configurations/migrations, the `ITechnologyRepository` / `IResourceRepository` implementations, and `IResourceHubReadService` are **Implemented**. Hub admin services, the link-health checker, the shared `LessonResource` migration, and API endpoints remain **Target** (Milestone M4).
 
 ---
 

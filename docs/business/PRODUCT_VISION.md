@@ -77,7 +77,7 @@ Learning software engineering today is broken in two distinct ways:
 
 ## 5. Non-Goals
 
-To maintain high development velocity and architectural focus, the following are explicitly out of scope:
+To maintain high development velocity and architectural focus, the following are explicitly out of scope for the MVP (the authoritative boundary of the MVP and post-MVP directions are defined in [ROADMAP.md](ROADMAP.md)):
 
 1. **In-Browser IDE / Code Execution:** TalebElm will not build or maintain an online compiler, code sandbox, or container runner. We leverage Codeforces and GitHub.
 2. **Contest Hosting Platform:** TalebElm is an educational progression engine, not a competitive programming judge.

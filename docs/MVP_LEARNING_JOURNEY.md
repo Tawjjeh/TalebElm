@@ -5,16 +5,16 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 ## Learner Flow
 
-1. **Create an account** — the learner provides a name and email. The `User` model stores these fields plus a PBKDF2 `PasswordHash` and `Role` (`Student` default); registration, login, and token issuance are not implemented.
-2. **Browse and choose a Track** — show available Tracks and their Modules in `Order`. `Track`, `Module`, and `TrackStatus` exist; Track list/create services exist, while the HTTP API remains a placeholder.
-3. **Enroll in the Track** — create one enrollment for the learner and Track. The `TrackEnrollment` entity, repository, and migration exist; the enrollment workflow is not implemented. Do not use `UserProgress` as a substitute: it is per user and Module.
-4. **Study a Module** — display its ordered Lessons. `Lesson.Content` holds the explanation, and `LessonResource` stores books, official documentation, videos, and other sources; lesson HTTP endpoints remain placeholders.
-5. **Take the Module Exam** — load the Exam and its questions, accept answers, and calculate the score on the server. The current model stores only Exam title and pass threshold; it has no question/answer model. The current submit DTO accepts a client-provided score and is not suitable for trusted grading.
-6. **Solve Practice Problems** — for fundamentals modules, solve assigned Codeforces problems verified via public API against the learner's linked profile-verified handle; for framework modules, solve practical GitHub tasks verified automatically by the server.
-7. **Record the result** — store the latest score, sticky `PassedExam = true`, and sticky `CompletedRequiredProblems = true` in the learner's `UserProgress` row for that Module.
-8. **Unlock the next Module** — on passing **both** the exam and completing required practice problems, unlock only the next Module in the same Track. Failing either gate leaves later Modules locked.
-9. **Show progress** — list the learner's Module states in Track order. Authentication and current-user resolution are not implemented yet.
-10. **Deliver Track Capstone** — build a single cumulative portfolio project across the entire Track, split into ordered milestones verified automatically via GitHub tasks. Track completion is derived: all Modules passed AND all capstone Milestones verified.
+1. **Create an account** — the learner provides a name and email. The `User` model stores these fields plus a PBKDF2 `PasswordHash` and `Role` (`Student` default). Registration, login, and token issuance are not implemented; `AuthController.Login` returns `501`.
+2. **Browse and choose a Track** — show available Tracks and their Modules in `Order`. `GET /api/tracks` returns a page of Tracks, and `TrackService.CreateAsync` exists behind a `POST /api/tracks` placeholder. `ModuleService` and `LessonService` return the ordered content; their controllers still return `501`.
+3. **Enroll in the Track** — create one enrollment for the learner and Track. `TrackEnrollmentService.EnrollAsync` does this today: it rejects a duplicate enrollment with `409`, rejects a Track with no Modules with `400`, and creates the first Module's `UserProgress` row as unlocked. No HTTP endpoint exposes it yet. Do not use `UserProgress` as a substitute for enrollment: it is per user and Module.
+4. **Study a Module** — display its ordered Lessons. `Lesson.Content` holds the explanation, `Lesson.Type` marks text, video, or exercise, and `LessonResource` stores books, official documentation, videos, and other sources. `LessonService` returns this data; `LessonsController` still returns `501`.
+5. **Take the Module Exam** — load the Exam and its questions, accept answers, and calculate the score on the server. `ExamQuestion` and `ExamOption` hold the questions and the answer key, and `ExamService.SubmitAsync` validates every answer, grades from `Points` and `IsCorrect`, then writes `Score` and the sticky `PassedExam` flag to `UserProgress`. `ExamsController` endpoints still return `501`.
+6. **Solve Practice Problems** — for fundamentals modules, solve assigned Codeforces problems verified via the public API against the learner's linked, profile-verified handle; for framework modules, solve practical GitHub tasks verified automatically by the server. The `ModuleProblem`, `GitHubTask`, `UserExternalAccount`, and `UserProblemCompletion` entities exist, and `ICodeforcesClient` / `IGitHubClient` define the calls; only the Infrastructure `IGitHubClient` implementation is complete, while the Codeforces client, the verification services, and the completion writes are still missing.
+7. **Record the result** — store the latest score, sticky `PassedExam = true`, and sticky `CompletedRequiredProblems = true` in the learner's `UserProgress` row for that Module. The exam half happens today inside `ExamService.SubmitAsync`; `CompletedRequiredProblems` is never set because problem verification is not implemented.
+8. **Unlock the next Module** — on passing **both** the exam and completing required practice problems, unlock only the next Module in the same Track. Failing either gate leaves later Modules locked. `ExamService.SubmitAsync` applies this today when `CompletedRequiredProblems` already holds; the trigger that runs when the problems are verified is still target (#444).
+9. **Show progress** — list the learner's Module states in Track order. `UserProgressService.GetMyProgressAsync(userId)` and `GetByTrackAsync(userId, trackId)` read the rows, but `ProgressController` returns `501` and authentication is not implemented, so there is no current-user resolution yet.
+10. **Deliver Track Capstone** — build a single cumulative portfolio project across the entire Track, split into ordered milestones verified automatically via GitHub tasks. `CapstoneProject` and `ProjectMilestone` are persisted; per-learner milestone progress, verification, and the derived track completion are not implemented.
 
 ## Core Rules
 
@@ -39,25 +39,26 @@ TalebElm helps a learner study software development through an ordered Track. Th
 
 | Area | Current code | MVP target |
 |---|---|---|
-| User identity | User name/email, `PasswordHash`, `Role`, and user service contract | Registration and authentication before protected learner actions |
-| Track structure | Track, Module, Lesson entities; Track/Module/Lesson read services | Browse a Track and its ordered content |
-| Lesson sources | Lesson text plus `LessonResource` entity/repository | Resource authoring, validation, and lesson endpoints; shared Resource Hub |
-| Enrollment | `TrackEnrollment` entity/repository exists; no enrollment service | One enrollment per learner and Track; initialize the first Module's progress |
-| Exams | Exam title and threshold; service supports loading an Exam | Questions, answer submission, server-side scoring, and result recording |
-| Practice problems | None | Codeforces handle token verification, solve verification API, automated GitHub tasks |
-| Progression | UserProgress entity and read/service contracts | Dual-gated unlock rules (exam AND problems) and progress queries |
-| Resource Hub | None | 3-click anonymous public directory of curated resources across languages and topics |
-| Capstone | None | Cumulative track portfolio project and milestones verified automatically via GitHub tasks |
-| API | Placeholder controllers; DI, Application services, validators, and exception middleware are registered; auth is not | Endpoints wired to Application service interfaces |
+| User identity | User name/email, `PasswordHash`, `Role`, and a user service | Registration and authentication before protected learner actions |
+| Track structure | Track, Module, Lesson entities; `TrackService` paging and creation; Module/Lesson read services; `GET /api/tracks` live | The remaining browse endpoints, wired to the existing services |
+| Lesson sources | Lesson text with `Type`, `LessonResource` entity/configuration/repository/migration, Lesson read services | Authoring and URL validation, lesson endpoints, shared Resource Hub |
+| Enrollment | `TrackEnrollment` persistence and `TrackEnrollmentService.EnrollAsync`, which unlocks the first Module; no endpoint | An enroll endpoint and the progress endpoints |
+| Exams | `Exam`, `ExamQuestion`, `ExamOption`; `ExamService.SubmitAsync` grades on the server, records `Score` / `PassedExam`, and unlocks the next Module when both stored gates already hold | Admin authoring and controller wiring |
+| Practice problems | `ModuleProblem`, `GitHubTask`, `UserExternalAccount`, `UserProblemCompletion` persistence; `ICodeforcesClient` / `IGitHubClient` contracts, with only the Infrastructure `IGitHubClient` implementation complete | Handle verification, solve verification, and automated GitHub task verification |
+| Progression | `UserProgress` with `PassedExam` and `CompletedRequiredProblems`, plus read services and the exam-side unlock | The shared gate (#444) and progress queries |
+| Resource Hub | `Technology` / `Resource` persistence and their repositories | 3-click anonymous public directory of curated resources across languages and topics |
+| Capstone | `CapstoneProject` / `ProjectMilestone` persistence | Milestone verification and derived track completion |
+| API | `GET /api/tracks` and `/api/health` are live; the other controllers return `501`; DI, validators, and exception middleware are registered; auth is not | Endpoints wired to Application service interfaces |
 
 ## Suggested Delivery Order
 
-1. Finish database setup, mappings, repositories, and UnitOfWork (#274; #326 resolved in PR #328).
-2. Wire authentication and authorization policies (Phase 1).
-3. Implement Track enrollment, Exam questions, and server-side answer scoring (Phase 2).
-4. Integrate practice problems, handle verification, and dual-gated progression (Phase 3).
-5. Deploy the public read-only Resource Hub (Phase 4, running in parallel).
-6. Implement Capstone project definitions and automated milestone verification (Phase 5).
+Phase deliverables, dependencies, and milestone criteria are detailed in [business/ROADMAP.md](business/ROADMAP.md).
+
+1. Wire authentication and authorization policies so protected routes can resolve the current learner (Phase 1).
+2. Expose the existing Track, Module, Lesson, enrollment, exam, and progress services over HTTP (Phase 2).
+3. Implement practice-problem verification, handle verification, and the problem-side unlock trigger (Phase 3).
+4. Deploy the public read-only Resource Hub (Phase 4, running in parallel).
+5. Implement capstone milestone verification and derived track completion (Phase 5).
 
 ## Explicitly Out of This Learning-Flow MVP
 
