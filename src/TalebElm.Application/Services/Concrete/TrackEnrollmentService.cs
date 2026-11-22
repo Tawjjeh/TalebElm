@@ -18,8 +18,7 @@ public class TrackEnrollmentService(IUnitOfWork unitOfWork) : ITrackEnrollmentSe
         if (track is null)
             throw new NotFoundException($"Track with id '{trackId}' was not found.");
 
-        var existingEnrollment = await unitOfWork.TrackEnrollments.GetAllAsync(ct);
-        if (existingEnrollment.Any(enrollment => enrollment.UserId == userId && enrollment.TrackId == trackId))
+        if (await unitOfWork.TrackEnrollments.ExistsAsync(userId, trackId, ct))
             throw new ConflictException("The user has already enrolled in this track.");
 
         var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId, ct);

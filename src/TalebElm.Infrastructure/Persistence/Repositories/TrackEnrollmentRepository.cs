@@ -11,6 +11,11 @@ public class TrackEnrollmentRepository(AppDbContext context) : ITrackEnrollmentR
         await context.TrackEnrollments.AddAsync(entity, ct);
     }
 
+    public Task<bool> ExistsAsync(Guid userId, Guid trackId, CancellationToken ct = default)
+    {
+        return context.TrackEnrollments.AnyAsync(e => e.UserId == userId && e.TrackId == trackId, ct);
+    }
+
     public async Task<IReadOnlyList<TrackEnrollment>> GetAllAsync(CancellationToken ct = default)
     {
         return await context.TrackEnrollments.ToListAsync(ct);
