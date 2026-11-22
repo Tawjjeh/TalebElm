@@ -36,10 +36,17 @@ public static class DependencyInjection
 
         services.AddHttpClient<IGitHubClient, GitHubClient>();
         services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+        services.AddSingleton<PerHostRequestSpacer>();
         services.AddHttpClient<ILinkHealthChecker, LinkHealthChecker>()
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            .ConfigurePrimaryHttpMessageHandler(sp =>
             {
-                AllowAutoRedirect = false
+                var dnsResolver = sp.GetRequiredService<IDnsResolver>();
+                return new SocketsHttpHandler
+                {
+                    AllowAutoRedirect = false,
+                    ConnectCallback = (context, ct) =>
+                        LinkHealthChecker.ConnectWithSsrfGuardAsync(context, dnsResolver, ct)
+                };
             });
 
         return services;

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
@@ -16,14 +17,16 @@ public class LinkHealthCheckerTests
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler,
         IDnsResolver? dnsResolver = null,
         TimeSpan? timeout = null,
-        TimeSpan? perHostSpacing = null)
+        TimeSpan? perHostSpacing = null,
+        PerHostRequestSpacer? spacer = null)
     {
         var httpClient = new HttpClient(new StubHttpMessageHandler(handler));
         return new LinkHealthChecker(
             httpClient,
-            dnsResolver ?? new StubDnsResolver(_ => [PublicIp]),
+            dnsResolver ?? new StubDnsResolver((_, _) => Task.FromResult<IPAddress[]>([PublicIp])),
             timeout ?? TimeSpan.FromSeconds(5),
-            perHostSpacing ?? TimeSpan.Zero);
+            perHostSpacing ?? TimeSpan.Zero,
+            spacer);
     }
 
     [Fact]
@@ -98,6 +101,8 @@ public class LinkHealthCheckerTests
     [InlineData("192.168.1.1")]
     [InlineData("169.254.169.254")]
     [InlineData("100.64.0.1")]
+    [InlineData("198.18.0.1")]
+    [InlineData("192.0.2.1")]
     [InlineData("0.0.0.0")]
     [InlineData("::1")]
     [InlineData("fc00::1")]
@@ -105,10 +110,13 @@ public class LinkHealthCheckerTests
     [InlineData("fe80::1")]
     [InlineData("::ffff:127.0.0.1")]
     [InlineData("::ffff:169.254.169.254")]
+    [InlineData("64:ff9b::127.0.0.1")]
+    [InlineData("2002:7f00:0001::")]
+    [InlineData("2001:0::1")]
     public async Task CheckAsync_WhenDnsResolvesToUnsafeIp_BlocksSsrfBeforeHttpCall(string resolvedIp)
     {
         var httpCalled = false;
-        var dns = new StubDnsResolver(_ => [IPAddress.Parse(resolvedIp)]);
+        var dns = new StubDnsResolver((_, _) => Task.FromResult<IPAddress[]>([IPAddress.Parse(resolvedIp)]));
         var checker = CreateChecker((_, _) =>
         {
             httpCalled = true;
@@ -189,6 +197,41 @@ public class LinkHealthCheckerTests
     }
 
     [Fact]
+    public async Task CheckAsync_WhenRedirectMissingLocation_ReturnsRedirectMissingLocation()
+    {
+        var checker = CreateChecker((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Found)));
+
+        var result = await checker.CheckAsync("https://example.com/no-loc");
+
+        Assert.False(result.IsHealthy);
+        Assert.Equal(302, result.StatusCode);
+        Assert.Equal("RedirectMissingLocation", result.FailureReason);
+    }
+
+    [Fact]
+    public async Task CheckAsync_WhenRelativeRedirect_ResolvesAndFollowsSafely()
+    {
+        var uris = new List<string>();
+        var checker = CreateChecker((req, _) =>
+        {
+            uris.Add(req.RequestUri!.ToString());
+            if (uris.Count == 1)
+            {
+                var redirect = new HttpResponseMessage(HttpStatusCode.Found);
+                redirect.Headers.Location = new Uri("/final-page", UriKind.Relative);
+                return Task.FromResult(redirect);
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+
+        var result = await checker.CheckAsync("https://example.com/start");
+
+        Assert.True(result.IsHealthy);
+        Assert.Equal(["https://example.com/start", "https://example.com/final-page"], uris);
+    }
+
+    [Fact]
     public async Task CheckAsync_WhenRedirectsExceedFive_ReturnsTooManyRedirects()
     {
         var checker = CreateChecker((_, _) =>
@@ -208,10 +251,8 @@ public class LinkHealthCheckerTests
     public async Task CheckAsync_WhenRedirectPointsToPrivateIp_BlocksSsrfBeforeFollowing()
     {
         var requestedHosts = new List<string>();
-        var dns = new StubDnsResolver(host =>
-            host == "public.example.com"
-                ? [PublicIp]
-                : [IPAddress.Loopback]);
+        var dns = new StubDnsResolver((host, _) =>
+            Task.FromResult<IPAddress[]>(host == "public.example.com" ? [PublicIp] : [IPAddress.Loopback]));
 
         var checker = CreateChecker((req, _) =>
         {
@@ -232,13 +273,32 @@ public class LinkHealthCheckerTests
     [Fact]
     public async Task CheckAsync_WhenDnsThrows_ReturnsDnsFailure()
     {
-        var dns = new StubDnsResolver(_ => throw new SocketException());
+        var dns = new StubDnsResolver((_, _) => throw new SocketException());
         var checker = CreateChecker((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)), dns);
 
         var result = await checker.CheckAsync("https://nonexistent.invalid");
 
         Assert.False(result.IsHealthy);
         Assert.Equal("DnsFailure", result.FailureReason);
+    }
+
+    [Fact]
+    public async Task CheckAsync_WhenDnsTimesOut_ReturnsTimeout()
+    {
+        var dns = new StubDnsResolver(async (_, ct) =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5), ct);
+            return [PublicIp];
+        });
+        var checker = CreateChecker(
+            (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)),
+            dns,
+            timeout: TimeSpan.FromMilliseconds(50));
+
+        var result = await checker.CheckAsync("https://slow-dns.example.com");
+
+        Assert.False(result.IsHealthy);
+        Assert.Equal("Timeout", result.FailureReason);
     }
 
     [Fact]
@@ -270,7 +330,25 @@ public class LinkHealthCheckerTests
     }
 
     [Fact]
-    public void AddInfrastructure_RegistersLinkHealthChecker()
+    public async Task CheckAsync_ConcurrentCallsToSameHost_EnforcesAtomicPerHostSpacing()
+    {
+        var sharedSpacer = new PerHostRequestSpacer(TimeSpan.FromMilliseconds(60));
+        var checker1 = CreateChecker((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)), perHostSpacing: TimeSpan.FromMilliseconds(60), spacer: sharedSpacer);
+        var checker2 = CreateChecker((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)), perHostSpacing: TimeSpan.FromMilliseconds(60), spacer: sharedSpacer);
+        var checker3 = CreateChecker((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)), perHostSpacing: TimeSpan.FromMilliseconds(60), spacer: sharedSpacer);
+
+        var sw = Stopwatch.StartNew();
+        await Task.WhenAll(
+            checker1.CheckAsync("https://spaced.example.com/1"),
+            checker2.CheckAsync("https://spaced.example.com/2"),
+            checker3.CheckAsync("https://spaced.example.com/3"));
+        sw.Stop();
+
+        Assert.True(sw.Elapsed >= TimeSpan.FromMilliseconds(100), $"Expected >= 100ms spacing, actual {sw.ElapsedMilliseconds}ms");
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersSingletonSpacerAndLinkHealthChecker()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -283,16 +361,19 @@ public class LinkHealthCheckerTests
         services.AddInfrastructure(config);
 
         using var provider = services.BuildServiceProvider();
+        var spacer1 = provider.GetRequiredService<PerHostRequestSpacer>();
+        var spacer2 = provider.GetRequiredService<PerHostRequestSpacer>();
         var checker = provider.GetService<ILinkHealthChecker>();
 
+        Assert.Same(spacer1, spacer2);
         Assert.NotNull(checker);
         Assert.IsType<LinkHealthChecker>(checker);
     }
 
-    private sealed class StubDnsResolver(Func<string, IPAddress[]> resolver) : IDnsResolver
+    private sealed class StubDnsResolver(Func<string, CancellationToken, Task<IPAddress[]>> resolver) : IDnsResolver
     {
         public Task<IPAddress[]> GetHostAddressesAsync(string hostNameOrAddress, CancellationToken ct = default)
-            => Task.FromResult(resolver(hostNameOrAddress));
+            => resolver(hostNameOrAddress, ct);
     }
 
     private sealed class StubHttpMessageHandler(

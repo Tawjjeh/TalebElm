@@ -12,23 +12,60 @@ public sealed class SystemDnsResolver : IDnsResolver
         => Dns.GetHostAddressesAsync(hostNameOrAddress, ct);
 }
 
+public sealed class PerHostRequestSpacer(TimeSpan? defaultSpacing = null)
+{
+    private readonly TimeSpan _defaultSpacing = defaultSpacing ?? TimeSpan.FromMilliseconds(250);
+    private readonly ConcurrentDictionary<string, HostSlot> _slots = new(StringComparer.OrdinalIgnoreCase);
+
+    public async Task WaitTurnAsync(string host, TimeSpan? spacingOverride, CancellationToken ct)
+    {
+        var spacing = spacingOverride ?? _defaultSpacing;
+        if (spacing <= TimeSpan.Zero)
+            return;
+
+        var slot = _slots.GetOrAdd(host, static _ => new HostSlot());
+        await slot.Gate.WaitAsync(ct);
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (slot.LastRequestAt is { } last)
+            {
+                var elapsed = now - last;
+                if (elapsed < spacing)
+                    await Task.Delay(spacing - elapsed, ct);
+            }
+
+            slot.LastRequestAt = DateTimeOffset.UtcNow;
+        }
+        finally
+        {
+            slot.Gate.Release();
+        }
+    }
+
+    private sealed class HostSlot
+    {
+        public SemaphoreSlim Gate { get; } = new(1, 1);
+        public DateTimeOffset? LastRequestAt { get; set; }
+    }
+}
+
 public sealed class LinkHealthChecker : ILinkHealthChecker
 {
     public const string FixedUserAgent = "TalebElm-LinkChecker/1.0";
     private const int MaxRedirects = 5;
     private const int MaxGetBytes = 4096;
     private static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan DefaultPerHostSpacing = TimeSpan.FromMilliseconds(250);
 
     private readonly HttpClient _httpClient;
     private readonly IDnsResolver _dnsResolver;
+    private readonly PerHostRequestSpacer _spacer;
     private readonly TimeSpan _requestTimeout;
-    private readonly TimeSpan _perHostSpacing;
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _lastHostRequest = new(StringComparer.OrdinalIgnoreCase);
+    private readonly TimeSpan? _perHostSpacingOverride;
 
     [ActivatorUtilitiesConstructor]
-    public LinkHealthChecker(HttpClient httpClient, IDnsResolver dnsResolver)
-        : this(httpClient, dnsResolver, DefaultRequestTimeout, DefaultPerHostSpacing)
+    public LinkHealthChecker(HttpClient httpClient, IDnsResolver dnsResolver, PerHostRequestSpacer spacer)
+        : this(httpClient, dnsResolver, spacer, DefaultRequestTimeout, perHostSpacingOverride: null)
     {
     }
 
@@ -36,20 +73,35 @@ public sealed class LinkHealthChecker : ILinkHealthChecker
         HttpClient httpClient,
         IDnsResolver dnsResolver,
         TimeSpan requestTimeout,
-        TimeSpan perHostSpacing)
+        TimeSpan perHostSpacing,
+        PerHostRequestSpacer? spacer = null)
+        : this(httpClient, dnsResolver, spacer ?? new PerHostRequestSpacer(perHostSpacing), requestTimeout, perHostSpacing)
+    {
+    }
+
+    private LinkHealthChecker(
+        HttpClient httpClient,
+        IDnsResolver dnsResolver,
+        PerHostRequestSpacer spacer,
+        TimeSpan requestTimeout,
+        TimeSpan? perHostSpacingOverride)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(dnsResolver);
+        ArgumentNullException.ThrowIfNull(spacer);
 
         _httpClient = httpClient;
         _dnsResolver = dnsResolver;
+        _spacer = spacer;
         _requestTimeout = requestTimeout;
-        _perHostSpacing = perHostSpacing;
+        _perHostSpacingOverride = perHostSpacingOverride;
     }
 
     public async Task<LinkCheckResult> CheckAsync(string url, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var currentUri))
+        if (string.IsNullOrWhiteSpace(url)
+            || url.TrimStart().StartsWith('/')
+            || !Uri.TryCreate(url, UriKind.Absolute, out var currentUri))
             return new LinkCheckResult(false, null, "InvalidUrl");
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -61,15 +113,15 @@ public sealed class LinkHealthChecker : ILinkHealthChecker
             if (currentUri.Scheme != Uri.UriSchemeHttp && currentUri.Scheme != Uri.UriSchemeHttps)
                 return new LinkCheckResult(false, null, "UnsupportedScheme");
 
-            var ssrfFailure = await ValidateHostSafetyAsync(currentUri.DnsSafeHost, linkedToken);
-            if (ssrfFailure is not null)
-                return new LinkCheckResult(false, null, ssrfFailure);
-
-            await EnforcePerHostSpacingAsync(currentUri.DnsSafeHost, linkedToken);
-
             HttpResponseMessage? response = null;
             try
             {
+                var ssrfFailure = await ValidateHostSafetyAsync(currentUri.DnsSafeHost, linkedToken);
+                if (ssrfFailure is not null)
+                    return new LinkCheckResult(false, null, ssrfFailure);
+
+                await _spacer.WaitTurnAsync(currentUri.DnsSafeHost, _perHostSpacingOverride, linkedToken);
+
                 response = await SendRequestAsync(HttpMethod.Head, currentUri, linkedToken);
 
                 if (ShouldFallbackToGet(response.StatusCode))
@@ -114,6 +166,31 @@ public sealed class LinkHealthChecker : ILinkHealthChecker
         }
 
         return new LinkCheckResult(false, null, "TooManyRedirects");
+    }
+
+    public static async ValueTask<Stream> ConnectWithSsrfGuardAsync(
+        SocketsHttpConnectionContext context,
+        IDnsResolver dnsResolver,
+        CancellationToken ct)
+    {
+        var addresses = IPAddress.TryParse(context.DnsEndPoint.Host, out var literalIp)
+            ? [literalIp]
+            : await dnsResolver.GetHostAddressesAsync(context.DnsEndPoint.Host, ct);
+
+        if (addresses.Length == 0 || addresses.Any(IsUnsafeIpAddress))
+            throw new HttpRequestException("Connection blocked by SSRF guard.");
+
+        var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+        try
+        {
+            await socket.ConnectAsync(addresses[0], context.DnsEndPoint.Port, ct);
+            return new NetworkStream(socket, ownsSocket: true);
+        }
+        catch
+        {
+            socket.Dispose();
+            throw;
+        }
     }
 
     private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod method, Uri uri, CancellationToken ct)
@@ -188,14 +265,19 @@ public sealed class LinkHealthChecker : ILinkHealthChecker
         if (address.AddressFamily == AddressFamily.InterNetwork)
         {
             var bytes = address.GetAddressBytes();
-            return bytes[0] == 0                                      // 0.0.0.0/8
-                || bytes[0] == 10                                     // 10.0.0.0/8 (RFC 1918)
-                || bytes[0] == 127                                    // 127.0.0.0/8 (Loopback)
-                || (bytes[0] == 169 && bytes[1] == 254)               // 169.254.0.0/16 (Link-local & Cloud metadata)
-                || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) // 172.16.0.0/12 (RFC 1918)
-                || (bytes[0] == 192 && bytes[1] == 168)               // 192.168.0.0/16 (RFC 1918)
-                || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127) // 100.64.0.0/10 (CGNAT)
-                || bytes[0] >= 224;                                   // Multicast & Reserved
+            return bytes[0] == 0                                             // 0.0.0.0/8 (Unspecified)
+                || bytes[0] == 10                                            // 10.0.0.0/8 (RFC 1918)
+                || bytes[0] == 127                                           // 127.0.0.0/8 (Loopback)
+                || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127)    // 100.64.0.0/10 (CGNAT)
+                || (bytes[0] == 169 && bytes[1] == 254)                      // 169.254.0.0/16 (Link-local & Cloud metadata)
+                || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)     // 172.16.0.0/12 (RFC 1918)
+                || (bytes[0] == 192 && bytes[1] == 0 && bytes[2] == 0)       // 192.0.0.0/24 (IETF Protocol)
+                || (bytes[0] == 192 && bytes[1] == 0 && bytes[2] == 2)       // 192.0.2.0/24 (TEST-NET-1)
+                || (bytes[0] == 192 && bytes[1] == 168)                      // 192.168.0.0/16 (RFC 1918)
+                || (bytes[0] == 198 && (bytes[1] == 18 || bytes[1] == 19))   // 198.18.0.0/15 (Benchmarking)
+                || (bytes[0] == 198 && bytes[1] == 51 && bytes[2] == 100)    // 198.51.100.0/24 (TEST-NET-2)
+                || (bytes[0] == 203 && bytes[1] == 0 && bytes[2] == 113)     // 203.0.113.0/24 (TEST-NET-3)
+                || bytes[0] >= 224;                                          // Multicast & Reserved
         }
 
         if (address.AddressFamily == AddressFamily.InterNetworkV6)
@@ -204,27 +286,20 @@ public sealed class LinkHealthChecker : ILinkHealthChecker
                 return true;
 
             var bytes = address.GetAddressBytes();
-            // Unique Local Address (fc00::/7 -> fc00..fdff)
+            // Unique Local Address (fc00::/7)
             if ((bytes[0] & 0xFE) == 0xFC)
+                return true;
+            // NAT64 well-known prefix (64:ff9b::/96)
+            if (bytes[0] == 0x00 && bytes[1] == 0x64 && bytes[2] == 0xFF && bytes[3] == 0x9B)
+                return true;
+            // 6to4 (2002::/16)
+            if (bytes[0] == 0x20 && bytes[1] == 0x02)
+                return true;
+            // Teredo (2001:0000::/32)
+            if (bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00)
                 return true;
         }
 
         return false;
-    }
-
-    private async Task EnforcePerHostSpacingAsync(string host, CancellationToken ct)
-    {
-        if (_perHostSpacing <= TimeSpan.Zero)
-            return;
-
-        var now = DateTimeOffset.UtcNow;
-        if (_lastHostRequest.TryGetValue(host, out var last))
-        {
-            var elapsed = now - last;
-            if (elapsed < _perHostSpacing)
-                await Task.Delay(_perHostSpacing - elapsed, ct);
-        }
-
-        _lastHostRequest[host] = DateTimeOffset.UtcNow;
     }
 }
