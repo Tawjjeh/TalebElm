@@ -79,15 +79,8 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         progress.Score = score;
         progress.PassedExam |= passed;
 
-        // Failed attempt: persist the score only. Never create or unlock the next Module's progress.
-        if (!passed)
-        {
-            await unitOfWork.SaveChangesAsync(ct);
-            return new ExamResultResponse(exam.Id, passed, score);
-        }
-
         // Make checks for unlocking the next module
-        if (progress.CompletedRequiredProblems)
+        if (progress.PassedExam && progress.CompletedRequiredProblems)
         {
             // The progress row is loaded without its Module navigation, so read the
             // Module explicitly instead of dereferencing progress.Module.
