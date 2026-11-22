@@ -53,12 +53,10 @@ namespace TalebElm.Infrastructure.Migrations
 
             // 1. One Resource per distinct legacy LessonResource
             migrationBuilder.Sql($@"
-            INSERT INTO ""Resources"" (""Id"", ""CreatedAt"", ""Title"", ""Kind"", ""Url"", ""Citation"", ""Language"", ""Level"", ""IsPaid"", ""Status"", ""ConsecutiveFailureCount"")
-            SELECT lower(hex(randomblob(16))), CURRENT_TIMESTAMP, ""Title"", ""NewKind"", ""Url"", ""Citation"", '', {(int)default(ResourceLevel)}, FALSE, {(int)ResourceStatus.Approved}, 0
-            FROM (
-                SELECT DISTINCT ""Title"", {Kind(@"""Kind""")} AS ""NewKind"", ""Url"", ""Citation""
+                INSERT INTO ""Resources"" (""Id"", ""CreatedAt"", ""Title"", ""Kind"", ""Url"", ""Citation"", ""Language"", ""Level"", ""IsPaid"", ""Status"", ""ConsecutiveFailureCount"")
+                SELECT MIN(""Id""), CURRENT_TIMESTAMP, ""Title"", {Kind(@"""Kind""")}, ""Url"", ""Citation"", 'en', {(int)default(ResourceLevel)}, FALSE, {(int)ResourceStatus.Approved}, 0
                 FROM ""LessonResources""
-            );");
+                GROUP BY ""Title"", {Kind(@"""Kind""")}, ""Url"", ""Citation"";");
 
             // 2. Point each LessonResource at its Resource
             migrationBuilder.Sql($@"
