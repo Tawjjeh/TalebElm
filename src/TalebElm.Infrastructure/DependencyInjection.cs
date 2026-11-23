@@ -35,6 +35,19 @@ public static class DependencyInjection
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
 
         services.AddHttpClient<IGitHubClient, GitHubClient>();
+        services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+        services.AddSingleton<PerHostRequestSpacer>();
+        services.AddHttpClient<ILinkHealthChecker, LinkHealthChecker>()
+            .ConfigurePrimaryHttpMessageHandler(sp =>
+            {
+                var dnsResolver = sp.GetRequiredService<IDnsResolver>();
+                return new SocketsHttpHandler
+                {
+                    AllowAutoRedirect = false,
+                    ConnectCallback = (context, ct) =>
+                        LinkHealthChecker.ConnectWithSsrfGuardAsync(context, dnsResolver, ct)
+                };
+            });
 
         return services;
     }
