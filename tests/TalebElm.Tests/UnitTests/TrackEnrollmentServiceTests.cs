@@ -27,7 +27,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId)).ReturnsAsync(new[] { module });
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
@@ -58,7 +58,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(new[] { new TrackEnrollment { UserId = userId, TrackId = trackId } });
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(true);
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
         unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
@@ -82,7 +82,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId)).ReturnsAsync(Array.Empty<Module>());
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
@@ -165,7 +165,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId, ct)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId, ct)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync(ct)).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId, ct)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId, ct)).ReturnsAsync(new[] { module });
         unitOfWork.Setup(u => u.SaveChangesAsync(ct)).ReturnsAsync(1);
 
@@ -181,7 +181,8 @@ public class TrackEnrollmentServiceTests
 
         users.Verify(r => r.GetByIdAsync(userId, ct), Times.Once);
         tracks.Verify(r => r.GetByIdAsync(trackId, ct), Times.Once);
-        enrollments.Verify(r => r.GetAllAsync(ct), Times.Once);
+        enrollments.Verify(r => r.ExistsAsync(userId, trackId, ct), Times.Once);
+        enrollments.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Never);
         modules.Verify(r => r.GetByTrackIdAsync(trackId, ct), Times.Once);
         enrollments.Verify(r => r.AddAsync(It.IsAny<TrackEnrollment>(), ct), Times.Once);
         userProgress.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), ct), Times.Once);
