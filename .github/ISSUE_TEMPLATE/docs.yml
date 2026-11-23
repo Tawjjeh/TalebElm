@@ -1,37 +1,54 @@
 name: Documentation
-description: Report errors, missing sections, or improvements in project documentation.
+description: Report a wrong rule, a stale status marker, a broken link, or a missing guide.
 title: "[Docs]: "
 labels:
   - "documentation"
 body:
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched open and closed issues and found no duplicate.
+          required: true
   - type: input
     id: location
     attributes:
       label: Location
-      description: File or section path that needs work.
-      placeholder: "docs/business/BUSINESS_RULES.md §Track or ARCHITECTURE.md"
+      description: The file and heading or line where the problem is.
+      placeholder: "docs/business/BUSINESS_RULES.md, rule C-7"
     validations:
       required: true
   - type: textarea
     id: problem
     attributes:
-      label: Problem
-      description: What is inaccurate, outdated, missing, or unclear?
+      label: What is wrong
+      description: Quote the current text and say why it is wrong. Name the code, test, or decision that disagrees.
     validations:
       required: true
   - type: textarea
-    id: proposed-change
+    id: fix
     attributes:
-      label: Proposed change
-      description: Describe the corrected text, structure, or links to add/update.
+      label: Proposed text
+      description: The replacement wording, the new link, or the missing section.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - Wrong fact or stale Implemented/Target marker
+        - Broken link or anchor
+        - Missing guide or example
+        - Table, diagram, or formatting error
+        - Wording that changes no fact
     validations:
       required: true
   - type: checkboxes
-    id: checks
+    id: readiness
     attributes:
-      label: Checklist
+      label: Ready to claim
       options:
-        - label: The change will be verified with `python3 scripts/check-docs.py`.
-          required: true
-        - label: No private notes or sensitive references are included.
+        - label: The change needs no product decision, only an accurate rewrite.
           required: true
