@@ -57,4 +57,5 @@ pull request, is taken. A comment claims an issue; the work starts once an owner
   `database` only when the change directly touches them.
 - Add the milestone that owns the work. Do not use feature labels; a milestone plus a layer is
   the whole scheme.
+- Milestones strictly track MVP deliverables (M0–M5). Issues for post-MVP work or unconfirmed ideas carry no milestone until committed to the roadmap.
 - Never invent a label. Propose a change in an issue first.

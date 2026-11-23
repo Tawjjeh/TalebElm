@@ -17,7 +17,7 @@ We are glad you want to contribute to طالب علم (TalebElm). Every accepted
    dotnet test TalebElm.slnx
    python3 scripts/check-docs.py
    ```
-3. **Pick a ready issue.** It must be open, carry an M0–M5 milestone, have no assignee, and have no open pull request. Small ones carry [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee).
+3. **Pick a ready issue.** It must be open, carry an M0–M5 milestone, have no assignee, and have no open pull request ([browse ready issues](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+-no%3Amilestone+NOT+%22%5BTracking%5D%22+in%3Atitle)). Small ones carry [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee).
 4. **Claim it in a comment.** Say what you plan to change and where. Wait until an owner assigns the issue to you, then start. One issue has one pull request; link it with `Closes #N`.
 5. **Branch from `upstream/main`.**
    ```bash
