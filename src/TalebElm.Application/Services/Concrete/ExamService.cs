@@ -9,14 +9,14 @@ namespace TalebElm.Application.Services.Concrete;
 
 public class ExamService(IUnitOfWork unitOfWork) : IExamService
 {
-    public Task<ExamResponse> CreateAsync(CreateExamRequest request)
+    public Task<ExamResponse> CreateAsync(CreateExamRequest request, CancellationToken ct = default)
     {
         throw new NotImplementedException("Creating an exam is not implemented yet.");
     }
 
-    public async Task<ExamResponse> GetByIdAsync(Guid id)
+    public async Task<ExamResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var exam = await unitOfWork.Exams.GetByIdAsync(id);
+        var exam = await unitOfWork.Exams.GetByIdAsync(id, ct);
         if (exam is null)
             throw new NotFoundException($"Exam with id '{id}' was not found.");
 

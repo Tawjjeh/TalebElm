@@ -4,6 +4,7 @@ using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
+using TalebElm.Infrastructure.Repositories;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -86,6 +87,23 @@ public class ExamServiceTests
         var ex = await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(id));
 
         Assert.Contains(id.ToString(), ex.Message);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var examId = Guid.NewGuid();
+        var exam = new Exam { Id = examId, Title = "Midterm", PassThreshold = 70, ModuleId = Guid.NewGuid() };
+
+        _exams
+            .Setup(r => r.GetByIdAsync(examId, cts.Token))
+            .ReturnsAsync(exam);
+
+        var result = await _sut.GetByIdAsync(examId, cts.Token);
+
+        Assert.Equal(examId, result.Id);
+        _exams.Verify(r => r.GetByIdAsync(examId, cts.Token), Times.Once);
     }
 
     #region SubmtiAsync_Method_Tests
