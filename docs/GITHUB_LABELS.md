@@ -1,15 +1,15 @@
 # TalebElm labels
 
-Fifteen labels, in four groups. Every issue and pull request carries at most one type and one
-layer. Work is grouped by the six MVP milestones (M0–M5), not by feature labels: the milestone
-says where the work fits, the layer says where the code goes.
+Fourteen labels in four groups. Every issue and pull request carries at most one type and one
+layer. Work is grouped by the six MVP milestones (M0–M5): the milestone says when the work
+happens, the layer says where the code goes.
 
 ## Type: what kind of change is this?
 
 | Label | Use when |
 |---|---|
 | `bug` | Something is broken: a failing test, a wrong response, a crash. |
-| `enhancement` | New behavior, a new endpoint, a refactor, or a test that adds coverage. |
+| `enhancement` | New behavior, an endpoint, a refactor, or a test that adds coverage. |
 | `documentation` | A change to Markdown, templates, or the docs check. Needs no layer. |
 | `question` | A decision or clarification is needed before code is written. |
 
@@ -23,25 +23,38 @@ says where the work fits, the layer says where the code goes.
 | `layer:api` | Controllers, middleware, `Program.cs`, Swagger. |
 | `layer:tests` | Unit, integration, and migration tests. |
 
-## State: can someone pick it up?
+## Contribution: who can pick it up?
 
 | Label | Use when |
 |---|---|
-| `help wanted` | The issue is approved and free for a contributor to claim. |
-| `good first issue` | It is also small, contained, and safe for a first contribution. |
+| `good first issue` | The work is small, contained, and safe for a first contribution. It is not a difficulty guarantee and it does not replace the milestone. |
 
 ## Resolution and boundaries
 
 | Label | Use when |
 |---|---|
-| `duplicate` | The same work exists elsewhere; link the survivor. |
+| `duplicate` | The same work exists elsewhere; link the surviving issue. |
 | `wontfix` | The work is out of MVP scope or contradicts a recorded decision. |
-| `security` | Authentication, hashing, tokens, or a vulnerability report. |
-| `database` | A schema change, a migration, or a data constraint. |
+| `security` | The change directly touches authentication, hashing, tokens, or a vulnerability. |
+| `database` | The change directly touches a schema, a migration, or a data constraint. |
+
+## How an issue becomes ready
+
+An issue is ready to claim when all four hold:
+
+1. it is open,
+2. it has a milestone from M0 to M5,
+3. it has no assignee,
+4. it has no open pull request.
+
+An issue with no milestone is undecided, not ready. An issue with an assignee, or with an open
+pull request, is taken. A comment claims an issue; the work starts once an owner assigns it.
+`good first issue` marks the small ones, so a first contribution can start there.
 
 ## Rules
 
-- One type and one layer per item. A documentation-only item needs no layer; `security` and
-  `database` are added only when the change directly touches them.
-- Add the milestone that owns the work, and `help wanted` only when the issue is ready to claim.
-  Never invent a label; propose a change in an issue first.
+- One type and one layer per item. A documentation-only item needs no layer. Add `security` or
+  `database` only when the change directly touches them.
+- Add the milestone that owns the work. Do not use feature labels; a milestone plus a layer is
+  the whole scheme.
+- Never invent a label. Propose a change in an issue first.

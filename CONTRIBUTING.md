@@ -2,64 +2,54 @@
 
 We are glad you want to contribute to طالب علم (TalebElm). Every accepted change helps build a clear, open path for anyone learning software engineering.
 
-## Your first contribution
+## Start here
 
-Follow these five steps to find an issue, set up your branch, and submit your change:
-
-1. **Fork the repository:** Fork TalebElm to your personal GitHub account:
+1. **Fork and clone.**
    ```bash
    gh repo fork Tawjjeh/TalebElm --clone=false
-   ```
-2. **Clone your fork:** Clone your fork locally and configure the upstream remote:
-   ```bash
    git clone https://github.com/<your-username>/TalebElm.git
    cd TalebElm
    git remote add upstream https://github.com/Tawjjeh/TalebElm.git
    ```
-3. **Build and test:** Confirm the solution builds and all existing tests pass:
+2. **Build and test before you change anything.**
    ```bash
    dotnet build TalebElm.slnx
    dotnet test TalebElm.slnx
    python3 scripts/check-docs.py
    ```
-4. **Pick an issue:** Pick an issue with the `help wanted` label that nobody has taken (or start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee)), comment that you want it, and start once it is assigned to you.
-5. **Create a branch:** Fetch latest changes and create a branch from `upstream/main`:
+3. **Pick a ready issue.** It must be open, carry an M0–M5 milestone, have no assignee, and have no open pull request. Small ones carry [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee).
+4. **Claim it in a comment.** Say what you plan to change and where. Wait until an owner assigns the issue to you, then start. One issue has one pull request; link it with `Closes #N`.
+5. **Branch from `upstream/main`.**
    ```bash
    git fetch upstream
    git switch -c feat/my-topic upstream/main
    ```
 
-## Contribution rule
-
-Pick an issue with the help wanted label that nobody has taken, comment that you want it, and start once it is assigned to you.
-Please link the issue with `Closes #N` in your pull request description to keep work organized and avoid duplicate effort.
-
 ## A good pull request
 
-- **One focused change:** Touch only the files needed for that single task, keeping diffs under about 200 lines.
-- **Automated tests:** Include unit or integration tests proving the new behavior that would fail without your change.
-- **Docs updated:** Update relevant guides or index tables if behavior, arguments, or contracts changed.
-- **Linked issue:** Include `Closes #N` in the description so the issue closes on merge.
-- **Conventional title:** Prefix the title with a conventional type such as `feat:`, `fix:`, `docs:`, or `test:`.
+- **One focused change.** Touch only the files that task needs, and keep the diff near 200 lines.
+- **Tests that prove it.** The new test must fail without your change.
+- **Docs in the same pull request.** Update the feature doc, table, or rule marker when behavior or a contract changes.
+- **Conventional title.** `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, or `ci:`.
+- **Accurate description.** What changed, why, how you verified it, and anything still open.
 
-## What happens next
+## Checks and review
 
-- Automated CI builds the code, runs the test suite, and checks doc formatting on every push.
-- An assigned reviewer reads your change, checks architecture rules, and leaves actionable comments.
-- Once all checks pass and the review is approved, an owner merges your pull request.
-- We squash-merge each branch into `main` as a single clean commit.
+CI runs `dotnet build`, `dotnet test`, the OpenAPI validation, and `python3 scripts/check-docs.py`. An assigned reviewer reads the change against the architecture rules and the recorded decisions. When the checks pass and the review is approved, an owner squash-merges the branch into `main` as one commit.
 
-## Ask for help
+If a review asks for changes, reply on the thread and push a follow-up commit. Do not force-push over someone else's branch, and do not reopen a pull request that was closed for a duplicate.
 
-If you run into an unexpected build failure or have a question about architecture, ask on your assigned issue thread or open a topic in [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
+## Where to ask
+
+- A question about the project or an idea: open a [Discussion](https://github.com/Tawjjeh/TalebElm/discussions).
+- A blocked task or an unclear rule: comment on your issue thread.
+- A security problem: follow [`SECURITY.md`](SECURITY.md) and do not open a public issue.
 
 ## Please don't
 
-- Do not open unsolicited refactoring, code reformatting, or cosmetic changes.
-- Do not edit files under `.github/workflows` without prior agreement on an issue.
-- Do not open promotional PRs or submit changes without tests proving their correctness.
+- Do not open unsolicited refactoring, reformatting, or cosmetic pull requests.
+- Do not change `.github/workflows` without agreeing on an issue first.
+- Do not trust client input for scores, handles, solves, or task results.
+- Do not commit databases, secrets, or editor user files.
 
-## Standards and labels
-
-Read [`docs/development/coding-standards.md`](docs/development/coding-standards.md) for architectural boundaries and [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) for completion criteria.
-Available issue and pull request labels are documented in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md).
+Read [`docs/development/coding-standards.md`](docs/development/coding-standards.md) for the layer rules, [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) for completion, and [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md) for the label scheme.
