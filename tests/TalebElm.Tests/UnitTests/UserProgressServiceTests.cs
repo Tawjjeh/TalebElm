@@ -19,13 +19,15 @@ public class UserProgressServiceTests
             new() { UserId = otherId, ModuleId = Guid.NewGuid(), IsUnlocked = true, PassedExam = true, Score = 10 }
         };
         var repository = new Mock<IUserProgressRepository>();
+
         repository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(rows);
+
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
 
         var service = new UserProgressService(unitOfWork.Object);
 
-        var result = await service.GetMyProgressAsync(userId);
+        var result = await service.GetMyProgressAsync(userId, It.IsAny<CancellationToken>());
 
         Assert.Single(result);
         Assert.Equal(rows[0].ModuleId, result[0].ModuleId);
@@ -42,7 +44,10 @@ public class UserProgressServiceTests
         };
         var repository = new Mock<IUserProgressRepository>();
         repository.Setup(r => r.GetByUserAndTrackAsync(userId, trackId, It.IsAny<CancellationToken>())).ReturnsAsync(rows);
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(t => t.GetByIdAsync(trackId, It.IsAny<CancellationToken>())).ReturnsAsync(new Track { Id = trackId });
         var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
         unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
 
         var service = new UserProgressService(unitOfWork.Object);
@@ -79,19 +84,25 @@ public class UserProgressServiceTests
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
+        var trackId = Guid.NewGuid();
+
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(t => t.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Track { Id = trackId });
+
+        // The exact token instance must reach the repository; a different
+        // token ( CancellationToken.None) leaves this setup unmatched.
         var repository = new Mock<IUserProgressRepository>();
-        repository.Setup(r => r.GetByUserAndTrackAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .Returns((Guid _, Guid _, CancellationToken ct) =>
-            {
-                ct.ThrowIfCancellationRequested();
-                return Task.FromResult<IReadOnlyList<UserProgress>>(new List<UserProgress>());
-            });
+        repository.Setup(r => r.GetByUserAndTrackAsync(It.IsAny<Guid>(), trackId, cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
         var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
         unitOfWork.Setup(u => u.UserProgresses).Returns(repository.Object);
 
         var service = new UserProgressService(unitOfWork.Object);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => service.GetByTrackAsync(Guid.NewGuid(), Guid.NewGuid(), cts.Token));
+            () => service.GetByTrackAsync(Guid.NewGuid(), trackId, cts.Token));
     }
 }

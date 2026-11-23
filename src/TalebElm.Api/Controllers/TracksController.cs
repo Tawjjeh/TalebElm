@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
@@ -10,6 +11,7 @@ namespace TalebElm.Api.Controllers;
 [Route("api/[controller]")]
 public class TracksController(ITrackService trackService) : ControllerBase
 {
+
     /// <summary>
     /// Retrieves a page of available tracks.
     /// </summary>
@@ -42,4 +44,5 @@ public class TracksController(ITrackService trackService) : ControllerBase
     public IActionResult Post([FromBody] CreateTrackRequest request)
         => throw new NotImplementedException(
             "Creating a track via this endpoint is not implemented yet.");
+
 }
