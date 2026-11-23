@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new capability, workflow, or architectural improvement.
+description: Propose new behavior, an endpoint, a refactor, or a test that adds coverage.
 title: "[Feature]: "
 labels:
   - "enhancement"
@@ -7,48 +7,70 @@ body:
   - type: markdown
     attributes:
       value: |
-        TalebElm follows Clean Architecture (Domain → Application → Infrastructure → Api) and strict domain rules.
-        Features must respect server-side verification and progression rules.
+        TalebElm is scoped to the six MVP milestones in `docs/business/ROADMAP.md`.
+        A feature outside that scope waits in Discussions until the MVP closes.
+        For an open product or technical question, start a thread in Discussions instead.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched open and closed issues and pull requests and found no duplicate.
+          required: true
+        - label: This is inside the MVP scope, or I explained below why it should wait.
+          required: true
   - type: textarea
     id: problem
     attributes:
-      label: Problem or motivation
-      description: What problem does this solve for the learner, admin, or developer?
+      label: Problem
+      description: What is missing or painful today, and for whom?
     validations:
       required: true
   - type: textarea
-    id: proposed-solution
+    id: proposal
     attributes:
-      label: Proposed solution
-      description: Describe the behavior, endpoints, or data models from a user/system perspective.
+      label: Proposed behavior
+      description: Routes, entities, and rules. Keep it specific enough to size the work.
     validations:
       required: true
-  - type: checkboxes
-    id: layers
+  - type: textarea
+    id: boundaries
     attributes:
-      label: Target layers affected
+      label: What is out of scope
+      description: What this change deliberately does not do.
+    validations:
+      required: false
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Main layer
       options:
-        - label: Domain (Entities, Enums, Exceptions, Domain Interfaces)
-        - label: Application (Services, DTOs, Business Rules, Validators)
-        - label: Infrastructure (EF Core Entities, Repositories, Migrations)
-        - label: Api (Controllers, Middleware, Dependency Injection)
-        - label: Tests (Unit & Integration tests)
+        - Domain (entities, enums, exceptions, repository interfaces)
+        - Application (services, DTOs, validators)
+        - Infrastructure (EF Core, repositories, migrations)
+        - Api (controllers, middleware, Program.cs)
+        - Tests
+        - Documentation or scripts
+        - Cross-cutting
+    validations:
+      required: true
+  - type: input
+    id: rule
+    attributes:
+      label: Related rule or decision
+      description: Optional. Quote the decision that the change follows or would change.
+    validations:
+      required: false
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: What other approaches did you consider and why were they rejected?
-  - type: input
-    id: decision-link
-    attributes:
-      label: Related Decisions / Rules
-      description: "Optional. Link relevant decisions in docs/OPEN_DECISIONS.md or rules in docs/business/BUSINESS_RULES.md"
+    validations:
+      required: false
   - type: checkboxes
-    id: checklist
+    id: architecture
     attributes:
-      label: Checklist
+      label: Architecture
       options:
-        - label: I searched existing issues and open PRs to avoid duplication.
-          required: true
-        - label: This proposed change aligns with Clean Architecture principles described in `ARCHITECTURE.md`.
+        - label: The proposal keeps business logic in Application and persistence in Infrastructure.
           required: true
