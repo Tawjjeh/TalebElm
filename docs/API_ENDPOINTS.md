@@ -80,6 +80,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 |---|---|---|---|---|
 | GET | `/api/hub/technologies` | None | Top-level languages & categories | 200 |
 | GET | `/api/hub/technologies/{slug}` | Query filters (language, level, cost) | Technology detail with children & resources | 200, 404 |
+| GET | `/api/hub/topics/{id}/resources` | Query filters (language, level, cost) | Topic detail with paginated resources | 200, 404 |
 | GET | `/api/hub/resources` | Query filters (search, language, level, cost, kind, page, size) | Paginated curated resources | 200 |
 | POST | `/api/admin/hub/resources` | Resource creation DTO | Created resource DTO | 201, 400, 401, 403 |
 | PUT | `/api/admin/hub/resources/{id}` | Resource update DTO | Updated resource DTO | 200, 400, 401, 403, 404 |
@@ -101,7 +102,7 @@ The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `
 
 | Access | Routes |
 |---|---|
-| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/resources` |
+| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/topics/{id}/resources`, `GET /api/hub/resources` |
 | Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/module-problems/{moduleProblemId}/verify`, `/api/tracks/{trackId}/project*` |
 | Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, and `GET /api/users` |
 
