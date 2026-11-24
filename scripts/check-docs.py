@@ -19,11 +19,30 @@ PRIVATE_WORKSPACE = ".local"  # public docs must never mention this folder
 
 
 def gh_slug(text: str) -> str:
-    # GitHub heading slug rules (lowercase, punctuation dropped, spaces -> -)
+    # GitHub heading slug rules: lowercase, drop punctuation, then turn each
+    # space into "-". Runs are kept, so "a & b" becomes "a--b", not "a-b".
     s = text.strip().lower()
-    s = re.sub(r"[^\w\s-]", "", s)
-    s = re.sub(r"\s+", "-", s)
-    return s
+    s = re.sub(r"[^\w\- ]", "", s)
+    return s.replace(" ", "-")
+
+
+# Headings with the anchors GitHub generates for them. The script fails if
+# gh_slug disagrees, so a wrong slug can't make a broken link look valid.
+GH_SLUG_EXAMPLES = {
+    "6. Progress tracking & unlock": "6-progress-tracking--unlock",
+    "Reads / writes": "reads--writes",
+    "3.2 Codeforces Problem Solve Verification Flow": "32-codeforces-problem-solve-verification-flow",
+    "`IUnitOfWork` contract": "iunitofwork-contract",
+    "snake_case and kebab-case": "snake_case-and-kebab-case",
+}
+
+for heading, expected in GH_SLUG_EXAMPLES.items():
+    actual = gh_slug(heading)
+    if actual != expected:
+        errors.append(f"scripts/check-docs.py: gh_slug({heading!r}) returned {actual!r}, expected {expected!r}")
+
+# Explicit HTML anchors such as <a id="name"></a> are link targets too.
+HTML_ANCHOR = re.compile(r"""<a\s+(?:[^>]*\s)?(?:id|name)=["']([^"']+)["']""", re.IGNORECASE)
 
 
 def strip_frontiers(line: str) -> bool:
@@ -60,6 +79,7 @@ def headings_slugs(lines):
     seen = {}
     slugs = set()
     for line in lines:
+        slugs.update(HTML_ANCHOR.findall(line))
         m = re.match(r"^(#{1,6})\s+(.*)$", line.strip())
         if not m:
             continue
