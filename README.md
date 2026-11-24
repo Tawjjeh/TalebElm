@@ -88,7 +88,7 @@ Dependencies point inward. Domain has no dependencies; Application depends on Do
 
 ## Contributing
 
-Pick an open issue that has a milestone, no assignee, and no open pull request ([browse ready issues](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+-no%3Amilestone+NOT+%22%5BTracking%5D%22+in%3Atitle)). Comment how you plan to change it, and start once an owner assigns it. Start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee), and read [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full flow.
+Pick an open issue that has a milestone, no assignee, and no open pull request ([browse ready issues](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+-no%3Amilestone+NOT+%22%5BTracking%5D%22+in%3Atitle)). Comment how you plan to change it and start; the first pull request that meets the guide wins. Start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee), and read [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full flow.
 
 Questions and post-MVP ideas belong in [Discussions](https://github.com/Tawjjeh/TalebElm/discussions). Security problems follow [`SECURITY.md`](SECURITY.md).
 

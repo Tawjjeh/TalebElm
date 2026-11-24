@@ -48,8 +48,9 @@ An issue is ready to claim when all four hold:
 4. it has no open pull request.
 
 An issue with no milestone is undecided, not ready. An issue with an assignee, or with an open
-pull request, is taken. A comment claims an issue; the work starts once an owner assigns it.
-`good first issue` marks the small ones, so a first contribution can start there.
+pull request, is taken. A comment claims an issue and the work starts right away; the first pull
+request that meets the checklist wins. `good first issue` marks the small ones, so a first
+contribution can start there.
 
 ## Rules
 
