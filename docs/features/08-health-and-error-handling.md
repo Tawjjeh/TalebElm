@@ -67,6 +67,8 @@ DomainException (base)
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
 | Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
+When a downstream cancellation exception coincides with a canceled `RequestAborted` token, the middleware classifies an unstarted response as `499` for server-side reporting and skips the error log and ProblemDetails body. A response that has already started is left intact.
+
 ### Validation error payload (implemented)
 
 The middleware returns an RFC 7807 problem-details envelope with field-specific errors so clients can attach each message to its input field:
