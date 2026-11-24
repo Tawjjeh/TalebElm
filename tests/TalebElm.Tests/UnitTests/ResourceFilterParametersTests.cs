@@ -7,7 +7,7 @@ public class ResourceFilterParametersTests
     [Fact]
     public void Constructor_UsesDefaultPagingAndNullFilters()
     {
-        var parameters = new ResourceFilterParameters();
+        var parameters = new ResourceFilterParameters(null, null, null, null, null);
 
         Assert.Null(parameters.SearchQuery);
         Assert.Null(parameters.Language);
