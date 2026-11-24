@@ -63,7 +63,9 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("StudentOnly", policy =>
     {
-        policy.RequireRole(UserRole.Student.ToString());
+        policy.RequireRole(
+            UserRole.Student.ToString(),
+            UserRole.Admin.ToString());
     });
 });
 
