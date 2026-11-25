@@ -28,12 +28,18 @@ jobs:
         with:
           script: |
             const dispatched = context.eventName === 'workflow_dispatch';
+            const inputs = context.payload.inputs || {};
             const dryRun = dispatched
-              ? String(core.getInput('dry_run') || 'true').trim().toLowerCase() !== 'false'
+              ? String(inputs.dry_run ?? 'true').trim().toLowerCase() !== 'false'
               : false;
             const issueNumber = dispatched
-              ? Number(core.getInput('issue_number'))
+              ? Number(inputs.issue_number)
               : context.payload.issue.number;
+
+            if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+              core.setFailed('Provide a positive issue_number when running this manually.');
+              return;
+            }
             const { owner, repo } = context.repo;
 
             const { data: issue } = await github.rest.issues.get({
