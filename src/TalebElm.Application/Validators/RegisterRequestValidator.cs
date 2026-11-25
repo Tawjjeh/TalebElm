@@ -1,4 +1,3 @@
-
 using FluentValidation;
 using TalebElm.Application.DTOs.Requests;
 
@@ -18,7 +17,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestDTO>
             .MaximumLength(256);
 
         RuleFor(x => x.Password)
-	        .NotEmpty()
+            .NotEmpty()
             .MinimumLength(8)
             .MaximumLength(128)
             .Matches(@"[a-zA-Z]")
