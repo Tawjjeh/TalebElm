@@ -28,7 +28,9 @@ jobs:
         with:
           script: |
             const dispatched = context.eventName === 'workflow_dispatch';
-            const dryRun = dispatched ? core.getBooleanInput('dry_run') : false;
+            const dryRun = dispatched
+              ? String(core.getInput('dry_run') || 'true').trim().toLowerCase() !== 'false'
+              : false;
             const issueNumber = dispatched
               ? Number(core.getInput('issue_number'))
               : context.payload.issue.number;
