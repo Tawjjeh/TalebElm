@@ -29,7 +29,7 @@ We use a claim-by-comment workflow:
 3. Open a pull request within 7 days. If you need more time or run into questions, leave an update on the issue thread.
 4. If an assigned issue stays idle for more than 14 days without an open pull request or branch, we clear the assignment so someone else can pick it up.
 
-To keep things fair and manageable, please focus on one open issue at a time. The first pull request that meets the architectural rules and passes all checks wins.
+To keep things fair and manageable, claim at most two issues at a time. The first pull request that meets the architectural rules and passes all checks wins; if two arrive for the same issue, the earlier one is reviewed first.
 
 ## Local setup
 
