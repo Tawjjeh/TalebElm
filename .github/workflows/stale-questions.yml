@@ -24,7 +24,7 @@ jobs:
         with:
           script: |
             const dryRun = context.eventName === 'workflow_dispatch'
-              ? core.getBooleanInput('dry_run')
+              ? String(core.getInput('dry_run') || 'true').trim().toLowerCase() !== 'false'
               : false;
             const { owner, repo } = context.repo;
             const now = Date.now();
