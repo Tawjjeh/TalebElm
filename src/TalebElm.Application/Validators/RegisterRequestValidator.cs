@@ -18,6 +18,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestDTO>
             .MaximumLength(256);
 
         RuleFor(x => x.Password)
+	    .NotEmpty()
             .MinimumLength(8)
             .MaximumLength(128)
             .Matches(@"[a-zA-Z]")
