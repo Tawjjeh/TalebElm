@@ -1,0 +1,99 @@
+name: Issue triage
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to triage
+        required: true
+        type: number
+      dry_run:
+        description: Log the label without applying it
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  label-layer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add the layer label chosen in the issue form
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const dispatched = context.eventName === 'workflow_dispatch';
+            const dryRun = dispatched ? core.getBooleanInput('dry_run') : false;
+            const issueNumber = dispatched
+              ? Number(core.getInput('issue_number'))
+              : context.payload.issue.number;
+            const { owner, repo } = context.repo;
+
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: issueNumber,
+            });
+
+            if (issue.pull_request) {
+              core.info(`#${issueNumber} is a pull request; nothing to do.`);
+              return;
+            }
+
+            const body = issue.body || '';
+            const section = body
+              .split(/^### /m)
+              .find((part) => /^(Affected layer|Main layer)\b/i.test(part.trim()));
+
+            if (!section) {
+              core.info(`#${issueNumber} has no layer question; nothing to do.`);
+              return;
+            }
+
+            const answer = section
+              .split('\n')
+              .slice(1)
+              .map((line) => line.trim())
+              .find(Boolean) || '';
+
+            const layers = [
+              [/^Domain\b/i, 'layer:domain'],
+              [/^Application\b/i, 'layer:application'],
+              [/^Infrastructure\b/i, 'layer:infrastructure'],
+              [/^Api\b/i, 'layer:api'],
+              [/^Tests\b/i, 'layer:tests'],
+            ];
+            const match = layers.find(([pattern]) => pattern.test(answer));
+
+            if (!match) {
+              core.info(`#${issueNumber} chose "${answer}"; no layer label needed.`);
+              return;
+            }
+
+            const label = match[1];
+            const current = (issue.labels || []).map((item) =>
+              typeof item === 'string' ? item : item.name);
+            const existingLayer = current.find((name) => name.startsWith('layer:'));
+
+            if (existingLayer) {
+              core.info(`#${issueNumber} already has ${existingLayer}; leaving it.`);
+              return;
+            }
+
+            if (dryRun) {
+              core.info(`Dry run: #${issueNumber} would receive ${label}.`);
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: [label],
+            });
+            core.info(`#${issueNumber} received ${label}.`);
