@@ -23,8 +23,9 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
+            const inputs = context.payload.inputs || {};
             const dryRun = context.eventName === 'workflow_dispatch'
-              ? String(core.getInput('dry_run') || 'true').trim().toLowerCase() !== 'false'
+              ? String(inputs.dry_run ?? 'true').trim().toLowerCase() !== 'false'
               : false;
             const { owner, repo } = context.repo;
             const now = Date.now();
