@@ -167,4 +167,20 @@ public class RegisterRequestValidatorTest
 
         result.ShouldNotHaveValidationErrorFor(x => x.Password);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("        ")]
+    public async Task Validate_NullEmptyOrWhitespacePassword_ShouldHaveValidationError(string? password)
+    {
+        var request = new RegisterRequestDTO(
+            "Ahmed",
+            "ahmed@example.com",
+            password!);
+
+        var result = await _validator.TestValidateAsync(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Password);
+    }
 }
