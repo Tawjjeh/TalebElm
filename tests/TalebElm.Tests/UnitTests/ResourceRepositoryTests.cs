@@ -90,6 +90,27 @@ public class ResourceRepositoryTests : SqliteTestBase
     }
 
     [Fact]
+    public async Task GetApprovedPagedAsync_IgnoresBlankLanguageFilter_AndTrimsLanguage()
+    {
+        DbContext.Resources.AddRange(
+            NewResource("English", language: "en"),
+            NewResource("Arabic", language: "ar"));
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var (blankItems, blankTotal) = await _repository.GetApprovedPagedAsync(null, null, "   ", null, null, null, 1, 20);
+
+        Assert.Equal(2, blankTotal);
+        Assert.Equal(2, blankItems.Count);
+
+        var (trimmedItems, trimmedTotal) = await _repository.GetApprovedPagedAsync(null, null, " en ", null, null, null, 1, 20);
+
+        Assert.Single(trimmedItems);
+        Assert.Equal("English", trimmedItems[0].Title);
+        Assert.Equal(1, trimmedTotal);
+    }
+
+    [Fact]
     public async Task GetApprovedPagedAsync_PagesResults_AndReportsTotalCount()
     {
         DbContext.Resources.AddRange(
