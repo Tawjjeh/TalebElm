@@ -1,8 +1,13 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.InteropServices.ObjectiveC;
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
+using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Application.Services.Concrete;
@@ -32,7 +37,7 @@ public class TrackService(
         var validationResult = await validator.ValidateAsync(request);
 
         if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
+            throw new FluentValidation.ValidationException(validationResult.Errors);
 
         var track = new Track
         {
@@ -71,4 +76,47 @@ public class TrackService(
 
         return new PagedTracksResponse(items, page, pageSize, totalCount);
     }
+
+    public async Task PublishAsync(Guid id, CancellationToken ct = default)
+    {
+        var track = await unitOfWork.Tracks.GetByIdAsync(id, ct);
+        if (track == null)
+            throw new NotFoundException("Track not found");
+
+        if (track.Status == TrackStatus.Draft)
+        {
+            var hasModules = await unitOfWork.Modules.GetByTrackIdAsync(id, ct);
+            if (!hasModules.Any())
+                throw new FluentValidation.ValidationException("A track must contain at least one module before publishing.");
+        }
+        else if(track.Status != TrackStatus.Archived) 
+        {
+            throw new FluentValidation
+                    .ValidationException("The track cannot be published from its current status.");
+        }
+        track.Status = TrackStatus.Published;
+
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task ArchiveAsync(Guid id, CancellationToken ct = default)
+    {
+        var track = await unitOfWork.Tracks
+                                    .GetByIdAsync(id, ct);
+
+        if (track is null)
+            throw new NotFoundException("Track not found.");
+
+        if (track.Status != TrackStatus.Published)
+        {
+            throw new FluentValidation.ValidationException(
+                "Only published tracks can be archived.");
+        }
+
+        track.Status = TrackStatus.Archived;
+
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+
 }

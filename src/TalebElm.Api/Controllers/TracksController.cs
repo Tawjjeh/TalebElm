@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
+using TalebElm.Domain.Enums;
 using NotImplementedException = TalebElm.Domain.Exceptions.NotImplementedException;
 
 namespace TalebElm.Api.Controllers;
@@ -42,4 +44,32 @@ public class TracksController(ITrackService trackService) : ControllerBase
     public IActionResult Post([FromBody] CreateTrackRequest request)
         => throw new NotImplementedException(
             "Creating a track via this endpoint is not implemented yet.");
+
+    [HttpPatch("{trackId}/publish")]
+    [Authorize(Policy = "AdminOnly")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
+    public async Task<ActionResult> PublishAsync(Guid trackId, CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole(nameof(UserRole.Admin)))
+            return Forbid();
+
+        await trackService.PublishAsync(trackId, cancellationToken);
+        return Ok();
+    } 
+
+    [HttpPatch("{trackId}/Archive")]
+    [Authorize(Policy = "AdminOnly")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
+    public async Task<ActionResult> ArchiveAsync(Guid trackId, CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole(nameof(UserRole.Admin)))
+            return Forbid();
+
+        await trackService.ArchiveAsync(trackId, cancellationToken);
+        return Ok();
+    }
 }

@@ -5,6 +5,8 @@ using TalebElm.Api.Controllers;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
+using System.Security.Claims;
+using TalebElm.Domain.Enums;
 using DomainNotImplemented = TalebElm.Domain.Exceptions.NotImplementedException;
 
 namespace TalebElm.Tests.IntegrationTests;
@@ -12,6 +14,26 @@ namespace TalebElm.Tests.IntegrationTests;
 public class TracksControllerTests
 {
     private readonly Mock<ITrackService> _trackService = new();
+
+    private static TracksController CreateControllerAs(
+        ITrackService trackService,
+        UserRole role)
+    {
+        var identity = new ClaimsIdentity(
+            [new Claim(ClaimTypes.Role, role.ToString())],
+            authenticationType: "Test");
+
+        return new TracksController(trackService)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(identity)
+                }
+            }
+        };
+    }
 
     [Fact]
     public async Task Get_ReturnsOkWithPagedTracksResponse()
@@ -65,5 +87,43 @@ public class TracksControllerTests
         context.Response.Body.Position = 0;
         var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
         Assert.Contains("\"status\":501", body);
+    }
+
+    [Fact]
+    public async Task Publish_AsNonAdmin_ReturnsForbidden()
+    {
+        // Arrange: an authenticated user whose role is Student, not Admin.
+        var trackId = Guid.NewGuid();
+        var controller = CreateControllerAs(_trackService.Object, UserRole.Student);
+
+        // Act
+        var actionResult = await controller.PublishAsync(
+            trackId,
+            CancellationToken.None);
+
+        // Assert
+        Assert.IsType<ForbidResult>(actionResult);
+        _trackService.Verify(
+            s => s.PublishAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never); 
+    }
+
+    [Fact]
+    public async Task Archive_AsNonAdmin_ReturnsForbidden()
+    {
+        // Arrange: an authenticated user whose role is Student, not Admin.
+        var trackId = Guid.NewGuid();
+        var controller = CreateControllerAs(_trackService.Object, UserRole.Student);
+
+        // Act
+        var actionResult = await controller.ArchiveAsync(
+            trackId,
+            CancellationToken.None);
+
+        // Assert
+        Assert.IsType<ForbidResult>(actionResult);
+        _trackService.Verify(
+            s => s.ArchiveAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }
