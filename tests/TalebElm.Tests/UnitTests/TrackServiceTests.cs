@@ -205,4 +205,43 @@ public class TrackServiceTests
 
         Assert.Equal("PageSize must be between 1 and 100.", ex.Message);
     }
+
+
+    [Fact]
+    public async Task GetAllAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        _unitOfWork
+            .Setup(u => u.Tracks.GetAllAsync(cts.Token))
+            .ReturnsAsync([]);
+
+        await _sut.GetAllAsync(cts.Token);
+
+        _unitOfWork.Verify(u => u.Tracks.GetAllAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ForwardsCancellationTokenToValidatorAndUnitOfWork()
+    {
+        using var cts = new CancellationTokenSource();
+        var request = new CreateTrackRequest("Backend .NET", "Learn ASP.NET Core");
+
+        _validator
+            .Setup(v => v.ValidateAsync(request, cts.Token))
+            .ReturnsAsync(new ValidationResult());
+
+        _unitOfWork
+            .Setup(u => u.Tracks.AddAsync(It.IsAny<Track>(), cts.Token))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork
+            .Setup(u => u.SaveChangesAsync(cts.Token))
+            .ReturnsAsync(1);
+
+        await _sut.CreateAsync(request, cts.Token);
+
+        _validator.Verify(v => v.ValidateAsync(request, cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.Tracks.AddAsync(It.IsAny<Track>(), cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
 }
