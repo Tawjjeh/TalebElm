@@ -1,5 +1,6 @@
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
+using TalebElm.Application.Validators;
 using TalebElm.Domain.Entities;
 using TalebElm.Infrastructure.Repositories;
 using TalebElm.Tests.Infrastructure;
@@ -25,7 +26,7 @@ public class ExamProgressionTests : SqliteTestBase
     public ExamProgressionTests()
     {
         _unitOfWork = new UnitOfWork(DbContext);
-        _sut = new ExamService(_unitOfWork);
+        _sut = new ExamService(_unitOfWork, new CreateExamRequestValidator());
 
         _track = new Track { Name = "Backend", Description = "Backend track", Status = Domain.Enums.TrackStatus.Published };
         _firstModule = new Module { Track = _track, Title = "M1", Order = 1 };

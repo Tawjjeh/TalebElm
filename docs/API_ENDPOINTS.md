@@ -15,7 +15,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
-| POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams` | Declared as a placeholder; throws domain `NotImplementedException`. (`ExamService.CreateAsync` is implemented with nested questions, validation, and 404/409 checks; controller wiring is a separate issue.) |
 | POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
