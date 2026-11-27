@@ -20,7 +20,7 @@ public class ExamServiceTests
     private readonly Exam _exam;
     private readonly Module _module;
     private readonly Module _nextModule;
-    private readonly UserProgress _progress = new() { Score = 42, PassedExam = false };
+    private readonly UserProgress _progress = new() { Score = 42, PassedExam = false, IsUnlocked = true };
 
     public ExamServiceTests()
     {
@@ -105,6 +105,149 @@ public class ExamServiceTests
         Assert.Equal(examId, result.Id);
         _exams.Verify(r => r.GetByIdAsync(examId, cts.Token), Times.Once);
     }
+
+    #region GetDetailForLearnerAsync_Method_Tests
+
+    // Questions stored out of order; the detail view must order them by Order.
+    private Exam DetailExam() => new()
+    {
+        Id = Guid.NewGuid(),
+        Title = "Midterm",
+        PassThreshold = 70,
+        ModuleId = _exam.ModuleId,
+        Questions = new List<ExamQuestion>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(), Prompt = "Second", Order = 2, Points = 20,
+                Options = new List<ExamOption>
+                {
+                    new() { Id = Guid.NewGuid(), Text = "B1", IsCorrect = false },
+                    new() { Id = Guid.NewGuid(), Text = "B2", IsCorrect = true }
+                }
+            },
+            new()
+            {
+                Id = Guid.NewGuid(), Prompt = "First", Order = 1, Points = 10,
+                Options = new List<ExamOption>
+                {
+                    new() { Id = Guid.NewGuid(), Text = "A1", IsCorrect = true },
+                    new() { Id = Guid.NewGuid(), Text = "A2", IsCorrect = false }
+                }
+            }
+        }
+    };
+
+    [Fact]
+    public async Task GetDetailForLearnerAsync_WhenUnlocked_ReturnsOrderedQuestionsWithoutAnswerKey()
+    {
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetWithQuestionsAsync(detailExam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+
+        var result = await _sut.GetDetailForLearnerAsync(_learnerId, detailExam.Id);
+
+        Assert.Equal(detailExam.Id, result.Id);
+        Assert.Equal("Midterm", result.Title);
+        Assert.Equal(70, result.PassThreshold);
+        Assert.Equal(_exam.ModuleId, result.ModuleId);
+        Assert.Equal(new[] { "First", "Second" }, result.Questions.Select(q => q.Prompt));
+        Assert.Equal(new[] { 10, 20 }, result.Questions.Select(q => q.Points));
+        Assert.Equal(new[] { "A1", "A2" }, result.Questions[0].Options.Select(o => o.Text));
+        // The learner DTOs have no IsCorrect member anywhere in their shape.
+        Assert.DoesNotContain(typeof(ExamDetailResponse).GetProperties(), p => p.Name == "IsCorrect");
+        Assert.DoesNotContain(typeof(ExamQuestionResponse).GetProperties(), p => p.Name == "IsCorrect");
+        Assert.DoesNotContain(typeof(ExamOptionResponse).GetProperties(), p => p.Name == "IsCorrect");
+    }
+
+    [Fact]
+    public async Task GetDetailForLearnerAsync_WhenModuleLocked_ThrowsForbiddenException()
+    {
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetWithQuestionsAsync(detailExam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = _learnerId, ModuleId = _exam.ModuleId, IsUnlocked = false });
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => _sut.GetDetailForLearnerAsync(_learnerId, detailExam.Id));
+    }
+
+    [Fact]
+    public async Task GetDetailForLearnerAsync_WhenProgressMissing_ThrowsForbiddenException()
+    {
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetWithQuestionsAsync(detailExam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserProgress?)null);
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => _sut.GetDetailForLearnerAsync(_learnerId, detailExam.Id));
+    }
+
+    [Fact]
+    public async Task GetDetailForLearnerAsync_WhenExamMissing_ThrowsNotFoundException()
+    {
+        var examId = Guid.NewGuid();
+        _exams.Setup(r => r.GetWithQuestionsAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetDetailForLearnerAsync(_learnerId, examId));
+    }
+
+    [Fact]
+    public async Task GetDetailForLearnerAsync_ForwardsCancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetWithQuestionsAsync(detailExam.Id, cts.Token)).ReturnsAsync(detailExam);
+
+        var result = await _sut.GetDetailForLearnerAsync(_learnerId, detailExam.Id, cts.Token);
+
+        Assert.Equal(detailExam.Id, result.Id);
+        _exams.Verify(r => r.GetWithQuestionsAsync(detailExam.Id, cts.Token), Times.Once);
+        _progresses.Verify(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetDetailByModuleForLearnerAsync_WhenUnlocked_ReturnsModuleExam()
+    {
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetByModuleIdAsync(_exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+        _exams.Setup(r => r.GetWithQuestionsAsync(detailExam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+
+        var result = await _sut.GetDetailByModuleForLearnerAsync(_learnerId, _exam.ModuleId);
+
+        Assert.Equal(detailExam.Id, result.Id);
+        Assert.Equal(new[] { "First", "Second" }, result.Questions.Select(q => q.Prompt));
+    }
+
+    [Fact]
+    public async Task GetDetailByModuleForLearnerAsync_WhenModuleHasNoExam_ThrowsNotFoundException()
+    {
+        var moduleId = Guid.NewGuid();
+        _exams.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetDetailByModuleForLearnerAsync(_learnerId, moduleId));
+    }
+
+    [Fact]
+    public async Task GetDetailByModuleForLearnerAsync_WhenModuleLocked_ThrowsForbiddenException()
+    {
+        var detailExam = DetailExam();
+        _exams.Setup(r => r.GetByModuleIdAsync(_exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(detailExam);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = _learnerId, ModuleId = _exam.ModuleId, IsUnlocked = false });
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => _sut.GetDetailByModuleForLearnerAsync(_learnerId, _exam.ModuleId));
+    }
+
+    [Fact]
+    public async Task Submit_WhenModuleLocked_ThrowsForbiddenExceptionAndSavesNothing()
+    {
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = _learnerId, ModuleId = _exam.ModuleId, IsUnlocked = false });
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => Submit(Answers(true, true, true)));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal(42, _progress.Score);
+    }
+    #endregion
 
     #region SubmtiAsync_Method_Tests
 
