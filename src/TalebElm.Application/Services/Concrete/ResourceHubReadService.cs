@@ -111,6 +111,15 @@ public sealed class ResourceHubReadService(IUnitOfWork unitOfWork) : IResourceHu
 
     private static void ValidatePaging(ResourceFilterParameters filters)
     {
+        if (filters is null)
+            throw new ValidationException("Resource filters are required.");
+
+        if (filters.Level is not null && !Enum.IsDefined((ResourceLevel)filters.Level.Value))
+            throw new ValidationException("Level must be a valid resource level.");
+
+        if (filters.Kind is not null && !Enum.IsDefined((ResourceKind)filters.Kind.Value))
+            throw new ValidationException("Kind must be a valid resource kind.");
+
         if (filters.PageNumber < 1)
             throw new ValidationException("Page must be greater than or equal to 1.");
 
