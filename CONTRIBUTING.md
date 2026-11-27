@@ -6,7 +6,10 @@ This guide walks you through finding work, setting up your environment, making y
 
 ## Finding work
 
-We organize work into six milestones (M0 through M5). Ready issues have a milestone, no assignee, and no open pull request:
+We organize work into six milestones (M0 through M5). On the project board, ready work is in
+the **Todo** status: accepted, with a milestone, and without an open pull request. If the
+board is not available in your browser, the same issues have a milestone, no assignee, and
+no open pull request:
 
 ```text
 is:issue is:open no:assignee -linked:pr -no:milestone NOT "[Tracking]" in:title
@@ -18,7 +21,7 @@ https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+
 If you are new to the project, start with `good first issue`:
 https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee+-linked%3Apr
 
-These are small, isolated tasks such as adding missing unit tests or fixing documentation discrepancies.
+These are small, isolated tasks such as adding missing unit tests or fixing documentation discrepancies. [`docs/development/workflow.md`](docs/development/workflow.md) explains the statuses and the full path from claim to merge.
 
 ## Claiming an issue
 
@@ -114,10 +117,10 @@ When your branch is ready:
 ## Review and merge process
 
 Here is what to expect after opening your pull request:
-- **Timely reviews**: I review open pull requests within 48 hours.
+- **Timely reviews**: reviews aim to arrive within 48 hours, though this is a volunteer project and the time can stretch.
 - **Constructive feedback**: Reviews focus on architectural boundaries, test coverage, and correctness. Feedback is specific and actionable.
 - **Iterative updates**: If changes are requested, push additional commits to your branch. There is no need to close the PR or force-push.
-- **Squash merge**: Once approved and checks pass, your change is squash-merged into `main` as a single clean commit with your name as author.
+- **Squash merge**: Once approved and checks pass, a reviewer squash-merges your change into `main` as a single clean commit with your name as author. You do not merge it yourself.
 
 ## Questions and community
 
