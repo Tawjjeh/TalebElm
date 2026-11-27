@@ -98,9 +98,9 @@ public class TrackEnrollmentServiceTests
         enrollments.Verify(r => r.AddAsync(It.IsAny<TrackEnrollment>(), It.IsAny<CancellationToken>()), Times.Never);
         userProgress.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-}
+    }
 
-[Fact]
+    [Fact]
     public async Task EnrollAsync_EmptyTrack_ThrowsValidation()
     {
         var userId = Guid.NewGuid();
