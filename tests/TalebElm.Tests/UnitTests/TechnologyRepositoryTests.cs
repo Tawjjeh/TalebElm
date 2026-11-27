@@ -136,4 +136,21 @@ public class TechnologyRepositoryTests : SqliteTestBase
         await using (var after = CreateContext())
             Assert.Equal(1, after.Technologies.Count(t => t.Id == tech.Id));
     }
+
+    [Fact]
+    public async Task GetBySlugPathAsync_ResolvesThreeLevelPath()
+    {
+        var csharp = NewTech("csharp", 1);
+        var aspnet = NewTech("aspnet-core", 1, csharp.Id, TechnologyKind.Framework);
+        var dependencyInjection = NewTech("dependency-injection", 1, aspnet.Id, TechnologyKind.Topic);
+
+        DbContext.Technologies.AddRange(csharp, aspnet, dependencyInjection);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var result = await _repository.GetBySlugPathAsync(["csharp", "aspnet-core", "dependency-injection"]);
+
+        Assert.NotNull(result);
+        Assert.Equal(dependencyInjection.Id, result!.Id);
+    }
 }
