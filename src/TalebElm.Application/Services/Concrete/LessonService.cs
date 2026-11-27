@@ -1,18 +1,27 @@
+using System.Text;
+using System.Xml.XPath;
+using TalebElm.Api.Services;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Application.Services.Concrete;
 
-public class LessonService(IUnitOfWork unitOfWork) : ILessonService
+public class LessonService(IUnitOfWork unitOfWork, ICurrentUserService userService) : ILessonService
 {
     public async Task<IReadOnlyList<LessonResponse>> GetByModuleAsync(Guid moduleId, CancellationToken ct = default)
     {
-        if (await unitOfWork.Modules.GetByIdAsync(moduleId,ct) is null)
-        {
+        var module = await unitOfWork.Modules.GetByIdAsync(moduleId, ct);
+
+        if (module is null || module.Track.Status != Domain.Enums.TrackStatus.Published)
             throw new NotFoundException($"Module with id '{moduleId}' was not found.");
-        }
+
+        var userProgress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(CurrentUserId(), moduleId, ct);
+
+        if (userProgress is null || userProgress.IsUnlocked == false)
+            throw new ForbiddenExcpetion("You are not allowed to access this module.");
 
         var lessons = await unitOfWork.Lessons.GetByModuleIdAsync(moduleId,ct);
 
@@ -26,10 +35,14 @@ public class LessonService(IUnitOfWork unitOfWork) : ILessonService
     {
         var lesson = await unitOfWork.Lessons.GetByIdAsync(id,ct);
 
-        if (lesson is null)
+        if (lesson is null || lesson.Module.Track.Status != TrackStatus.Published)
         {
             throw new NotFoundException($"Lesson with id '{id}' was not found.");
         }
+
+        var userProgress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(CurrentUserId(), lesson.ModuleId, ct);
+        if (userProgress is null || userProgress.IsUnlocked == false)
+            throw new ForbiddenExcpetion("You are not allowed to access this module.");
 
         var resources = await unitOfWork.LessonResources.GetByLessonIdAsync(id, ct);
 
@@ -51,5 +64,13 @@ public class LessonService(IUnitOfWork unitOfWork) : ILessonService
             lesson.Content,
             lesson.Order,
             resourceResponses);
+    }
+
+    private Guid CurrentUserId()
+    {
+        if (!Guid.TryParse(userService.UserId(), out var userId))
+            throw new UnauthorizedException("An authenticated user is required.");
+
+        return userId;
     }
 }

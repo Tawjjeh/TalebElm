@@ -1,4 +1,4 @@
-﻿
+
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Exceptions;
@@ -12,7 +12,8 @@ public class ModuleService(IUnitOfWork unitOfWork) : IModuleService
         Guid trackId,
         CancellationToken ct = default)
     {
-        if (await unitOfWork.Tracks.GetByIdAsync(trackId, ct) is null)
+        var track = await unitOfWork.Tracks.GetByIdAsync(trackId, ct);
+        if (track is null || track.Status != Domain.Enums.TrackStatus.Published)
         {
             throw new NotFoundException(
                 $"Track with id '{trackId}' was not found.");

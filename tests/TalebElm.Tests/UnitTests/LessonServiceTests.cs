@@ -1,4 +1,6 @@
+using Microsoft.JSInterop.Infrastructure;
 using Moq;
+using TalebElm.Api.Services;
 using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
@@ -9,6 +11,8 @@ namespace TalebElm.Tests.UnitTests;
 
 public class LessonServiceTests
 {
+    private static readonly Guid StudentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     [Fact]
     public async Task GetByModuleAsync_ReturnsLessonsOrderedByOrder()
     {
@@ -20,13 +24,13 @@ public class LessonServiceTests
         };
 
         var modules = new Mock<IModuleRepository>();
-        modules.Setup(r => r.GetByIdAsync(moduleId))
-            .ReturnsAsync(new Module { Id = moduleId, Title = "Module", Order = 1, TrackId = Guid.NewGuid() });
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId));
 
         var lessonRepository = new Mock<ILessonRepository>();
-        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId)).ReturnsAsync(lessons);
+        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>())).ReturnsAsync(lessons);
 
-        var service = new LessonService(CreateUnitOfWork(modules, lessonRepository).Object);
+        var service = CreateService(modules, lessonRepository, UnlockedProgress(moduleId));
         var result = await service.GetByModuleAsync(moduleId);
 
         Assert.Equal(new[] { "Lesson 1", "Lesson 2" }, result.Select(lesson => lesson.Title));
@@ -38,13 +42,28 @@ public class LessonServiceTests
     {
         var moduleId = Guid.NewGuid();
         var modules = new Mock<IModuleRepository>();
-        modules.Setup(r => r.GetByIdAsync(moduleId)).ReturnsAsync((Module?)null);
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>())).ReturnsAsync((Module?)null);
 
         var lessonRepository = new Mock<ILessonRepository>();
-        var service = new LessonService(CreateUnitOfWork(modules, lessonRepository).Object);
+        var service = CreateService(modules, lessonRepository);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByModuleAsync(moduleId));
-        lessonRepository.Verify(r => r.GetByModuleIdAsync(It.IsAny<Guid>()), Times.Never);
+        lessonRepository.Verify(r => r.GetByModuleIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByModuleAsync_WhenTrackIsNotPublished_ThrowsNotFoundException()
+    {
+        var moduleId = Guid.NewGuid();
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId, TrackStatus.Draft));
+
+        var lessonRepository = new Mock<ILessonRepository>();
+        var service = CreateService(modules, lessonRepository);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByModuleAsync(moduleId));
+        lessonRepository.Verify(r => r.GetByModuleIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -52,50 +71,77 @@ public class LessonServiceTests
     {
         var moduleId = Guid.NewGuid();
         var modules = new Mock<IModuleRepository>();
-        modules.Setup(r => r.GetByIdAsync(moduleId))
-            .ReturnsAsync(new Module { Id = moduleId, Title = "Module", Order = 1, TrackId = Guid.NewGuid() });
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId));
 
         var lessonRepository = new Mock<ILessonRepository>();
-        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId))
+        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Lesson>());
 
-        var service = new LessonService(CreateUnitOfWork(modules, lessonRepository).Object);
+        var service = CreateService(modules, lessonRepository, UnlockedProgress(moduleId));
         var result = await service.GetByModuleAsync(moduleId);
 
         Assert.Empty(result);
     }
 
     [Fact]
-    public async Task GetByModuleAsync_ForwardsCancellationTokenToRepository()
+    public async Task GetByModuleAsync_WithoutAuthenticatedUser_ThrowsUnauthorized()
     {
-        using var cts = new CancellationTokenSource();
-
-        var ct = cts.Token;
         var moduleId = Guid.NewGuid();
-
         var modules = new Mock<IModuleRepository>();
-
-        modules.Setup(r => r.GetByIdAsync(moduleId, ct))
-            .ReturnsAsync(new Module { Id = moduleId, Title = "Module", Order = 1, TrackId = Guid.NewGuid() });
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId));
 
         var lessonRepository = new Mock<ILessonRepository>();
+        var progress = new Mock<IUserProgressRepository>();
 
-        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId, ct))
-            .ReturnsAsync(new List<Lesson>());
+        var service = CreateService(modules, lessonRepository, progress, user: Anonymous());
 
-        var service = new LessonService(CreateUnitOfWork(modules, lessonRepository).Object);
+        await Assert.ThrowsAsync<UnauthorizedException>(() => service.GetByModuleAsync(moduleId));
 
-        var result = await service.GetByModuleAsync(moduleId, ct);
+        progress.Verify(
+            r => r.GetByUserAndModuleAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 
-        Assert.Empty(result);
+    [Fact]
+    public async Task GetByModuleAsync_WhenUserHasNoProgress_ThrowsForbidden()
+    {
+        var moduleId = Guid.NewGuid();
+        var modules = new Mock<IModuleRepository>();
 
-        modules.Verify(
-            r => r.GetByIdAsync(moduleId, ct),
-            Times.Once);
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId));
 
-        lessonRepository.Verify(
-            r => r.GetByModuleIdAsync(moduleId, ct),
-            Times.Once);
+        var lessonRepository = new Mock<ILessonRepository>();
+        var progress = new Mock<IUserProgressRepository>();
+
+        progress.Setup(r => r.GetByUserAndModuleAsync(StudentId, moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserProgress?)null);
+
+        var service = CreateService(modules, lessonRepository, progress);
+
+        await Assert.ThrowsAsync<ForbiddenExcpetion>(() => service.GetByModuleAsync(moduleId));
+        lessonRepository.Verify(r => r.GetByModuleIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByModuleAsync_WhenModuleIsLocked_ThrowsForbidden()
+    {
+        var moduleId = Guid.NewGuid();
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateModule(moduleId));
+
+        var lessonRepository = new Mock<ILessonRepository>();
+        var progress = new Mock<IUserProgressRepository>();
+        progress.Setup(r => r.GetByUserAndModuleAsync(StudentId, moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = StudentId, ModuleId = moduleId, IsUnlocked = false });
+
+        var service = CreateService(modules, lessonRepository, progress);
+
+        await Assert.ThrowsAsync<ForbiddenExcpetion>(() => service.GetByModuleAsync(moduleId));
+        lessonRepository.Verify(r => r.GetByModuleIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -109,7 +155,8 @@ public class LessonServiceTests
             Title = "C# Basics",
             Content = "Introduction to C#",
             Order = 3,
-            ModuleId = moduleId
+            ModuleId = moduleId,
+            Module = CreateModule(moduleId)
         };
 
         var resources = new List<LessonResource>
@@ -119,15 +166,16 @@ public class LessonServiceTests
         };
 
         var lessons = new Mock<ILessonRepository>();
-        lessons.Setup(r => r.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+        lessons.Setup(r => r.GetByIdAsync(lessonId, It.IsAny<CancellationToken>())).ReturnsAsync(lesson);
 
         var lessonResources = new Mock<ILessonResourceRepository>();
-        lessonResources.Setup(r => r.GetByLessonIdAsync(lessonId)).ReturnsAsync(resources);
+        lessonResources.Setup(r => r.GetByLessonIdAsync(lessonId, It.IsAny<CancellationToken>())).ReturnsAsync(resources);
 
-        var service = new LessonService(CreateUnitOfWork(
+        var service = CreateService(
             new Mock<IModuleRepository>(),
             lessons,
-            lessonResources).Object);
+            UnlockedProgress(moduleId),
+            lessonResources);
 
         var result = await service.GetByIdAsync(lessonId);
 
@@ -139,7 +187,9 @@ public class LessonServiceTests
         Assert.Equal(new[] { "Docs", "Video" }, result.Resources.Select(resource => resource.Title));
         Assert.Equal(LessonResourceKind.Documentation, result.Resources[0].Kind);
         Assert.Equal("C# spec", result.Resources[0].Citation);
+       
         Assert.Equal(LessonResourceKind.Video, result.Resources[1].Kind);
+
         Assert.Equal("https://example.com/video", result.Resources[1].Url);
     }
 
@@ -148,71 +198,140 @@ public class LessonServiceTests
     {
         var lessonId = Guid.NewGuid();
         var lessons = new Mock<ILessonRepository>();
-        lessons.Setup(r => r.GetByIdAsync(lessonId)).ReturnsAsync((Lesson?)null);
+        lessons.Setup(r => r.GetByIdAsync(lessonId, It.IsAny<CancellationToken>())).ReturnsAsync((Lesson?)null);
 
         var lessonResources = new Mock<ILessonResourceRepository>();
-        var service = new LessonService(CreateUnitOfWork(
-            new Mock<IModuleRepository>(),
-            lessons,
-            lessonResources).Object);
+        var service = CreateService(new Mock<IModuleRepository>(), lessons, lessonResources: lessonResources);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(lessonId));
-        lessonResources.Verify(r => r.GetByLessonIdAsync(It.IsAny<Guid>()), Times.Never);
+        lessonResources.Verify(r => r.GetByLessonIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task GetByIdAsync_ForwardsCancellationTokenToRepository()
+    public async Task GetByIdAsync_WhenLessonIsInDraftTrack_ThrowsNotFoundException()
     {
-        using var cts = new CancellationTokenSource();
-
-        var ct = cts.Token;
         var lessonId = Guid.NewGuid();
         var moduleId = Guid.NewGuid();
-
         var lessons = new Mock<ILessonRepository>();
-
-        lessons.Setup(r => r.GetByIdAsync(lessonId, ct))
+        lessons.Setup(r => r.GetByIdAsync(lessonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Lesson
             {
                 Id = lessonId,
-                Title = "C# Basics",
-                Content = "Introduction to C#",
-                Order = 3,
-                ModuleId = moduleId
+                ModuleId = moduleId,
+                Module = CreateModule(moduleId, TrackStatus.Draft)
             });
 
         var lessonResources = new Mock<ILessonResourceRepository>();
+        var service = CreateService(new Mock<IModuleRepository>(), lessons, lessonResources: lessonResources);
 
-        lessonResources.Setup(r => r.GetByLessonIdAsync(lessonId, ct))
-            .ReturnsAsync(new List<LessonResource>());
-
-        var service = new LessonService(CreateUnitOfWork(
-            new Mock<IModuleRepository>(),
-            lessons,
-            lessonResources).Object);
-
-        var result = await service.GetByIdAsync(lessonId, ct);
-
-        Assert.Equal(lessonId, result.Id);
-
-        lessons.Verify(
-            r => r.GetByIdAsync(lessonId, ct),
-            Times.Once);
-
-        lessonResources.Verify(
-            r => r.GetByLessonIdAsync(lessonId, ct),
-            Times.Once);
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(lessonId));
+        lessonResources.Verify(r => r.GetByLessonIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetByIdAsync_WithoutAuthenticatedUser_ThrowsUnauthorized()
+    {
+        var lessonId = Guid.NewGuid();
+        var moduleId = Guid.NewGuid();
+        var lessons = new Mock<ILessonRepository>();
+        lessons.Setup(r => r.GetByIdAsync(lessonId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Lesson
+            {
+                Id = lessonId,
+                ModuleId = moduleId,
+                Module = CreateModule(moduleId)
+            });
+
+        var progress = new Mock<IUserProgressRepository>();
+        var service = CreateService(
+            new Mock<IModuleRepository>(),
+            lessons,
+            progress,
+            user: Anonymous());
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => service.GetByIdAsync(lessonId));
+        progress.Verify(
+            r => r.GetByUserAndModuleAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenModuleIsLocked_ThrowsForbidden()
+    {
+        var lessonId = Guid.NewGuid();
+        var moduleId = Guid.NewGuid();
+        var lessons = new Mock<ILessonRepository>();
+        lessons.Setup(r => r.GetByIdAsync(lessonId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Lesson
+            {
+                Id = lessonId,
+                ModuleId = moduleId,
+                Module = CreateModule(moduleId)
+            });
+
+        var progress = new Mock<IUserProgressRepository>();
+        progress.Setup(r => r.GetByUserAndModuleAsync(StudentId, moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = StudentId, ModuleId = moduleId, IsUnlocked = false });
+
+        var lessonResources = new Mock<ILessonResourceRepository>();
+        var service = CreateService(new Mock<IModuleRepository>(), lessons, progress, lessonResources);
+
+        await Assert.ThrowsAsync<ForbiddenExcpetion>(() => service.GetByIdAsync(lessonId));
+        lessonResources.Verify(r => r.GetByLessonIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private static LessonService CreateService(
+        Mock<IModuleRepository> modules,
+        Mock<ILessonRepository> lessons,
+        Mock<IUserProgressRepository>? progresses = null,
+        Mock<ILessonResourceRepository>? lessonResources = null,
+        ICurrentUserService? user = null)
+        => new(CreateUnitOfWork(modules, lessons, progresses, lessonResources).Object,
+            user ?? SignedInAs(StudentId));
+
+    //. Avoid writing the same lines 
     private static Mock<IUnitOfWork> CreateUnitOfWork(
         Mock<IModuleRepository> modules,
         Mock<ILessonRepository> lessons,
+        Mock<IUserProgressRepository>? progresses = null,
         Mock<ILessonResourceRepository>? lessonResources = null)
     {
         var unitOfWork = new Mock<IUnitOfWork>();
         unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
         unitOfWork.Setup(u => u.Lessons).Returns(lessons.Object);
+        unitOfWork.Setup(u => u.UserProgresses).Returns((progresses ?? new Mock<IUserProgressRepository>()).Object);
         unitOfWork.Setup(u => u.LessonResources).Returns((lessonResources ?? new Mock<ILessonResourceRepository>()).Object);
         return unitOfWork;
+    }
+
+    private static Mock<IUserProgressRepository> UnlockedProgress(Guid moduleId)
+    {
+        var progresses = new Mock<IUserProgressRepository>();
+        progresses.Setup(r => r.GetByUserAndModuleAsync(StudentId, moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserProgress { UserId = StudentId, ModuleId = moduleId, IsUnlocked = true });
+        return progresses;
+    }
+
+    private static Module CreateModule(Guid moduleId, TrackStatus status = TrackStatus.Published)
+        => new()
+        {
+            Id = moduleId,
+            Title = "Module",
+            Summary = "Summary",
+            Order = 1,
+            TrackId = Guid.NewGuid(),
+            Track = new Track { Name = "Track", Description = "Track", Status = status }
+        };
+
+    //. for only Student or admin 
+    private static ICurrentUserService SignedInAs(Guid userId) => new TestAuthenticationScheme(userId.ToString());
+
+    private static ICurrentUserService Anonymous() => new TestAuthenticationScheme(null);
+
+    //. This was creating for the anonymous user or the user that didn't login on server
+    //. And will be private to be called 
+    private sealed class TestAuthenticationScheme(string? userId) : ICurrentUserService
+    {
+        public string? UserId() => userId;
     }
 }

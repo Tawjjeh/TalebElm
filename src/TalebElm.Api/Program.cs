@@ -1,9 +1,12 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.OpenApi;
 using TalebElm.Api.Middlewares;
+using TalebElm.Api.Services;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
+using TalebElm.Domain.Enums;
 using TalebElm.Infrastructure;
 using TalebElm.Infrastructure.Persistence;
 
@@ -56,6 +59,20 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("StudentOnly", policy =>
+    {
+    policy.RequireRole(
+        UserRole.Admin.ToString(),
+        UserRole.Student.ToString()
+        );
+    });
+});
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
 
