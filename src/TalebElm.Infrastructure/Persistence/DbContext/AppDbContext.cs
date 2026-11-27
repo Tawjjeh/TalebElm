@@ -41,4 +41,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CapstoneProject> CapstoneProjects => Set<CapstoneProject>();
     public DbSet<ProjectMilestone> ProjectMilestones => Set<ProjectMilestone>();
     public DbSet<UserProblemCompletion> UserProblemCompletions => Set<UserProblemCompletion>();
+    public DbSet<GitHubTask> GitHubTasks => Set<GitHubTask>();
+    public DbSet<TaskVersion> TaskVersions => Set<TaskVersion>();
 }

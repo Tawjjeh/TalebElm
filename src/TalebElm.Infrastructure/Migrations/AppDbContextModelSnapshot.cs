@@ -173,15 +173,22 @@ namespace TalebElm.Infrastructure.Migrations
 
                     b.Property<string>("TemplateRepository")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowFileName")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("GitHubTask");
+                    b.ToTable("GitHubTask", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_GitHubTask_MinPassingTests_Positive", "MinPassingTests IS NULL OR MinPassingTests > 0");
+
+                            t.HasCheckConstraint("CK_GitHubTask_TemplateRepository_NotEmpty", "length(trim(TemplateRepository)) > 0");
+                        });
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Lesson", b =>
@@ -487,6 +494,54 @@ namespace TalebElm.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_Resources_Title_NotEmpty", "length(trim(Title)) > 0");
                         });
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.TaskVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommitSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("GitHubTaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TestTreeSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VersionTag")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowFileSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GitHubTaskId")
+                        .IsUnique()
+                        .HasFilter("Status = 1");
+
+                    b.HasIndex("GitHubTaskId", "VersionTag")
+                        .IsUnique();
+
+                    b.ToTable("TaskVersions");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Technology", b =>
@@ -944,6 +999,17 @@ namespace TalebElm.Infrastructure.Migrations
                     b.Navigation("CreatedByUser");
 
                     b.Navigation("Technology");
+                });
+
+            modelBuilder.Entity("TalebElm.Domain.Entities.TaskVersion", b =>
+                {
+                    b.HasOne("TalebElm.Domain.Entities.GitHubTask", "GitHubTask")
+                        .WithMany()
+                        .HasForeignKey("GitHubTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GitHubTask");
                 });
 
             modelBuilder.Entity("TalebElm.Domain.Entities.Technology", b =>
