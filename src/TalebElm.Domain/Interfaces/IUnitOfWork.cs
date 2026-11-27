@@ -16,4 +16,10 @@ public interface IUnitOfWork
     IModuleProblemRepository ModuleProblems { get; }
     IUserProblemCompletionRepository UserProblemCompletions { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Runs <paramref name="action"/> inside a single database transaction,
+    /// committing when it completes and rolling back when it throws.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default);
 }

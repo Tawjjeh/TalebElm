@@ -21,4 +21,10 @@ public class LessonRepository(AppDbContext context) : ILessonRepository
             .OrderBy(lesson => lesson.Order)
             .AsNoTracking()
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Lesson>> GetByModuleIdForUpdateAsync(Guid moduleId, CancellationToken ct = default)
+        => await context.Lessons
+            .Where(lesson => lesson.ModuleId == moduleId)
+            .OrderBy(lesson => lesson.Order)
+            .ToListAsync(ct);
 }

@@ -1,6 +1,8 @@
+using TalebElm.Domain.Interfaces;
+
 namespace TalebElm.Domain.Entities;
 
-public class Module : BaseEntity
+public class Module : BaseEntity, IOrderedSibling
 {
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;

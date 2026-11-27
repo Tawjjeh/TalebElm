@@ -8,4 +8,10 @@ public interface ITrackRepository : IRepository<Track>
         int pageSize,
         bool publishedOnly = true,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a track for deletion. Callers run the #251 conflict guards
+    /// first, so no dependent row may exist when this is called.
+    /// </summary>
+    Task RemoveAsync(Track track, CancellationToken ct = default);
 }

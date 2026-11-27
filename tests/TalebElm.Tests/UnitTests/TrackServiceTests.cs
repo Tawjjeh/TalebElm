@@ -13,13 +13,15 @@ public class TrackServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IValidator<CreateTrackRequest>> _validator = new();
+    private readonly Mock<IValidator<UpdateTrackRequest>> _updateValidator = new();
     private readonly TrackService _sut;
 
     public TrackServiceTests()
     {
         _sut = new TrackService(
             _unitOfWork.Object,
-            _validator.Object);
+            _validator.Object,
+            _updateValidator.Object);
     }
 
     [Fact]
@@ -243,5 +245,181 @@ public class TrackServiceTests
         _validator.Verify(v => v.ValidateAsync(request, cts.Token), Times.Once);
         _unitOfWork.Verify(u => u.Tracks.AddAsync(It.IsAny<Track>(), cts.Token), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DraftTrack_UpdatesNameAndDescription()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "Old", Description = "Old", Status = TrackStatus.Draft };
+
+        _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UpdateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+
+        var result = await _sut.UpdateAsync(trackId, new UpdateTrackRequest("New", "New description"));
+
+        Assert.Equal("New", result.Name);
+        Assert.Equal("New description", result.Description);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PublishedTrack_ThrowsValidationWithoutSaving()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "T", Description = "D", Status = TrackStatus.Published };
+
+        _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UpdateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ValidationException>(() =>
+            _sut.UpdateAsync(trackId, new UpdateTrackRequest("New", "New description")));
+
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenTrackDoesNotExist_ThrowsNotFound()
+    {
+        _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UpdateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Track?)null);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.NotFoundException>(() =>
+            _sut.UpdateAsync(Guid.NewGuid(), new UpdateTrackRequest("New", "New description")));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenRequestInvalid_ThrowsFluentValidation()
+    {
+        _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UpdateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([new ValidationFailure("Name", "Track Name is required")]));
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _sut.UpdateAsync(Guid.NewGuid(), new UpdateTrackRequest("", "Description")));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_EmptyTrack_Deletes()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "T", Description = "D", Status = TrackStatus.Draft };
+
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByTrackIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+        var enrollments = new Mock<ITrackEnrollmentRepository>();
+        enrollments.Setup(r => r.ExistsForTrackAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _unitOfWork.Setup(u => u.TrackEnrollments).Returns(enrollments.Object);
+        var progress = new Mock<IUserProgressRepository>();
+        progress.Setup(r => r.ExistsForTrackAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _unitOfWork.Setup(u => u.UserProgresses).Returns(progress.Object);
+
+        await _sut.DeleteAsync(trackId);
+
+        tracks.Verify(r => r.RemoveAsync(track, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenTrackDoesNotExist_ThrowsNotFound()
+    {
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Track?)null);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.NotFoundException>(() =>
+            _sut.DeleteAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithModules_ThrowsConflictWithoutRemoving()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "T", Description = "D", Status = TrackStatus.Draft };
+
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByTrackIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Module { Id = Guid.NewGuid(), TrackId = trackId, Title = "M", Order = 1 }]);
+        _unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ConflictException>(() =>
+            _sut.DeleteAsync(trackId));
+
+        tracks.Verify(r => r.RemoveAsync(It.IsAny<Track>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithEnrollments_ThrowsConflict()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "T", Description = "D", Status = TrackStatus.Draft };
+
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByTrackIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+        var enrollments = new Mock<ITrackEnrollmentRepository>();
+        enrollments.Setup(r => r.ExistsForTrackAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _unitOfWork.Setup(u => u.TrackEnrollments).Returns(enrollments.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ConflictException>(() =>
+            _sut.DeleteAsync(trackId));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithProgress_ThrowsConflict()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track { Id = trackId, Name = "T", Description = "D", Status = TrackStatus.Draft };
+
+        var tracks = new Mock<ITrackRepository>();
+        tracks.Setup(r => r.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByTrackIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+        var enrollments = new Mock<ITrackEnrollmentRepository>();
+        enrollments.Setup(r => r.ExistsForTrackAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _unitOfWork.Setup(u => u.TrackEnrollments).Returns(enrollments.Object);
+        var progress = new Mock<IUserProgressRepository>();
+        progress.Setup(r => r.ExistsForTrackAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _unitOfWork.Setup(u => u.UserProgresses).Returns(progress.Object);
+
+        await Assert.ThrowsAsync<TalebElm.Domain.Exceptions.ConflictException>(() =>
+            _sut.DeleteAsync(trackId));
     }
 }

@@ -1,5 +1,8 @@
+using FluentValidation;
 using Moq;
+using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
+using TalebElm.Application.Validators;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
@@ -49,8 +52,7 @@ public class ModuleServiceTests
                 trackId, CancellationToken.None))
             .ReturnsAsync(modules);
 
-        var service = new ModuleService(
-            CreateUnitOfWork(tracks, moduleRepository).Object);
+        var service = CreateService(CreateUnitOfWork(tracks, moduleRepository).Object);
 
         var result = await service.GetByTrackAsync(trackId);
 
@@ -76,8 +78,7 @@ public class ModuleServiceTests
 
         var moduleRepository = new Mock<IModuleRepository>();
 
-        var service = new ModuleService(
-            CreateUnitOfWork(tracks, moduleRepository).Object);
+        var service = CreateService(CreateUnitOfWork(tracks, moduleRepository).Object);
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => service.GetByTrackAsync(trackId));
@@ -110,8 +111,7 @@ public class ModuleServiceTests
                 moduleId, CancellationToken.None))
             .ReturnsAsync(module);
 
-        var service = new ModuleService(
-            CreateUnitOfWork(
+        var service = CreateService(CreateUnitOfWork(
                 new Mock<ITrackRepository>(),
                 moduleRepository).Object);
 
@@ -135,8 +135,7 @@ public class ModuleServiceTests
                 moduleId, CancellationToken.None))
             .ReturnsAsync((Module?)null);
 
-        var service = new ModuleService(
-            CreateUnitOfWork(
+        var service = CreateService(CreateUnitOfWork(
                 new Mock<ITrackRepository>(),
                 moduleRepository).Object);
 
@@ -166,8 +165,7 @@ public class ModuleServiceTests
         moduleRepository.Setup(r => r.GetByTrackIdAsync(trackId, ct))
             .ReturnsAsync(new List<Module>());
 
-        var service = new ModuleService(
-            CreateUnitOfWork(tracks, moduleRepository).Object);
+        var service = CreateService(CreateUnitOfWork(tracks, moduleRepository).Object);
 
         var result = await service.GetByTrackAsync(trackId, ct);
 
@@ -203,8 +201,7 @@ public class ModuleServiceTests
                 TrackId = trackId
             });
 
-        var service = new ModuleService(
-            CreateUnitOfWork(
+        var service = CreateService(CreateUnitOfWork(
                 new Mock<ITrackRepository>(),
                 moduleRepository).Object);
 
@@ -216,6 +213,9 @@ public class ModuleServiceTests
             r => r.GetByIdAsync(moduleId, ct),
             Times.Once);
     }
+
+    private static ModuleService CreateService(IUnitOfWork unitOfWork)
+        => new(unitOfWork, new CreateModuleRequestValidator(), new UpdateModuleRequestValidator());
 
     private static Mock<IUnitOfWork> CreateUnitOfWork(
         Mock<ITrackRepository> tracks,
