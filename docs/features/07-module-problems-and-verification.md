@@ -173,8 +173,13 @@ public record VerifySolvesResponse(
 ```csharp
 public interface IProblemVerifier
 {
-    ProblemKind Kind { get; }
-    Task<bool> VerifyCompletionAsync(Guid userId, ModuleProblem problem);
+    // No `Kind` here: verifier selection lives in IProblemVerifierFactory.
+    Task<VerificationOutcome> VerifyAsync(Guid userId, Guid moduleProblemId, CancellationToken ct = default);
+}
+
+public interface IProblemVerifierFactory
+{
+    IProblemVerifier GetFor(ProblemKind kind);
 }
 
 public interface ICodeforcesClient
@@ -199,6 +204,8 @@ public interface IModuleProblemService
     Task<VerifySolvesResponse> VerifyModuleSolvesAsync(Guid moduleId, Guid userId);
 }
 ```
+
+Verifiers no longer expose a `Kind`. The caller asks `IProblemVerifierFactory.GetFor` for the verifier matching the problem's `ModuleProblem.Kind`.
 
 ---
 
