@@ -59,7 +59,7 @@ public interface ILessonRepository : IRepository<Lesson> { }
 - `TrackConfiguration`, `ModuleConfiguration`, and `LessonConfiguration` map the relationships above through navigation properties with `DeleteBehavior.Restrict`.
 - Enforce `UNIQUE(TrackId, Order)` (Modules), `UNIQUE(ModuleId, Order)` (Lessons), and `UNIQUE(ModuleId)` (Exams) as unique indexes.
 - `AppDbContext` lives at `Infrastructure/Persistence/DbContext/AppDbContext.cs`; configurations at `Infrastructure/Persistence/Configurations/`; repository implementations at `Infrastructure/Persistence/Repositories/`.
-- Ordering is applied by `ModuleRepository.GetByTrackIdAsync`; duplicate `Order` values are rejected by both Application validators and the unique indexes.
+- Ordering is applied by `ModuleRepository.GetByTrackIdAsync` for reads; ordering maintenance loads tracked siblings via `GetByTrackIdForUpdateAsync` / `GetByModuleIdForUpdateAsync` and shifts them with `SiblingOrdering`. Duplicate `Order` values are rejected by both Application validators and the unique indexes.
 
 ## 3. Application Contracts (Shared / Joint Ownership)
 
@@ -124,14 +124,24 @@ public interface ILessonService
 - Reject deleting a Track while it still has Modules. Return `409 Conflict` until an explicit archive/cascade-delete policy is approved.
 - Reject deleting a Track that has learner enrollment/progress data. Preserve learner history instead of cascading deletes.
 - Reject deleting a Module while it still has Lessons, an assigned Exam, or learner progress rows. Return `409 Conflict`.
-- Updating a Module must preserve unique ordering within its Track; changing `Order` may require shifting sibling Modules.
+- Updating a Module must preserve unique ordering within its Track; changing `Order` may require shifting sibling Modules. Shared helpers for this exist in `Application/Ordering/SiblingOrdering.cs` (`PrepareInsert`, `PrepareDelete`, `MoveAsync`); the module/lesson create/update/delete service methods that call them are target (#282, #284).
 - Deleting a Module must re-sequence the remaining sibling Modules so their
   `Order` values stay contiguous (`1, 2, 3, ...`) and free of gaps, otherwise
-  learner progress rows keyed to old orders become confusing.
-- Deleting a Lesson is allowed only after confirming no downstream content linkage depends on it; re-sequence remaining Lessons in the Module after deletion.
+  learner progress rows keyed to old orders become confusing. `SiblingOrdering.PrepareDelete` does the compaction after the #251 conflict guards.
+- Deleting a Lesson is allowed only after confirming no downstream content linkage depends on it; re-sequence remaining Lessons in the Module after deletion (`SiblingOrdering.PrepareDelete`).
 - Updating a Lesson can change title/content/type/order, but it must remain scoped to one Module unless a separate move operation is designed.
 - When a Module or Lesson `Order` changes, shift siblings within the same parent
   in the same `UnitOfWork` transaction so no two siblings share an `Order`.
+  `SiblingOrdering` implements this: insert/delete shifts run in one
+  `SaveChangesAsync` (EF Core orders the updates so no transient duplicate
+  `Order` exists), while a move runs as two saves inside one
+  `IUnitOfWork.ExecuteInTransactionAsync` transaction — a single save cannot
+  work because the mover and the intermediate range form a dependency cycle
+  that EF Core refuses with a circular-dependency error. Callers load the
+  siblings tracked via `IModuleRepository.GetByTrackIdForUpdateAsync` /
+  `ILessonRepository.GetByModuleIdForUpdateAsync`; the read
+  `GetByTrackIdAsync` / `GetByModuleIdAsync` return detached copies whose
+  mutations would never be saved.
 
 ### Validators
 

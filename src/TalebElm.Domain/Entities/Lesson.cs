@@ -1,8 +1,9 @@
 using TalebElm.Domain.Enums;
+using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Domain.Entities;
 
-public class Lesson : BaseEntity
+public class Lesson : BaseEntity, IOrderedSibling
 {
     public string Title { get; set; } = string.Empty;
 
