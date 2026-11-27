@@ -35,4 +35,9 @@ public class UserProgressRepository(AppDbContext context) : IUserProgressReposit
             .AsNoTracking()
             .ToListAsync(ct);
     }
+
+    public async Task<bool> ExistsForModuleAsync(Guid moduleId, CancellationToken ct = default)
+    {
+        return await context.UserProgresses.AnyAsync(up => up.ModuleId == moduleId, ct);
+    }
 }

@@ -6,5 +6,6 @@ namespace TalebElm.Domain.Interfaces
     {
         Task<UserProgress?> GetByUserAndModuleAsync(Guid userId, Guid moduleId, CancellationToken ct = default);
         Task<IReadOnlyList<UserProgress>> GetByUserAndTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default);
+        Task<bool> ExistsForModuleAsync(Guid moduleId, CancellationToken ct = default);
     }
 }

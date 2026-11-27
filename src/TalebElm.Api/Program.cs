@@ -4,6 +4,7 @@ using Microsoft.OpenApi;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
+using TalebElm.Domain.Enums;
 using TalebElm.Infrastructure;
 using TalebElm.Infrastructure.Persistence;
 
@@ -56,6 +57,13 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+
+builder.Services.AddAuthorization(options =>
+{
+    // No authentication scheme is registered yet; controllers still return 401
+    // themselves when the claim is missing or malformed.
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole(UserRole.Admin.ToString()));
+});
 
 var app = builder.Build();
 

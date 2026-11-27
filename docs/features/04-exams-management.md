@@ -76,7 +76,12 @@ Decided (MVP, Decision 7): each question has at least two options and exactly on
 
 | DTO | Type | Fields |
 |---|---|---|
-| `CreateExamRequest` | Current input | `Guid ModuleId`, `string Title`, `int PassThreshold` (`Questions` is planned, #273) |
+| `CreateExamRequest` | Current input | `Guid ModuleId`, `string Title`, `int PassThreshold`, `IReadOnlyList<CreateExamQuestionRequest> Questions` (nested questions, #273) |
+| `UpdateExamRequest` | Current input | `string Title`, `int PassThreshold` |
+| `UpdateExamQuestionRequest` | Current input | `string Prompt`, `int Order`, `int Points` |
+| `AddExamOptionRequest` | Current input | `string Text`, `bool IsCorrect` |
+| `ExamQuestionResponse` | Current output | `Guid Id`, `string Prompt`, `int Order`, `int Points`, `IReadOnlyList<ExamOptionResponse> Options` (learner-safe; never `IsCorrect`) |
+| `ExamOptionResponse` | Current output | `Guid Id`, `string Text` (learner-safe; never `IsCorrect`) |
 | `SubmitExamAnswersRequest` | Current input | `Guid ExamId`, `IReadOnlyList<SubmittedAnswer> Answers` |
 | `SubmittedAnswer` | Current input | `Guid QuestionId`, `Guid OptionId` |
 | `ExamResponse` | Current output | `Guid Id`, `string Title`, `int PassThreshold`, `Guid ModuleId` |
@@ -97,10 +102,20 @@ public interface IExamService
     Task<ExamResponse> CreateAsync(CreateExamRequest request);
     Task<ExamResponse> GetByIdAsync(Guid id);
     Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default);
+    Task<ExamResponse> UpdateAsync(Guid id, UpdateExamRequest request, CancellationToken ct = default);
+    Task<ExamQuestionResponse> UpdateQuestionAsync(Guid examId, Guid questionId, UpdateExamQuestionRequest request, CancellationToken ct = default);
+    Task<ExamQuestionResponse> AddOptionAsync(Guid examId, Guid questionId, AddExamOptionRequest request, CancellationToken ct = default);
+    Task<ExamQuestionResponse> RemoveOptionAsync(Guid examId, Guid questionId, Guid optionId, CancellationToken ct = default);
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 }
 ```
 
-**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `ExamService.SubmitAsync` validates submitted answers against `Exam.Questions`, grades strictly on the server, updates `UserProgress.Score` (latest wins) and `UserProgress.PassedExam` (sticky), and returns `ExamResultResponse` without `IsCorrect`. `CreateAsync` (#273) still throws domain `NotImplementedException`. The exam path unlocks the next Module when `CompletedRequiredProblems` already holds; the shared gate and the problem-side trigger remain target (#444). `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
+**Implementation status:** `ExamService.GetByIdAsync` loads an Exam and throws `NotFoundException` when missing. `ExamService.SubmitAsync` validates submitted answers against `Exam.Questions`, grades strictly on the server, updates `UserProgress.Score` (latest wins) and `UserProgress.PassedExam` (sticky), and returns `ExamResultResponse` without `IsCorrect`. `CreateAsync` (#273) persists an exam with nested questions and options in one `SaveChangesAsync` call, with 404 for a missing Module and 409 for a Module that already has an exam. The admin maintenance operations (#285) are implemented: `UpdateAsync` edits `Title`/`PassThreshold`; `UpdateQuestionAsync`, `AddOptionAsync`, and `RemoveOptionAsync` load the exam via `GetWithQuestionsAsync` and re-validate Decision 7 on the question's post-write state (400 on violation); `DeleteAsync` returns 409 when any `UserProgress` row references the exam's `ModuleId` (checked via `IUserProgressRepository.ExistsForModuleAsync`) and otherwise removes the exam with its questions and options (`IExamRepository.RemoveAsync`). The exam path unlocks the next Module when `CompletedRequiredProblems` already holds; the shared gate and the problem-side trigger remain target (#444). `Exam.HasPassed(int score)` implements `score >= PassThreshold`.
+
+### Maintenance rules (binding)
+
+- Changing `PassThreshold` does not alter existing `UserProgress` rows. Scores and `PassedExam` were computed against the threshold in force at submit time and stay as they are; the new threshold applies only to future submissions.
+- An exam cannot be deleted while any `UserProgress` row references its `ModuleId`: `DeleteAsync` throws `ConflictException` (409). The exam, its questions, and its options are removed together in one `SaveChangesAsync` call once the guard passes.
 
 ## 4. API Endpoints Contract (Owned by API Team)
 
@@ -111,15 +126,24 @@ public interface IExamService
 | `POST` | `/api/exams` | `CreateExamRequest` | `ExamResponse` | `201 Created`, `400 Bad Request` |
 | `GET` | `/api/exams/{id}` | — | `ExamResponse` | `200 OK`, `404 Not Found` |
 | `POST` | `/api/exams/{id}/submit` | `SubmitExamAnswersRequest` | `ExamResultResponse` | `200 OK`, `400 Bad Request`, `404 Not Found` |
+| `PUT` | `/api/exams/{id}` | `UpdateExamRequest` | `ExamResponse` | `200 OK`, `400 Bad Request`, `403 Forbidden`, `404 Not Found` |
+| `PUT` | `/api/exams/{examId}/questions/{questionId}` | `UpdateExamQuestionRequest` | `ExamQuestionResponse` | `200 OK`, `400 Bad Request`, `403 Forbidden`, `404 Not Found` |
+| `POST` | `/api/exams/{examId}/questions/{questionId}/options` | `AddExamOptionRequest` | `ExamQuestionResponse` | `200 OK`, `400 Bad Request`, `403 Forbidden`, `404 Not Found` |
+| `DELETE` | `/api/exams/{examId}/questions/{questionId}/options/{optionId}` | — | `ExamQuestionResponse` | `200 OK`, `400 Bad Request`, `403 Forbidden`, `404 Not Found` |
+| `DELETE` | `/api/exams/{id}` | — | — | `204 No Content`, `403 Forbidden`, `404 Not Found`, `409 Conflict` |
 
-> An `ExamsController` placeholder exists. `GET /api/exams/{id}` could delegate to the implemented `ExamService.GetByIdAsync` but does not yet. All three actions throw domain `NotImplementedException`; the endpoints are not wired to services.
+> An `ExamsController` placeholder exists. `GET /api/exams/{id}` could delegate to the implemented `ExamService.GetByIdAsync` but does not yet. All three actions throw domain `NotImplementedException`; the endpoints are not wired to services. The five admin maintenance endpoints above are wired to `IExamService` and gated by the `AdminOnly` policy (#285).
 
 The target submit request contains selected question/option IDs, not a score. The API takes the learner ID from the authenticated identity and passes it explicitly to Application; it must not come from request JSON. Calculate the score from server-side `IsCorrect` values, store the current Module result, and unlock only the next Module after a pass.
 
 ### Input Validation
 
 - `CreateExamRequest`: `Title` must not be empty and must fit 150 characters; `PassThreshold` must be between 1 and 100.
-- `CreateExamRequest.Questions` must not be empty once the planned nested DTO exists (#273). Each question needs at least two options and exactly one correct option.
+- `CreateExamRequest.Questions` must not be empty. Each question needs at least two options and exactly one correct option.
+- `UpdateExamRequest`: same `Title` (non-empty, max 150) and `PassThreshold` (1–100) rules as create.
+- `UpdateExamQuestionRequest`: `Prompt` non-empty, `Order >= 1` and unique within the exam, `Points > 0`.
+- `AddExamOptionRequest`: `Text` non-empty.
+- Question/option writes re-validate Decision 7 on the question's post-write state (`Points > 0`, at least 2 options, exactly 1 `IsCorrect == true`, unique `Order`); violations throw `FluentValidation.ValidationException` (400) and nothing is persisted.
 - `SubmitExamAnswersRequest`: requires non-null `Answers` covering every question in the exam exactly once with valid option IDs belonging to each question.
 - `CreateExamRequestValidator` exists; question/option validators do not exist yet.
 
@@ -137,4 +161,5 @@ The target submit request contains selected question/option IDs, not a score. Th
 | `NotFoundException` | Exam lookup by ID returns `null`; Module referenced by `ModuleId` not found |
 | `ValidationException` | `PassThreshold` out of range or `Title` empty (planned wiring) |
 | `ConflictException` | Duplicate exam per module (target; currently backed by the unique index) |
+| `ConflictException` | Deleting an exam whose `ModuleId` is referenced by any `UserProgress` row |
 | `DomainException` | General exam business rule violations |

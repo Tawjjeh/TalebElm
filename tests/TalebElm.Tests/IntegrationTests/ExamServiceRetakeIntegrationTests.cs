@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
+using TalebElm.Application.Validators;
 using TalebElm.Domain.Entities;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Repositories;
@@ -119,7 +120,7 @@ public sealed class ExamServiceRetakeIntegrationTests : IAsyncLifetime
     private async Task<ExamResultResponse> SubmitAsync(Guid examId, List<SubmittedAnswer> answers)
     {
         await using var ctx = new AppDbContext(_options);
-        var service = new ExamService(new UnitOfWork(ctx));
+        var service = new ExamService(new UnitOfWork(ctx), new CreateExamRequestValidator(), new UpdateExamRequestValidator(), new UpdateExamQuestionRequestValidator(), new AddExamOptionRequestValidator());
         return await service.SubmitAsync(_userId, new SubmitExamAnswersRequest(examId, answers));
     }
 

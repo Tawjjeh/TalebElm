@@ -15,12 +15,17 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
-| POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
+| POST | `/api/exams` | Declared as a placeholder; throws domain `NotImplementedException`. (`ExamService.CreateAsync` is implemented with nested questions, validation, and 404/409 checks; controller wiring is a separate issue.) |
 | POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
+| PUT | `/api/exams/{id}` | Admin only (`AdminOnly` policy); updates `Title` and `PassThreshold` via `ExamService.UpdateAsync` (200, 400, 404). |
+| PUT | `/api/exams/{examId}/questions/{questionId}` | Admin only; updates a question's `Prompt`, `Order`, and `Points` via `ExamService.UpdateQuestionAsync`, re-validating Decision 7 (200, 400, 404). |
+| POST | `/api/exams/{examId}/questions/{questionId}/options` | Admin only; adds one option via `ExamService.AddOptionAsync`, re-validating Decision 7 (200, 400, 404). |
+| DELETE | `/api/exams/{examId}/questions/{questionId}/options/{optionId}` | Admin only; removes one option via `ExamService.RemoveOptionAsync`, re-validating Decision 7 (200, 400, 404). |
+| DELETE | `/api/exams/{id}` | Admin only; deletes the exam with its questions and options via `ExamService.DeleteAsync` (204, 404, 409 when learners have progress on the module). |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
+There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication is not configured in `Program.cs`; authorization has one policy, `AdminOnly` (`RequireRole("Admin")`), used by the admin exam-maintenance endpoints.
 
 ### OpenAPI in development
 

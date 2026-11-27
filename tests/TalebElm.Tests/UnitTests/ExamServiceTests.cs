@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Moq;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
+using TalebElm.Application.Validators;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
@@ -50,12 +52,29 @@ public class ExamServiceTests
 
         _modules.Setup(r => r.GetByIdAsync(_module.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_module);
         _exams.Setup(r => r.GetWithQuestionsAsync(_exam.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_exam);
+        // Simulate EF fixup: adding/removing through the set updates the
+        // question's in-memory Options collection.
+        _exams.Setup(r => r.AddOptionAsync(It.IsAny<ExamQuestion>(), It.IsAny<ExamOption>(), It.IsAny<CancellationToken>()))
+            .Callback<ExamQuestion, ExamOption, CancellationToken>((q, o, _) => q.Options.Add(o))
+            .Returns(Task.CompletedTask);
+        _exams.Setup(r => r.RemoveOptionAsync(It.IsAny<ExamOption>(), It.IsAny<CancellationToken>()))
+            .Callback<ExamOption, CancellationToken>((o, _) =>
+            {
+                foreach (var q in _exam.Questions)
+                    q.Options.Remove(o);
+            })
+            .Returns(Task.CompletedTask);
         _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(_progress);
         _unitOfWork.SetupGet(u => u.Exams).Returns(_exams.Object);
         _unitOfWork.SetupGet(u => u.UserProgresses).Returns(_progresses.Object);
         _unitOfWork.SetupGet(u => u.Modules).Returns(_modules.Object);
 
-        _sut = new ExamService(_unitOfWork.Object);
+        _sut = new ExamService(
+            _unitOfWork.Object,
+            new CreateExamRequestValidator(),
+            new UpdateExamRequestValidator(),
+            new UpdateExamQuestionRequestValidator(),
+            new AddExamOptionRequestValidator());
     }
 
     [Fact]
@@ -105,6 +124,351 @@ public class ExamServiceTests
         Assert.Equal(examId, result.Id);
         _exams.Verify(r => r.GetByIdAsync(examId, cts.Token), Times.Once);
     }
+
+    #region CreateAsync_Method_Tests
+
+    private CreateExamRequest ValidCreateRequest(Guid moduleId) => new(
+        moduleId, "Final Exam", 60,
+        new List<CreateExamQuestionRequest>
+        {
+            new("What is 2 + 2?", 1, 10, new List<CreateExamOptionRequest>
+            {
+                new("4", true),
+                new("5", false)
+            })
+        });
+
+    [Fact]
+    public async Task CreateAsync_WhenValid_PersistsExamWithQuestionsAndOptions()
+    {
+        var moduleId = Guid.NewGuid();
+        _modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Module { Id = moduleId });
+        _exams.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Exam?)null);
+
+        var result = await _sut.CreateAsync(ValidCreateRequest(moduleId));
+
+        Assert.Equal("Final Exam", result.Title);
+        Assert.Equal(60, result.PassThreshold);
+        Assert.Equal(moduleId, result.ModuleId);
+        Assert.NotEqual(Guid.Empty, result.Id);
+        _exams.Verify(r => r.AddAsync(It.Is<Exam>(e =>
+            e.Title == "Final Exam" && e.ModuleId == moduleId
+            && e.Questions.Count == 1
+            && e.Questions.Single().Prompt == "What is 2 + 2?"
+            && e.Questions.Single().Points == 10
+            && e.Questions.Single().Options.Count == 2
+            && e.Questions.Single().Options.Count(o => o.IsCorrect) == 1),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenModuleMissing_ThrowsNotFoundException()
+    {
+        var moduleId = Guid.NewGuid();
+        _modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Module?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.CreateAsync(ValidCreateRequest(moduleId)));
+        _exams.Verify(r => r.AddAsync(It.IsAny<Exam>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenModuleAlreadyHasExam_ThrowsConflictException()
+    {
+        var moduleId = Guid.NewGuid();
+        _modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Module { Id = moduleId });
+        _exams.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Exam { Id = Guid.NewGuid(), ModuleId = moduleId });
+
+        await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(ValidCreateRequest(moduleId)));
+        _exams.Verify(r => r.AddAsync(It.IsAny<Exam>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task CreateAsync_WhenCorrectOptionCountIsNotOne_ThrowsFluentValidationException(int correctCount)
+    {
+        var moduleId = Guid.NewGuid();
+        var options = Enumerable.Range(0, 2)
+            .Select(i => new CreateExamOptionRequest($"Option {i}", i < correctCount))
+            .ToList();
+        var request = new CreateExamRequest(moduleId, "Final Exam", 60,
+            new List<CreateExamQuestionRequest> { new("Q", 1, 10, options) });
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() => _sut.CreateAsync(request));
+        _exams.Verify(r => r.AddAsync(It.IsAny<Exam>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ReturnsLearnerSafeResponseWithoutIsCorrect()
+    {
+        var moduleId = Guid.NewGuid();
+        _modules.Setup(r => r.GetByIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Module { Id = moduleId });
+        _exams.Setup(r => r.GetByModuleIdAsync(moduleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Exam?)null);
+
+        var result = await _sut.CreateAsync(ValidCreateRequest(moduleId));
+
+        var json = JsonSerializer.Serialize(result);
+        Assert.DoesNotContain("IsCorrect", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ForwardsCancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        var moduleId = Guid.NewGuid();
+        _modules.Setup(r => r.GetByIdAsync(moduleId, cts.Token)).ReturnsAsync(new Module { Id = moduleId });
+        _exams.Setup(r => r.GetByModuleIdAsync(moduleId, cts.Token)).ReturnsAsync((Exam?)null);
+
+        var result = await _sut.CreateAsync(ValidCreateRequest(moduleId), cts.Token);
+
+        Assert.Equal(moduleId, result.ModuleId);
+        _modules.Verify(r => r.GetByIdAsync(moduleId, cts.Token), Times.Once);
+        _exams.Verify(r => r.GetByModuleIdAsync(moduleId, cts.Token), Times.Once);
+    }
+    #endregion
+
+    #region UpdateAsync_Method_Tests
+
+    [Fact]
+    public async Task UpdateAsync_WhenValid_UpdatesTitleAndThreshold()
+    {
+        var examId = Guid.NewGuid();
+        var exam = new Exam { Id = examId, Title = "Old", PassThreshold = 50, ModuleId = Guid.NewGuid() };
+        _exams.Setup(r => r.GetByIdAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync(exam);
+
+        var result = await _sut.UpdateAsync(examId, new UpdateExamRequest("New Title", 80));
+
+        Assert.Equal("New Title", result.Title);
+        Assert.Equal(80, result.PassThreshold);
+        Assert.Equal(examId, result.Id);
+        Assert.Equal("New Title", exam.Title);
+        Assert.Equal(80, exam.PassThreshold);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenExamMissing_ThrowsNotFoundException()
+    {
+        var examId = Guid.NewGuid();
+        _exams.Setup(r => r.GetByIdAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.UpdateAsync(examId, new UpdateExamRequest("T", 60)));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("", 60)]
+    [InlineData("T", 0)]
+    [InlineData("T", 101)]
+    public async Task UpdateAsync_WhenRequestInvalid_ThrowsFluentValidationException(string title, int threshold)
+    {
+        var examId = Guid.NewGuid();
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(
+            () => _sut.UpdateAsync(examId, new UpdateExamRequest(title, threshold)));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+    #endregion
+
+    #region UpdateQuestionAsync_Method_Tests
+
+    [Fact]
+    public async Task UpdateQuestionAsync_WhenValid_UpdatesPromptOrderAndPoints()
+    {
+        var question = _exam.Questions.First();
+
+        var result = await _sut.UpdateQuestionAsync(_exam.Id, question.Id, new UpdateExamQuestionRequest("New prompt", 5, 25));
+
+        Assert.Equal(question.Id, result.Id);
+        Assert.Equal("New prompt", result.Prompt);
+        Assert.Equal(5, result.Order);
+        Assert.Equal(25, result.Points);
+        Assert.Equal(2, result.Options.Count);
+        Assert.Equal("New prompt", question.Prompt);
+        Assert.Equal(5, question.Order);
+        Assert.Equal(25, question.Points);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateQuestionAsync_WhenOrderDuplicatesAnotherQuestion_ThrowsFluentValidationException()
+    {
+        // Fixture questions all have Order 0, so updating one to Order 0 duplicates the others.
+        var question = _exam.Questions.First();
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(
+            () => _sut.UpdateQuestionAsync(_exam.Id, question.Id, new UpdateExamQuestionRequest("Q", 0, 10)));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateQuestionAsync_WhenQuestionMissing_ThrowsNotFoundException()
+    {
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.UpdateQuestionAsync(_exam.Id, Guid.NewGuid(), new UpdateExamQuestionRequest("Q", 1, 10)));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateQuestionAsync_WhenExamMissing_ThrowsNotFoundException()
+    {
+        var examId = Guid.NewGuid();
+        _exams.Setup(r => r.GetWithQuestionsAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.UpdateQuestionAsync(examId, Guid.NewGuid(), new UpdateExamQuestionRequest("Q", 1, 10)));
+    }
+    #endregion
+
+    #region AddOptionAsync_Method_Tests
+
+    [Fact]
+    public async Task AddOptionAsync_WhenAddingWrongOption_KeepsExactlyOneCorrect()
+    {
+        var question = _exam.Questions.First();
+
+        var result = await _sut.AddOptionAsync(_exam.Id, question.Id, new AddExamOptionRequest("New wrong", false));
+
+        Assert.Equal(3, result.Options.Count);
+        Assert.Equal(3, question.Options.Count);
+        Assert.Single(question.Options.Where(o => o.IsCorrect));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddOptionAsync_WhenAddingSecondCorrectOption_ThrowsFluentValidationException()
+    {
+        var question = _exam.Questions.First();
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(
+            () => _sut.AddOptionAsync(_exam.Id, question.Id, new AddExamOptionRequest("Second correct", true)));
+        // The option is already added to the in-memory collection; the guard
+        // only prevents persisting the invalid state.
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddOptionAsync_WhenQuestionMissing_ThrowsNotFoundException()
+    {
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.AddOptionAsync(_exam.Id, Guid.NewGuid(), new AddExamOptionRequest("X", false)));
+    }
+    #endregion
+
+    #region RemoveOptionAsync_Method_Tests
+
+    [Fact]
+    public async Task RemoveOptionAsync_WhenQuestionKeepsTwoOptionsAndOneCorrect_RemovesIt()
+    {
+        var question = new ExamQuestion
+        {
+            Id = Guid.NewGuid(),
+            Prompt = "Q",
+            Order = 1,
+            Points = 10,
+            Options = new List<ExamOption>
+            {
+                new() { Id = Guid.NewGuid(), Text = "A", IsCorrect = true },
+                new() { Id = Guid.NewGuid(), Text = "B", IsCorrect = false },
+                new() { Id = Guid.NewGuid(), Text = "C", IsCorrect = false }
+            }
+        };
+        var examId = Guid.NewGuid();
+        var exam = new Exam { Id = examId, ModuleId = Guid.NewGuid(), Questions = new List<ExamQuestion> { question } };
+        _exams.Setup(r => r.GetWithQuestionsAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync(exam);
+        _exams.Setup(r => r.RemoveOptionAsync(It.IsAny<ExamOption>(), It.IsAny<CancellationToken>()))
+            .Callback<ExamOption, CancellationToken>((o, _) => question.Options.Remove(o))
+            .Returns(Task.CompletedTask);
+        var wrongOption = question.Options.First(o => !o.IsCorrect);
+
+        var result = await _sut.RemoveOptionAsync(examId, question.Id, wrongOption.Id);
+
+        Assert.Equal(2, result.Options.Count);
+        Assert.Equal(2, question.Options.Count);
+        Assert.Single(question.Options.Where(o => o.IsCorrect));
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveOptionAsync_WhenRemovingCorrectOption_ThrowsFluentValidationException()
+    {
+        var question = _exam.Questions.First();
+        var correctOption = question.Options.First(o => o.IsCorrect);
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(
+            () => _sut.RemoveOptionAsync(_exam.Id, question.Id, correctOption.Id));
+        // The option is already removed from the in-memory collection; the
+        // guard only prevents persisting the invalid state.
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RemoveOptionAsync_WhenOnlyOneOptionWouldRemain_ThrowsFluentValidationException()
+    {
+        var question = _exam.Questions.First();
+        var wrongOption = question.Options.First(o => !o.IsCorrect);
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(
+            () => _sut.RemoveOptionAsync(_exam.Id, question.Id, wrongOption.Id));
+        // The option is already removed from the in-memory collection; the
+        // guard only prevents persisting the invalid state.
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RemoveOptionAsync_WhenOptionMissing_ThrowsNotFoundException()
+    {
+        var question = _exam.Questions.First();
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _sut.RemoveOptionAsync(_exam.Id, question.Id, Guid.NewGuid()));
+    }
+    #endregion
+
+    #region DeleteAsync_Method_Tests
+
+    [Fact]
+    public async Task DeleteAsync_WhenNoLearnerProgress_RemovesExamAndSaves()
+    {
+        _progresses.Setup(r => r.ExistsForModuleAsync(_exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        await _sut.DeleteAsync(_exam.Id);
+
+        _exams.Verify(r => r.RemoveAsync(_exam, It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenLearnerProgressExists_ThrowsConflictException()
+    {
+        _progresses.Setup(r => r.ExistsForModuleAsync(_exam.ModuleId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        await Assert.ThrowsAsync<ConflictException>(() => _sut.DeleteAsync(_exam.Id));
+        _exams.Verify(r => r.RemoveAsync(It.IsAny<Exam>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenExamMissing_ThrowsNotFoundException()
+    {
+        var examId = Guid.NewGuid();
+        _exams.Setup(r => r.GetWithQuestionsAsync(examId, It.IsAny<CancellationToken>())).ReturnsAsync((Exam?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.DeleteAsync(examId));
+        _exams.Verify(r => r.RemoveAsync(It.IsAny<Exam>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+    #endregion
 
     #region SubmtiAsync_Method_Tests
 
