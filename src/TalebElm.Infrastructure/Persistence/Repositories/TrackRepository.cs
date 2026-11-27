@@ -23,6 +23,12 @@ public class TrackRepository(AppDbContext context) : ITrackRepository
         return await context.Tracks.FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 
+    public Task RemoveAsync(Track track, CancellationToken ct = default)
+    {
+        context.Tracks.Remove(track);
+        return Task.CompletedTask;
+    }
+
     public async Task<(IReadOnlyList<Track> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,

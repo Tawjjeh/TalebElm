@@ -59,7 +59,7 @@ public interface ILessonRepository : IRepository<Lesson> { }
 - `TrackConfiguration`, `ModuleConfiguration`, and `LessonConfiguration` map the relationships above through navigation properties with `DeleteBehavior.Restrict`.
 - Enforce `UNIQUE(TrackId, Order)` (Modules), `UNIQUE(ModuleId, Order)` (Lessons), and `UNIQUE(ModuleId)` (Exams) as unique indexes.
 - `AppDbContext` lives at `Infrastructure/Persistence/DbContext/AppDbContext.cs`; configurations at `Infrastructure/Persistence/Configurations/`; repository implementations at `Infrastructure/Persistence/Repositories/`.
-- Ordering is applied by `ModuleRepository.GetByTrackIdAsync`; duplicate `Order` values are rejected by both Application validators and the unique indexes.
+- Ordering is applied by `ModuleRepository.GetByTrackIdAsync` for reads; ordering maintenance loads tracked siblings via `GetByTrackIdForUpdateAsync` / `GetByModuleIdForUpdateAsync` and shifts them with `SiblingOrdering`. Duplicate `Order` values are rejected by both Application validators and the unique indexes.
 
 ## 3. Application Contracts (Shared / Joint Ownership)
 
@@ -119,19 +119,41 @@ public interface ILessonService
   `Status = TrackStatus.Draft`; keep this default so a Track is never published
   accidentally. Publishing is a separate explicit operation.
 
-### Update and delete behavior (planned)
+### Update and delete behavior
 
-- Reject deleting a Track while it still has Modules. Return `409 Conflict` until an explicit archive/cascade-delete policy is approved.
-- Reject deleting a Track that has learner enrollment/progress data. Preserve learner history instead of cascading deletes.
-- Reject deleting a Module while it still has Lessons, an assigned Exam, or learner progress rows. Return `409 Conflict`.
-- Updating a Module must preserve unique ordering within its Track; changing `Order` may require shifting sibling Modules.
-- Deleting a Module must re-sequence the remaining sibling Modules so their
+- **Track edit policy (Draft-only):** `PUT /api/tracks/{id}` edits a track's name
+  and description only while its `Status` is `Draft`; editing a `Published` or
+  `Archived` track returns `400 ValidationException`. A track that left Draft is
+  live for learners, so its name and description are frozen. Status changes go
+  through the separate `PATCH /api/tracks/{id}/status` workflow (#266).
+- Deleting a Track is rejected with `409 Conflict` while it still has Modules,
+  learner enrollments, or learner progress rows. The guards run before any
+  modification, and the database's `Restrict` FKs are only the backstop.
+- Deleting a Module is rejected with `409 Conflict` while it still has Lessons,
+  an assigned Exam, or learner progress rows (same guard-first rule).
+- Creating a Module at `Order` k inserts it there and shifts siblings with
+  `Order >= k` up by one (`SiblingOrdering.PrepareInsert`); the `Order` in the
+  route's track is authoritative and the module's track must exist (`404`).
+- Updating a Module changes title, summary, and `Order` within its track; an
+  `Order` change moves it via `SiblingOrdering.MoveAsync` (two saves in one
+  transaction). Moving a Module to another track is not supported (`400`).
+- Deleting a Module re-sequences the remaining sibling Modules so their
   `Order` values stay contiguous (`1, 2, 3, ...`) and free of gaps, otherwise
-  learner progress rows keyed to old orders become confusing.
-- Deleting a Lesson is allowed only after confirming no downstream content linkage depends on it; re-sequence remaining Lessons in the Module after deletion.
+  learner progress rows keyed to old orders become confusing. `SiblingOrdering.PrepareDelete` does the compaction after the #251 conflict guards.
+- Deleting a Lesson is allowed only after confirming no downstream content linkage depends on it; re-sequence remaining Lessons in the Module after deletion (`SiblingOrdering.PrepareDelete`).
 - Updating a Lesson can change title/content/type/order, but it must remain scoped to one Module unless a separate move operation is designed.
 - When a Module or Lesson `Order` changes, shift siblings within the same parent
   in the same `UnitOfWork` transaction so no two siblings share an `Order`.
+  `SiblingOrdering` implements this: insert/delete shifts run in one
+  `SaveChangesAsync` (EF Core orders the updates so no transient duplicate
+  `Order` exists), while a move runs as two saves inside one
+  `IUnitOfWork.ExecuteInTransactionAsync` transaction — a single save cannot
+  work because the mover and the intermediate range form a dependency cycle
+  that EF Core refuses with a circular-dependency error. Callers load the
+  siblings tracked via `IModuleRepository.GetByTrackIdForUpdateAsync` /
+  `ILessonRepository.GetByModuleIdForUpdateAsync`; the read
+  `GetByTrackIdAsync` / `GetByModuleIdAsync` return detached copies whose
+  mutations would never be saved.
 
 ### Validators
 
@@ -147,16 +169,16 @@ public interface ILessonService
 | HTTP Method | Route | Request DTO | Response DTO | Status Codes |
 |---|---|---|---|---|
 | `GET` | `/api/tracks` | Query params: `page` (default 1), `pageSize` (default 20, max 100) | `PagedTracksResponse` | `200`, `400` |
-| `POST` | `/api/tracks` | `CreateTrackRequest` (planned) | `TrackResponse` (planned) | Service exists; controller action has no body and throws |
+| `POST` | `/api/tracks` | `CreateTrackRequest` | `TrackResponse` | `201`, `400`, `401`, `403` (`AdminOnly`) |
 | `GET` | `/api/tracks/{id}` | — | `TrackResponse` (planned) | Planned: `200`, `404` |
-| `PUT` | `/api/tracks/{id}` | `UpdateTrackRequest` (planned) | `TrackResponse` (planned) | Planned: `200`, `400`, `404` |
-| `DELETE` | `/api/tracks/{id}` | — | — | Planned: `204`, `404` |
+| `PUT` | `/api/tracks/{id}` | `UpdateTrackRequest` | `TrackResponse` | `200`, `400` (also when the track is not Draft), `401`, `403` (`AdminOnly`), `404` |
+| `DELETE` | `/api/tracks/{id}` | — | — | `204`, `401`, `403` (`AdminOnly`), `404`, `409` (Modules, enrollments, or progress exist) |
 | `GET` | `/api/tracks/{id}/modules` | — | `ModuleResponse[]` (planned) | Planned: `200`, `404` |
-| `POST` | `/api/modules` | (planned) | (planned) | Planned: `201`, `400` |
+| `POST` | `/api/tracks/{trackId}/modules` | `CreateModuleRequest` (route track id authoritative) | `ModuleResponse` | `201`, `400`, `401`, `403` (`AdminOnly`), `404` (track missing) |
 | `GET` | `/api/modules/{id}` | — | (planned) | Planned: `200`, `404` |
 | `GET` | `/api/modules` | — | — | Service exists; controller is a parameterless placeholder |
-| `PUT` | `/api/modules/{id}` | `UpdateModuleRequest` (planned) | `ModuleResponse` (planned) | Planned: `200`, `400`, `404`, `409` |
-| `DELETE` | `/api/modules/{id}` | — | — | Planned: `204`, `404`, `409` |
+| `PUT` | `/api/modules/{id}` | `UpdateModuleRequest` | `ModuleResponse` | `200`, `400` (also on cross-track move), `401`, `403` (`AdminOnly`), `404` |
+| `DELETE` | `/api/modules/{id}` | — | — | `204`, `401`, `403` (`AdminOnly`), `404`, `409` (Lessons, Exam, or progress exist) |
 | `GET` | `/api/modules/{id}/lessons` | — | `LessonResponse[]` (planned) | Planned: `200`, `404` |
 | `POST` | `/api/lessons` | (planned) | (planned) | Planned: `201`, `400` |
 | `GET` | `/api/lessons` | — | — | Service exists; controller is a parameterless placeholder |
@@ -166,15 +188,15 @@ public interface ILessonService
 
 ### Endpoint behavior notes
 
-- `DELETE /api/tracks/{id}` should fail with `409 Conflict` when the Track still has Modules or any learner enrollment/progress references.
-- `DELETE /api/modules/{id}` should fail with `409 Conflict` when Lessons, Exams, or learner progress depend on that Module.
-- `PUT` and `DELETE` routes for Modules and Lessons are planned contracts only. Update DTOs and validators exist, but no controller actions are implemented.
+- `DELETE /api/tracks/{id}` fails with `409 Conflict` when the Track still has Modules, enrollments, or learner progress references.
+- `DELETE /api/modules/{id}` fails with `409 Conflict` when Lessons, an Exam, or learner progress depend on that Module.
+- `PUT` and `DELETE` routes for Lessons are planned contracts only. Update DTOs and validators exist, but no controller actions are implemented (#284).
 - Learner-facing browse endpoints should return `404` for missing Track/Module/Lesson ids and `400` for invalid request payloads.
 
 ### Input Validation
 
-- TrackService validates `CreateTrackRequest` with FluentValidation; Name and Description must not be empty.
-- Module and Lesson create/update validators exist and are registered, but no controller invokes them yet.
+- TrackService validates `CreateTrackRequest` and `UpdateTrackRequest` with FluentValidation; Name and Description must not be empty.
+- Module create/update validators are invoked by `ModuleService` on every write.
 - The learner-facing Track browse/detail and nested Module/Lesson routes in the table are planned; current controller actions are parameterless placeholders.
 
 ## 5. Domain Exceptions

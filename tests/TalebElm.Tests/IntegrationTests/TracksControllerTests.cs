@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -39,14 +40,64 @@ public class TracksControllerTests
     }
 
     [Fact]
-    public void Post_ThrowsDomainNotImplementedException()
+    public async Task Post_ReturnsCreatedWithTrackResponse()
     {
+        var expected = new TrackResponse(Guid.NewGuid(), "Backend .NET", "Description", 0);
+
+        _trackService
+            .Setup(s => s.CreateAsync(It.IsAny<CreateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
         var controller = new TracksController(_trackService.Object);
 
-        var exception = Assert.Throws<DomainNotImplemented>(
-            () => controller.Post(new CreateTrackRequest("Backend .NET", "Description")));
+        var actionResult = await controller.Post(new CreateTrackRequest("Backend .NET", "Description"));
 
-        Assert.Contains("not implemented", exception.Message, StringComparison.OrdinalIgnoreCase);
+        var createdResult = Assert.IsType<CreatedResult>(actionResult);
+        Assert.Equal(StatusCodes.Status201Created, createdResult.StatusCode);
+        Assert.Equal(expected, createdResult.Value);
+    }
+
+    [Fact]
+    public async Task Put_ReturnsOkWithTrackResponse()
+    {
+        var trackId = Guid.NewGuid();
+        var expected = new TrackResponse(trackId, "New", "New description", 0);
+
+        _trackService
+            .Setup(s => s.UpdateAsync(trackId, It.IsAny<UpdateTrackRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var controller = new TracksController(_trackService.Object);
+
+        var actionResult = await controller.Put(trackId, new UpdateTrackRequest("New", "New description"));
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(expected, okResult.Value);
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNoContent()
+    {
+        var trackId = Guid.NewGuid();
+        var controller = new TracksController(_trackService.Object);
+
+        var actionResult = await controller.Delete(trackId);
+
+        Assert.IsType<NoContentResult>(actionResult);
+        _trackService.Verify(s => s.DeleteAsync(trackId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("Post")]
+    [InlineData("Put")]
+    [InlineData("Delete")]
+    public void WriteActions_AreGatedByAdminOnly(string methodName)
+    {
+        var method = typeof(TracksController).GetMethod(methodName)!;
+        var attribute = method.GetCustomAttributes(typeof(AuthorizeAttribute), inherit: false)
+            .Cast<AuthorizeAttribute>().Single();
+
+        Assert.Equal("AdminOnly", attribute.Policy);
     }
 
     [Fact]

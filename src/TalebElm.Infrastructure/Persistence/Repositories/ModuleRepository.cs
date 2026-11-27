@@ -28,6 +28,18 @@ public class ModuleRepository(AppDbContext context) : IModuleRepository
             .OrderBy(m => m.Order).AsNoTracking().ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Module>> GetByTrackIdForUpdateAsync(Guid trackId, CancellationToken ct = default)
+    {
+        return await context.Modules.Where(m => m.TrackId == trackId)
+            .OrderBy(m => m.Order).ToListAsync(ct);
+    }
+
+    public Task RemoveAsync(Module module, CancellationToken ct = default)
+    {
+        context.Modules.Remove(module);
+        return Task.CompletedTask;
+    }
+
     public async Task<Module?> GetNextModuleAsync(Guid trackId, int order, CancellationToken ct = default)
     {
         return await context.Modules

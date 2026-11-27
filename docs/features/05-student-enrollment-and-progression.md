@@ -44,7 +44,7 @@ The unique index on `(UserId, TrackId)` is implemented. Payment and attendance a
 - Reject enrollment in a Track with no Modules without creating partial records.
 - Reject duplicate enrollment with `409 Conflict`; there is no un-enroll in the MVP.
 - Modules without an Exam never set `PassedExam`; they progress only via the explicit unlock rule.
-- New Modules added after enrollment start locked; inserting in the middle shifts sibling `Order` values in one transaction. Reordering a `Published` Track after learners start requires product approval.
+- New Modules added after enrollment start locked; inserting in the middle shifts sibling `Order` values in one transaction (`SiblingOrdering`, Feature 02). Reordering a `Published` Track after learners start requires product approval.
 - Deletes use `Restrict` (see `DATABASE_ERD.md` §5.4): blocked deletes return `409`; learner history is never cascaded.
 
 ## 3. Application Contracts

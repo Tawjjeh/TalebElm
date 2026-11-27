@@ -11,8 +11,13 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
 | GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
-| POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
+| POST | `/api/tracks` | Wired (`AdminOnly`): creates a Draft track, returns `201 Created` with `TrackResponse`. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
+| PUT | `/api/tracks/{id}` | Wired (`AdminOnly`): updates name/description of a Draft track only (`400` when Published/Archived), returns `200` with `TrackResponse`. |
+| DELETE | `/api/tracks/{id}` | Wired (`AdminOnly`): deletes the track, returns `204`; `409` when Modules, enrollments, or progress exist. |
+| POST | `/api/tracks/{trackId}/modules` | Wired (`AdminOnly`): creates a module at the requested order (shifts siblings), returns `201 Created` with `ModuleResponse`. |
+| PUT | `/api/modules/{id}` | Wired (`AdminOnly`): updates title/summary/order within its track, returns `200` with `ModuleResponse`. |
+| DELETE | `/api/modules/{id}` | Wired (`AdminOnly`): deletes the module and compacts siblings, returns `204`; `409` when Lessons, Exam, or progress exist. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
 | GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
 | POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
@@ -37,6 +42,12 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 | GET | `/api/tracks` | Query params: `page` (default 1), `pageSize` (default 20, max 100) | `PagedTracksResponse` with published Track summaries | 200, 400 |
 | GET | `/api/tracks/{trackId}` | None | Track detail with ordered Modules | 200, 404 |
 | POST | `/api/tracks/{trackId}/enrollment` | None; Student comes from auth | Enrollment response | 201, 401, 404, 409 |
+| POST | `/api/tracks` | `CreateTrackRequest` | `TrackResponse` | 201, 400, 401, 403 |
+| PUT | `/api/tracks/{id}` | `UpdateTrackRequest` | `TrackResponse` | 200, 400, 401, 403, 404 |
+| DELETE | `/api/tracks/{id}` | None | None | 204, 401, 403, 404, 409 |
+| POST | `/api/tracks/{trackId}/modules` | `CreateModuleRequest` (route track id authoritative) | `ModuleResponse` | 201, 400, 401, 403, 404 |
+| PUT | `/api/modules/{id}` | `UpdateModuleRequest` | `ModuleResponse` | 200, 400, 401, 403, 404 |
+| DELETE | `/api/modules/{id}` | None | None | 204, 401, 403, 404, 409 |
 
 `User` now has `PasswordHash`, `Role` (`UserRole`: `Student`/`Instructor`/`Admin`), and a `TrackEnrollments` collection; password hashing is implemented. Registration, login, token issuance, and authorization policies are still not implemented. `TrackEnrollment` persistence exists separately from `UserProgress`; the enrollment endpoint is not wired.
 

@@ -70,6 +70,13 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
+    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+        await action(ct);
+        await transaction.CommitAsync(ct);
+    }
+
     // SQLite extended result codes, https://www.sqlite.org/rescode.html. Any other
     // failure stays a DbUpdateException and so an internal error.
     private static string? ConflictMessage(DbUpdateException exception)
