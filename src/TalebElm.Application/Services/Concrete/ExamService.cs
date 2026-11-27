@@ -29,12 +29,37 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         );
     }
 
+    public async Task<ExamDetailResponse> GetDetailForLearnerAsync(Guid learnerId, Guid examId, CancellationToken ct = default)
+    {
+        var exam = await unitOfWork.Exams.GetWithQuestionsAsync(examId, ct)
+            ?? throw new NotFoundException($"Exam with id '{examId}' was not found.");
+        await RequireUnlockedAsync(learnerId, exam.ModuleId, ct);
+        return ToDetailResponse(exam);
+    }
+
+    public async Task<ExamDetailResponse> GetDetailByModuleForLearnerAsync(Guid learnerId, Guid moduleId, CancellationToken ct = default)
+    {
+        var exam = await unitOfWork.Exams.GetByModuleIdAsync(moduleId, ct)
+            ?? throw new NotFoundException($"Exam for module '{moduleId}' was not found.");
+        await RequireUnlockedAsync(learnerId, exam.ModuleId, ct);
+        var withQuestions = await unitOfWork.Exams.GetWithQuestionsAsync(exam.Id, ct)
+            ?? throw new NotFoundException($"Exam with id '{exam.Id}' was not found.");
+        return ToDetailResponse(withQuestions);
+    }
+
     public async Task<ExamResultResponse> SubmitAsync(Guid userId, SubmitExamAnswersRequest request, CancellationToken ct = default)
     {
         if (request.Answers is null)
             throw new ValidationException("Answers are required.");
         var exam = await unitOfWork.Exams.GetWithQuestionsAsync(request.ExamId, ct) ?? throw new NotFoundException($"Exam {request.ExamId} was not found.");
         var questionIds = exam.Questions.Select(q => q.Id).ToHashSet();
+
+        // A locked module's exam is never graded: the learner is forbidden, not missing.
+        // A missing progress row keeps its existing NotFound behavior.
+        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(userId, exam.ModuleId, ct)
+            ?? throw new NotFoundException($"Progress for learner {userId} was not found.");
+        if (!progress.IsUnlocked)
+            throw new ForbiddenException($"Module '{exam.ModuleId}' is locked for learner '{userId}'.");
 
         // Checks each answer belongs to the exam and not duplicated
         var answerByQuestion = new Dictionary<Guid, SubmittedAnswer>(request.Answers.Count);
@@ -71,9 +96,6 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
             MidpointRounding.AwayFromZero);
 
         // Update progress for this learner and this exam's module.
-        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(userId, exam.ModuleId, ct)
-            ?? throw new NotFoundException($"Progress for learner {userId} was not found.");
-
         var passed = exam.HasPassed(score);
 
         progress.Score = score;
@@ -122,4 +144,27 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
 
         return new ExamResultResponse(exam.Id, passed, score);
     }
+
+    private async Task RequireUnlockedAsync(Guid learnerId, Guid moduleId, CancellationToken ct)
+    {
+        var progress = await unitOfWork.UserProgresses.GetByUserAndModuleAsync(learnerId, moduleId, ct);
+        if (progress is null || !progress.IsUnlocked)
+            throw new ForbiddenException($"Module '{moduleId}' is locked for learner '{learnerId}'.");
+    }
+
+    // Maps the exam with its questions/options; IsCorrect is never copied into a DTO.
+    private static ExamDetailResponse ToDetailResponse(Exam exam) => new(
+        exam.Id,
+        exam.Title,
+        exam.PassThreshold,
+        exam.ModuleId,
+        exam.Questions
+            .OrderBy(q => q.Order)
+            .Select(q => new ExamQuestionResponse(
+                q.Id,
+                q.Prompt,
+                q.Order,
+                q.Points,
+                q.Options.Select(o => new ExamOptionResponse(o.Id, o.Text)).ToList()))
+            .ToList());
 }

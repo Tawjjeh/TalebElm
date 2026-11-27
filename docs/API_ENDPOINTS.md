@@ -14,13 +14,14 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
-| GET | `/api/exams/{id}` | Declared as a placeholder; throws domain `NotImplementedException`. |
+| GET | `/api/modules/{moduleId}/exam` | Returns the module's exam as a learner-safe `ExamDetailResponse` (no `IsCorrect`); `StudentOnly`, `403` when the module is locked for the learner, `404` when the module has no exam. |
+| GET | `/api/exams/{id}` | Returns the learner-safe `ExamDetailResponse` (no `IsCorrect`); `StudentOnly`, `403` when the module is locked for the learner, `404` when the exam is not found. |
 | POST | `/api/exams` | Declared as a parameterless placeholder; throws domain `NotImplementedException`. |
-| POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
+| POST | `/api/exams/{id}/submit` | Submits answers via `ExamService.SubmitAsync` (server-side grading, `StudentOnly`); the route id is authoritative over the body's `ExamId`. Returns `200` with `ExamResultResponse`, `403` when the module is locked, `404` when the exam is not found. |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
+There is no registration endpoint, enrollment endpoint, or nested lesson route in the current API project. A `StudentOnly` authorization policy is registered in `Program.cs`, but no authentication scheme is configured yet, so controllers still return `401` themselves when the student claim is missing or malformed.
 
 ### OpenAPI in development
 
