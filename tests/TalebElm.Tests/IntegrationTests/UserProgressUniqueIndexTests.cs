@@ -20,9 +20,11 @@ public class UserProgressUniqueIndexTests : SqliteTestBase
 
         var userId = user.Id;
         var moduleId = module.Id;
-        DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = userId, ModuleId = moduleId },
-            new UserProgress { UserId = userId, ModuleId = moduleId });
+        DbContext.UserProgresses.Add(new UserProgress { UserId = userId, ModuleId = moduleId });
+        await SaveChangesAsync();
+        ClearTracker();
+
+        DbContext.UserProgresses.Add(new UserProgress { UserId = userId, ModuleId = moduleId });
 
         await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
     }

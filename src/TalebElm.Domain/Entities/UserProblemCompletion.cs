@@ -7,6 +7,8 @@ public class UserProblemCompletion : BaseEntity
 
     public Guid ModuleProblemId { get; private set; }
 
+    public Guid ModuleId { get; private set; }
+
     public string? ExternalSubmissionId { get; private set; }
 
     public DateTime VerifiedAtUtc { get; private set; }
@@ -26,7 +28,7 @@ public class UserProblemCompletion : BaseEntity
 
     public UserProblemCompletion(
         Guid userId,
-        Guid moduleProblemId,
+        ModuleProblem moduleProblem,
         DateTime verifiedAtUtc,
         string? externalSubmissionId = null,
         string? detailsJson = null,
@@ -34,7 +36,8 @@ public class UserProblemCompletion : BaseEntity
         Guid? taskVersionId = null)
     {
         UserId = userId;
-        ModuleProblemId = moduleProblemId;
+        ModuleProblemId = moduleProblem.Id;
+        ModuleId = moduleProblem.ModuleId;
         VerifiedAtUtc = verifiedAtUtc;
         ExternalSubmissionId = externalSubmissionId;
         DetailsJson = detailsJson;

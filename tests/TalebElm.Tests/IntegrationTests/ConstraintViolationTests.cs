@@ -96,9 +96,11 @@ public class ConstraintViolationTests : SqliteTestBase
     [Fact]
     public async Task Middleware_ReturnsConflictWithoutTheProviderMessage()
     {
-        DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = _user.Id, ModuleId = _module.Id },
-            new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
+        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
+        await _unitOfWork.SaveChangesAsync();
+        ClearTracker();
+
+        DbContext.UserProgresses.Add(new UserProgress { UserId = _user.Id, ModuleId = _module.Id });
 
         var (status, body) = await RunThroughMiddleware(async _ => await _unitOfWork.SaveChangesAsync());
 
