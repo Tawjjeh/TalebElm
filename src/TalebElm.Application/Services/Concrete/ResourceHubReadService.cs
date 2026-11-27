@@ -69,7 +69,7 @@ public sealed class ResourceHubReadService(IUnitOfWork unitOfWork) : IResourceHu
     {
         var (items, totalCount) = await unitOfWork.Resources.GetApprovedPagedAsync(
             technologyId,
-            filters.SearchQuery,
+            filters.SearchQuery?.Trim(),
             filters.Language,
             filters.Level is null ? null : (ResourceLevel)filters.Level.Value,
             filters.IsPaid,

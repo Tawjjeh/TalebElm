@@ -207,6 +207,27 @@ public class ResourceHubReadServiceTests : SqliteTestBase
         var resource = Assert.Single(result.Items);
         Assert.Equal("Approved", resource.Title);
         Assert.Equal(1, result.TotalCount);
+
+    }
+
+    [Theory]
+    [InlineData("csharp")]
+    [InlineData("  csharp")]
+    [InlineData("csharp  ")]
+    [InlineData(" csharp ")]
+    public async Task GetResourcesAsync_IgnoresSurroundingWhitespace(string query)
+    {
+        var match = AddResource("csharp");
+        AddResource("SQL basics");
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var filters = new ResourceFilterParameters(query, null, null, null, null);
+        var result = await _sut.GetResourcesAsync(null, filters);
+
+        var resource = Assert.Single(result.Items);
+        Assert.Equal(match.Id, resource.Id);
+        Assert.Equal(1, result.TotalCount);
     }
 
     [Fact]
