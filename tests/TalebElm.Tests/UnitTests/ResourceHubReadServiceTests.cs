@@ -324,4 +324,25 @@ public class ResourceHubReadServiceTests : SqliteTestBase
         await Assert.ThrowsAsync<ValidationException>(
             () => _sut.GetResourcesAsync(null, filters));
     }
+    [Theory]
+    [InlineData(999, null)]
+    [InlineData(-1, null)]
+    [InlineData(null, 999)]
+    [InlineData(null, -1)]
+    public async Task GetResourcesAsync_WhenLevelOrKindIsOutOfRange_ThrowsValidationException(
+        int? level,
+        int? kind)
+    {
+        var filters = new ResourceFilterParameters(null, null, level, null, kind);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.GetResourcesAsync(null, filters));
+    }
+
+    [Fact]
+    public async Task GetResourcesAsync_WhenFiltersAreNull_ThrowsValidationException()
+    {
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.GetResourcesAsync(null, null!));
+    }
 }
