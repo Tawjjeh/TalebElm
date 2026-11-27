@@ -1,6 +1,8 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
+using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Tests.Infrastructure;
 
 namespace TalebElm.Tests.IntegrationTests;
@@ -108,6 +110,104 @@ public class UserExternalAccountUniqueIndexTests : SqliteTestBase
 
         DbContext.UserExternalAccounts.AddRange(account1, account2);
         await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
+    }
+
+    [Fact]
+    public async Task VerifiedHandle_CaseVariantDuplicateOnSamePlatform_ThrowsUniqueViolation()
+    {
+        // Codeforces treats "Tourist" and "tourist" as the same account, so the
+        // NOCASE collation must make the verified-handle index case-insensitive.
+        var user1 = await CreateUserAsync("Learner 17", "learner17@example.com");
+        var user2 = await CreateUserAsync("Learner 18", "learner18@example.com");
+
+        var account1 = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user1.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = "tourist",
+            Status = AccountVerificationStatus.Verified
+        };
+
+        DbContext.UserExternalAccounts.Add(account1);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var account2 = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user2.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = "Tourist",
+            Status = AccountVerificationStatus.Verified
+        };
+
+        DbContext.UserExternalAccounts.Add(account2);
+
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
+
+        var sqliteEx = Assert.IsType<SqliteException>(ex.InnerException);
+        Assert.Equal(2067, sqliteEx.SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public async Task VerifiedHandle_CaseVariantPending_DoesNotBlockVerified()
+    {
+        // Pending claims never block a real owner, even when only the case differs
+        var user1 = await CreateUserAsync("Learner 19", "learner19@example.com");
+        var user2 = await CreateUserAsync("Learner 20", "learner20@example.com");
+
+        var verified = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user1.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = "tourist",
+            Status = AccountVerificationStatus.Verified
+        };
+
+        var pending = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user2.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = "Tourist",
+            Status = AccountVerificationStatus.Pending
+        };
+
+        DbContext.UserExternalAccounts.AddRange(verified, pending);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var count = await DbContext.UserExternalAccounts.CountAsync(x => x.Platform == ExternalPlatform.Codeforces);
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task GetByPlatformAndHandleAsync_CaseVariantInput_FindsStoredHandle()
+    {
+        // The NOCASE column collation flows into Handle comparisons, so lookups
+        // are case-insensitive without a separate query change
+        var user = await CreateUserAsync("Learner 21", "learner21@example.com");
+
+        var account = new UserExternalAccount
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Platform = ExternalPlatform.Codeforces,
+            Handle = "tourist",
+            Status = AccountVerificationStatus.Verified
+        };
+
+        DbContext.UserExternalAccounts.Add(account);
+        await SaveChangesAsync();
+        ClearTracker();
+
+        var repository = new UserExternalAccountRepository(DbContext);
+        var found = await repository.GetByPlatformAndHandleAsync(ExternalPlatform.Codeforces, "TOURIST");
+
+        Assert.NotNull(found);
+        Assert.Equal(account.Id, found!.Id);
     }
 
     [Fact]
