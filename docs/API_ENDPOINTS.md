@@ -19,6 +19,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | POST | `/api/exams/{id}/submit` | Binds `SubmitExamAnswersRequest`, throws domain `NotImplementedException` (`ExamService.SubmitAsync` is implemented; controller wiring tracked in #255). |
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
+| POST | `/api/progress/unlock` | Admin-only manual module unlock (`AdminUnlockModuleRequest`); creates the progress row unlocked if missing, unlocks it in place if locked, no-op if already unlocked. Logs the audit event (admin, learner, module ids only). Returns `200` with `ProgressResponse`, `404` when the learner (as a Student) or module is not found. |
 
 There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
 
@@ -104,7 +105,7 @@ The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `
 |---|---|
 | Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/topics/{id}/resources`, `GET /api/hub/resources` |
 | Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/module-problems/{moduleProblemId}/verify`, `/api/tracks/{trackId}/project*` |
-| Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, and `GET /api/users` |
+| Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, `POST /api/progress/unlock`, and `GET /api/users` |
 
 Student-facing reads should also return a Track's Modules and Lessons only to an enrolled Student once the unlock rule is implemented: a locked Module's Lessons, Exam, and Problems must not be served. When an authenticated Student requests a Lesson, Exam, or Problem set that belongs to a Module the Student has not unlocked, the API must return `403 Forbidden` — not `404` — because the resource exists but the Student is not allowed to access it yet.
 

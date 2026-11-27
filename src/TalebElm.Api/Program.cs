@@ -4,6 +4,7 @@ using Microsoft.OpenApi;
 using TalebElm.Api.Middlewares;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
+using TalebElm.Domain.Enums;
 using TalebElm.Infrastructure;
 using TalebElm.Infrastructure.Persistence;
 
@@ -11,6 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddAuthorization(options =>
+{
+    // No authentication scheme is registered yet; controllers still return 401
+    // themselves when the claim is missing or malformed.
+    options.AddPolicy("StudentOnly", policy => policy.RequireRole(UserRole.Student.ToString()));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole(UserRole.Admin.ToString()));
+});
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
