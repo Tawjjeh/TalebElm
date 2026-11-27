@@ -36,4 +36,27 @@ public class ExamRepository(AppDbContext context) : IExamRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.ModuleId == moduleId, ct);
     }
+
+    public Task RemoveAsync(Exam exam, CancellationToken ct = default)
+    {
+        // DeleteBehavior.Restrict on both FKs, so dependents go first.
+        foreach (var question in exam.Questions)
+            context.Set<ExamOption>().RemoveRange(question.Options);
+
+        context.Set<ExamQuestion>().RemoveRange(exam.Questions);
+        context.Set<Exam>().Remove(exam);
+        return Task.CompletedTask;
+    }
+
+    public async Task AddOptionAsync(ExamQuestion question, ExamOption option, CancellationToken ct = default)
+    {
+        option.ExamQuestionId = question.Id;
+        await context.Set<ExamOption>().AddAsync(option, ct);
+    }
+
+    public Task RemoveOptionAsync(ExamOption option, CancellationToken ct = default)
+    {
+        context.Set<ExamOption>().Remove(option);
+        return Task.CompletedTask;
+    }
 }
