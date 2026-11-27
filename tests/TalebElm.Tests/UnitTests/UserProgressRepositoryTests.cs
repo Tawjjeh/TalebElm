@@ -35,13 +35,16 @@ public class UserProgressRepositoryTests : SqliteTestBase
         var user = new User { Id = Guid.NewGuid(), Name = "User A", Email = "a@test.com", PasswordHash = "hash-a", JoinedAt = DateTime.UtcNow };
         var userBEntity = new User { Id = Guid.NewGuid(), Name = "User B", Email = "b@test.com", PasswordHash = "hash-b", JoinedAt = DateTime.UtcNow };
         await DbContext.Users.AddRangeAsync(user, userBEntity);
+        DbContext.TrackEnrollments.AddRange(
+            new TrackEnrollment { UserId = user.Id, TrackId = track.Id },
+            new TrackEnrollment { UserId = userBEntity.Id, TrackId = track.Id });
         await DbContext.SaveChangesAsync();
 
         var userA = user.Id;
         var userB = userBEntity.Id;
 
-        await _repository.AddAsync(new UserProgress { UserId = userA, ModuleId = module.Id, Score = 100 });
-        await _repository.AddAsync(new UserProgress { UserId = userB, ModuleId = module.Id, Score = 50 });
+        await _repository.AddAsync(new UserProgress { UserId = userA, ModuleId = module.Id, TrackId = track.Id, Score = 100 });
+        await _repository.AddAsync(new UserProgress { UserId = userB, ModuleId = module.Id, TrackId = track.Id, Score = 50 });
         await DbContext.SaveChangesAsync();
 
         var result = await _repository.GetByUserAndTrackAsync(userA, track.Id);
@@ -73,6 +76,7 @@ public class UserProgressRepositoryTests : SqliteTestBase
         };
 
         DbContext.Users.Add(user);
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = user.Id, TrackId = track.Id });
         await SaveChangesAsync();
 
 
@@ -81,9 +85,9 @@ public class UserProgressRepositoryTests : SqliteTestBase
         var m3 = new Module { Id = Guid.NewGuid(), TrackId = track.Id, Order = 3, Title = "M3" };
         await DbContext.Modules.AddRangeAsync(m1, m2, m3);
 
-        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m3.Id });
-        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m1.Id });
-        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m2.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m3.Id, TrackId = track.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m1.Id, TrackId = track.Id });
+        await _repository.AddAsync(new UserProgress { UserId = user.Id, ModuleId = m2.Id, TrackId = track.Id });
         await DbContext.SaveChangesAsync();
 
         var result = await _repository.GetByUserAndTrackAsync(user.Id, track.Id);
@@ -103,11 +107,12 @@ public class UserProgressRepositoryTests : SqliteTestBase
         DbContext.Tracks.Add(track);
         DbContext.Modules.Add(module);
         DbContext.Users.Add(user);
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = user.Id, TrackId = track.Id });
         await DbContext.SaveChangesAsync();
 
 
         var moduleId = module.Id;
-        var progress = new UserProgress { UserId = user.Id, ModuleId = moduleId, Score = 40, PassedExam = false };
+        var progress = new UserProgress { UserId = user.Id, ModuleId = moduleId, TrackId = track.Id, Score = 40, PassedExam = false };
 
         await _repository.AddAsync(progress);
         await DbContext.SaveChangesAsync();

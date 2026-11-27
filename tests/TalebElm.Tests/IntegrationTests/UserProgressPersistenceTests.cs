@@ -16,6 +16,9 @@ public class UserProgressPersistenceTests : SqliteTestBase
         DbContext.Tracks.Add(track);
         DbContext.Modules.Add(module);
         DbContext.Users.AddRange(completedUser, freshUser);
+        DbContext.TrackEnrollments.AddRange(
+            new TrackEnrollment { UserId = completedUser.Id, TrackId = track.Id },
+            new TrackEnrollment { UserId = freshUser.Id, TrackId = track.Id });
         await SaveChangesAsync();
 
         var completedUserId = completedUser.Id;
@@ -26,6 +29,7 @@ public class UserProgressPersistenceTests : SqliteTestBase
             {
                 UserId = completedUserId,
                 ModuleId = moduleId,
+                TrackId = track.Id,
                 IsUnlocked = true,
                 PassedExam = true,
                 CompletedRequiredProblems = true
@@ -33,7 +37,8 @@ public class UserProgressPersistenceTests : SqliteTestBase
             new UserProgress
             {
                 UserId = freshUserId,
-                ModuleId = moduleId
+                ModuleId = moduleId,
+                TrackId = track.Id
             });
         await SaveChangesAsync();
         ClearTracker();

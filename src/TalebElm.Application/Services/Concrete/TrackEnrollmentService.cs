@@ -40,6 +40,7 @@ public class TrackEnrollmentService(IUnitOfWork unitOfWork) : ITrackEnrollmentSe
             Id = Guid.NewGuid(),
             UserId = userId,
             ModuleId = firstModule.Id,
+            TrackId = firstModule.TrackId,
             IsUnlocked = true
         };
 

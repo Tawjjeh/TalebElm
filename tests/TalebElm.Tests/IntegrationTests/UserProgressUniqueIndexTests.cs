@@ -15,14 +15,15 @@ public class UserProgressUniqueIndexTests : SqliteTestBase
         DbContext.Tracks.Add(track);
         DbContext.Modules.Add(module);
         DbContext.Users.Add(user);
+        DbContext.TrackEnrollments.Add(new TrackEnrollment { UserId = user.Id, TrackId = track.Id });
         await SaveChangesAsync();
         ClearTracker();
 
         var userId = user.Id;
         var moduleId = module.Id;
         DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = userId, ModuleId = moduleId },
-            new UserProgress { UserId = userId, ModuleId = moduleId });
+            new UserProgress { UserId = userId, ModuleId = moduleId, TrackId = track.Id },
+            new UserProgress { UserId = userId, ModuleId = moduleId, TrackId = track.Id });
 
         await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
     }
@@ -37,13 +38,16 @@ public class UserProgressUniqueIndexTests : SqliteTestBase
         DbContext.Tracks.Add(track);
         DbContext.Modules.Add(module);
         DbContext.Users.AddRange(user1, user2);
+        DbContext.TrackEnrollments.AddRange(
+            new TrackEnrollment { UserId = user1.Id, TrackId = track.Id },
+            new TrackEnrollment { UserId = user2.Id, TrackId = track.Id });
         await SaveChangesAsync();
         ClearTracker();
 
         var moduleId = module.Id;
         DbContext.UserProgresses.AddRange(
-            new UserProgress { UserId = user1.Id, ModuleId = moduleId },
-            new UserProgress { UserId = user2.Id, ModuleId = moduleId });
+            new UserProgress { UserId = user1.Id, ModuleId = moduleId, TrackId = track.Id },
+            new UserProgress { UserId = user2.Id, ModuleId = moduleId, TrackId = track.Id });
 
         await SaveChangesAsync();
 

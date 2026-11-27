@@ -21,7 +21,14 @@ public class UserProgressConfiguration : IEntityTypeConfiguration<UserProgress>
 
         builder.HasOne(x => x.Module)
             .WithMany()
-            .HasForeignKey(x => x.ModuleId)
+            .HasForeignKey(x => new { x.ModuleId, x.TrackId })
+            .HasPrincipalKey(m => new { m.Id, m.TrackId })
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<TrackEnrollment>()
+            .WithMany()
+            .HasForeignKey(x => new { x.UserId, x.TrackId })
+            .HasPrincipalKey(e => new { e.UserId, e.TrackId })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.ToTable(t =>
