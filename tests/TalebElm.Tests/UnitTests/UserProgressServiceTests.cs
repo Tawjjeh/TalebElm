@@ -2,6 +2,8 @@ using Moq;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
+using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Tests.UnitTests;
@@ -94,4 +96,155 @@ public class UserProgressServiceTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => service.GetByTrackAsync(Guid.NewGuid(), Guid.NewGuid(), cts.Token));
     }
+
+    #region AdminUnlockAsync_Method_Tests
+
+    private readonly Guid _adminId = Guid.NewGuid();
+    private readonly Guid _learnerId = Guid.NewGuid();
+    private readonly Guid _moduleId = Guid.NewGuid();
+
+    private (Mock<IUnitOfWork> UnitOfWork, Mock<IUserRepository> Users, Mock<IModuleRepository> Modules, Mock<IUserProgressRepository> Progresses) ArrangeUnlock(
+        User? learner, Module? module, UserProgress? progress)
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(r => r.GetByIdAsync(_learnerId, It.IsAny<CancellationToken>())).ReturnsAsync(learner);
+        var modules = new Mock<IModuleRepository>();
+        modules.Setup(r => r.GetByIdAsync(_moduleId, It.IsAny<CancellationToken>())).ReturnsAsync(module);
+        var progresses = new Mock<IUserProgressRepository>();
+        progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _moduleId, It.IsAny<CancellationToken>())).ReturnsAsync(progress);
+        var unitOfWork = new Mock<IUnitOfWork>();
+        unitOfWork.Setup(u => u.Users).Returns(users.Object);
+        unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+        unitOfWork.Setup(u => u.UserProgresses).Returns(progresses.Object);
+        return (unitOfWork, users, modules, progresses);
+    }
+
+    private static User StudentLearner(Guid id) => new()
+    {
+        Id = id, Name = "Learner", Email = "learner@test.com", PasswordHash = "hash", Role = UserRole.Student
+    };
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenProgressMissing_CreatesUnlockedRow()
+    {
+        var (unitOfWork, _, _, progresses) = ArrangeUnlock(
+            StudentLearner(_learnerId), new Module { Id = _moduleId }, progress: null);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        var result = await service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId));
+
+        Assert.Equal(_moduleId, result.ModuleId);
+        Assert.True(result.IsUnlocked);
+        Assert.False(result.PassedExam);
+        Assert.Equal(0, result.Score);
+        progresses.Verify(r => r.AddAsync(
+            It.Is<UserProgress>(p => p.UserId == _learnerId && p.ModuleId == _moduleId
+                && p.IsUnlocked && !p.PassedExam && p.Score == 0 && !p.CompletedRequiredProblems),
+            It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenLocked_UnlocksLeavingScoreAndFlagsUntouched()
+    {
+        var existing = new UserProgress
+        {
+            UserId = _learnerId, ModuleId = _moduleId,
+            IsUnlocked = false, PassedExam = true, Score = 85, CompletedRequiredProblems = true
+        };
+        var (unitOfWork, _, _, progresses) = ArrangeUnlock(
+            StudentLearner(_learnerId), new Module { Id = _moduleId }, existing);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        var result = await service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId));
+
+        Assert.True(existing.IsUnlocked);
+        Assert.Equal(85, existing.Score);
+        Assert.True(existing.PassedExam);
+        Assert.True(existing.CompletedRequiredProblems);
+        Assert.Equal(85, result.Score);
+        progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenAlreadyUnlocked_IsIdempotentNoOp()
+    {
+        var existing = new UserProgress
+        {
+            UserId = _learnerId, ModuleId = _moduleId,
+            IsUnlocked = true, PassedExam = false, Score = 40, CompletedRequiredProblems = false
+        };
+        var (unitOfWork, _, _, progresses) = ArrangeUnlock(
+            StudentLearner(_learnerId), new Module { Id = _moduleId }, existing);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        var result = await service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId));
+
+        Assert.True(result.IsUnlocked);
+        Assert.Equal(40, result.Score);
+        Assert.False(result.PassedExam);
+        progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenLearnerMissing_ThrowsNotFoundException()
+    {
+        var (unitOfWork, _, _, _) = ArrangeUnlock(
+            learner: null, new Module { Id = _moduleId }, progress: null);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId)));
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenLearnerIsNotStudent_ThrowsNotFoundException()
+    {
+        var admin = new User
+        {
+            Id = _learnerId, Name = "Admin", Email = "admin@test.com", PasswordHash = "hash", Role = UserRole.Admin
+        };
+        var (unitOfWork, _, _, _) = ArrangeUnlock(
+            admin, new Module { Id = _moduleId }, progress: null);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId)));
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_WhenModuleMissing_ThrowsNotFoundException()
+    {
+        var (unitOfWork, _, _, _) = ArrangeUnlock(
+            StudentLearner(_learnerId), module: null, progress: null);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId)));
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminUnlockAsync_ForwardsCancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        var (unitOfWork, users, modules, progresses) = ArrangeUnlock(
+            StudentLearner(_learnerId), new Module { Id = _moduleId }, progress: null);
+        users.Setup(r => r.GetByIdAsync(_learnerId, cts.Token)).ReturnsAsync(StudentLearner(_learnerId));
+        modules.Setup(r => r.GetByIdAsync(_moduleId, cts.Token)).ReturnsAsync(new Module { Id = _moduleId });
+        progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _moduleId, cts.Token)).ReturnsAsync((UserProgress?)null);
+        var service = new UserProgressService(unitOfWork.Object);
+
+        var result = await service.AdminUnlockAsync(_adminId, new AdminUnlockModuleRequest(_learnerId, _moduleId), cts.Token);
+
+        Assert.True(result.IsUnlocked);
+        users.Verify(r => r.GetByIdAsync(_learnerId, cts.Token), Times.Once);
+        modules.Verify(r => r.GetByIdAsync(_moduleId, cts.Token), Times.Once);
+        progresses.Verify(r => r.GetByUserAndModuleAsync(_learnerId, _moduleId, cts.Token), Times.Once);
+    }
+    #endregion
 }
