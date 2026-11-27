@@ -7,4 +7,5 @@ public interface IUserExternalAccountRepository : IRepository<UserExternalAccoun
 {
     Task<UserExternalAccount?> GetByUserAndPlatformAsync(Guid userId, ExternalPlatform platform, CancellationToken ct = default);
     Task<UserExternalAccount?> GetByPlatformAndHandleAsync(ExternalPlatform platform, string handle, CancellationToken ct = default);
+    Task<UserExternalAccount?> GetVerifiedByPlatformAndHandleAsync(ExternalPlatform platform, string handle, CancellationToken ct = default);
 }

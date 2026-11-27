@@ -1,6 +1,6 @@
 # Feature Specification: Module Practice Problems & External Verification
 
-> **Status discipline:** The `ModuleProblem`, `UserExternalAccount`, and `UserProblemCompletion` entities, their EF Core configurations/migrations, and `IUserExternalAccountRepository` are **Implemented**, and the `ICodeforcesClient` contract exists without an implementation. Verification services, `UserProblemCompletion` writes, and endpoints remain **Target** (Phase 3).
+> **Status discipline:** The `ModuleProblem`, `UserExternalAccount`, and `UserProblemCompletion` entities, their EF Core configurations/migrations, `IUserExternalAccountRepository`, `ICodeforcesChallengeService` (challenge generation only), and `ExternalAccountResponse` are **Implemented**; the `ICodeforcesClient` contract exists without an implementation. Handle verification, solve verification, `UserProblemCompletion` writes, and endpoints remain **Target** (Phase 3).
 > Adheres strictly to the **Zero Manual Gating** principle: all verification is executed automatically by the server.
 > External API rules are marked **"Verify against official docs (codeforces.com/apiHelp)"**.
 
@@ -133,7 +133,7 @@ sequenceDiagram
 
 ## 4. Application Contracts
 
-### 4.1 DTOs (Target)
+### 4.1 DTOs (`ExternalAccountResponse` Implemented; others Target)
 
 ```csharp
 public record LinkCodeforcesAccountRequest(
