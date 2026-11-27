@@ -193,6 +193,13 @@ public class ResourceHubReadServiceTests : SqliteTestBase
     }
 
     [Fact]
+    public async Task GetTechnologyBySlugPathAsync_WhenPathContainsBlankSegment_ThrowsValidationException()
+    {
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.GetTechnologyBySlugPathAsync(["csharp", "   "], EmptyFilters));
+    }
+
+    [Fact]
     public async Task GetResourcesAsync_ReturnsOnlyApprovedResources()
     {
         AddResource("Approved");
