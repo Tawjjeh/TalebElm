@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Interfaces;
+using TalebElm.Infrastructure.Authentication;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Infrastructure.Repositories;
