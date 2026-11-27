@@ -43,8 +43,11 @@ public class ResourceRepository(AppDbContext context) : IResourceRepository
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(r => r.Title.Contains(searchQuery));
 
-        if (language is not null)
-            query = query.Where(r => r.Language == language);
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            var trimmedLanguage = language.Trim();
+            query = query.Where(r => r.Language == trimmedLanguage);
+        }
 
         if (level is not null)
             query = query.Where(r => r.Level == level);
