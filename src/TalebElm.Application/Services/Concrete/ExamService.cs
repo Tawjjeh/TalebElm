@@ -1,17 +1,54 @@
+using FluentValidation;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
-using NotImplementedException = TalebElm.Domain.Exceptions.NotImplementedException;
+using ValidationException = TalebElm.Domain.Exceptions.ValidationException;
 
 namespace TalebElm.Application.Services.Concrete;
 
-public class ExamService(IUnitOfWork unitOfWork) : IExamService
+public class ExamService(IUnitOfWork unitOfWork, IValidator<CreateExamRequest> validator) : IExamService
 {
-    public Task<ExamResponse> CreateAsync(CreateExamRequest request, CancellationToken ct = default)
+    public async Task<ExamResponse> CreateAsync(CreateExamRequest request, CancellationToken ct = default)
     {
-        throw new NotImplementedException("Creating an exam is not implemented yet.");
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+            throw new FluentValidation.ValidationException(validationResult.Errors);
+
+        var module = await unitOfWork.Modules.GetByIdAsync(request.ModuleId, ct)
+            ?? throw new NotFoundException($"Module with id '{request.ModuleId}' was not found.");
+
+        var existing = await unitOfWork.Exams.GetByModuleIdAsync(request.ModuleId, ct);
+        if (existing is not null)
+            throw new ConflictException($"Module '{request.ModuleId}' already has an exam.");
+
+        if (request.Questions is null)
+            throw new ValidationException("Questions are required.");
+
+        var exam = new Exam
+        {
+            Title = request.Title,
+            PassThreshold = request.PassThreshold,
+            ModuleId = request.ModuleId,
+            Questions = request.Questions.Select(question => new ExamQuestion
+            {
+                Prompt = question.Prompt,
+                Order = question.Order,
+                Points = question.Points,
+                Options = question.Options.Select(option => new ExamOption
+                {
+                    Text = option.Text,
+                    IsCorrect = option.IsCorrect
+                }).ToList()
+            }).ToList()
+        };
+
+        await unitOfWork.Exams.AddAsync(exam, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        // Learner-safe: ExamResponse carries no questions and no IsCorrect.
+        return new ExamResponse(exam.Id, exam.Title, exam.PassThreshold, exam.ModuleId);
     }
 
     public async Task<ExamResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
