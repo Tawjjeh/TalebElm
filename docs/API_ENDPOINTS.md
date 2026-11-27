@@ -11,6 +11,8 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
 | GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
+| GET | `/api/tracks/{trackId}` | Returns a published track with ordered modules (`TrackDetailResponse`); missing or unpublished tracks return `404`. Requires the `StudentOnly` policy. |
+| POST | `/api/tracks/{trackId}/enrollment` | Enrolls the authenticated student (`StudentOnly` policy); returns `201` with `EnrollmentResponse` (`404` for a missing track, `409` for a duplicate enrollment). |
 | POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
@@ -20,7 +22,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
+There is no registration endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication is not configured in `Program.cs`; only the `StudentOnly` authorization policy is registered, and controllers read the student id from the authenticated claims.
 
 ### OpenAPI in development
 

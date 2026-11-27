@@ -10,5 +10,6 @@ namespace TalebElm.Application.Services.Abstraction
             int page = 1,
             int pageSize = 20,
             CancellationToken cancellationToken = default);
+        Task<TrackDetailResponse> GetByIdAsync(Guid trackId, CancellationToken cancellationToken = default);
     }
 }

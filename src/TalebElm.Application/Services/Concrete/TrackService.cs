@@ -71,4 +71,29 @@ public class TrackService(
 
         return new PagedTracksResponse(items, page, pageSize, totalCount);
     }
+
+    public async Task<TrackDetailResponse> GetByIdAsync(Guid trackId, CancellationToken cancellationToken = default)
+    {
+        var track = await unitOfWork.Tracks.GetByIdAsync(trackId, cancellationToken);
+
+        if (track is null || track.Status != TrackStatus.Published)
+            throw new TalebElm.Domain.Exceptions.NotFoundException($"Track with id '{trackId}' was not found.");
+
+        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId, cancellationToken);
+
+        return new TrackDetailResponse(
+            track.Id,
+            track.Name,
+            track.Description,
+            (int)track.Status,
+            modules
+                .OrderBy(module => module.Order)
+                .Select(module => new ModuleResponse(
+                    module.Id,
+                    module.Title,
+                    module.Summary,
+                    module.Order,
+                    module.TrackId))
+                .ToList());
+    }
 }
