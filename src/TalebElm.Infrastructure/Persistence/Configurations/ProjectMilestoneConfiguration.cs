@@ -41,12 +41,14 @@ public class ProjectMilestoneConfiguration : IEntityTypeConfiguration<ProjectMil
 
         builder.HasOne(m => m.Project)
             .WithMany(p => p.Milestones)
-            .HasForeignKey(m => m.ProjectId)
+            .HasForeignKey(m => new { m.ProjectId, m.TrackId })
+            .HasPrincipalKey(p => new { p.Id, p.TrackId })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(m => m.Module)
             .WithMany()
-            .HasForeignKey(m => m.ModuleId)
+            .HasForeignKey(m => new { m.ModuleId, m.TrackId })
+            .HasPrincipalKey(m => new { m.Id, m.TrackId })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

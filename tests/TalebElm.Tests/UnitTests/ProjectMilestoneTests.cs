@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using TalebElm.Domain.Entities;
 
 namespace TalebElm.Tests.UnitTests;
@@ -8,9 +7,11 @@ public class ProjectMilestoneTests
     [Fact]
     public void Constructor_SetsDefaults()
     {
-        var milestone = new ProjectMilestone();
+        var project = new CapstoneProject { TrackId = Guid.NewGuid() };
+        var milestone = new ProjectMilestone(project);
 
-        Assert.Equal(Guid.Empty, milestone.ProjectId);
+        Assert.Equal(project.Id, milestone.ProjectId);
+        Assert.Equal(project.TrackId, milestone.TrackId);
         Assert.Null(milestone.ModuleId);
         Assert.Equal(string.Empty, milestone.Title);
         Assert.Equal(string.Empty, milestone.Instructions);
@@ -21,12 +22,11 @@ public class ProjectMilestoneTests
     [Fact]
     public void Properties_CanBeAssigned()
     {
-        var projectId = Guid.NewGuid();
+        var project = new CapstoneProject { TrackId = Guid.NewGuid() };
         var moduleId = Guid.NewGuid();
 
-        var milestone = new ProjectMilestone
+        var milestone = new ProjectMilestone(project)
         {
-            ProjectId = projectId,
             ModuleId = moduleId,
             Title = "Milestone 1: Domain Model",
             Instructions = "Step-by-step guidance",
@@ -34,7 +34,6 @@ public class ProjectMilestoneTests
             WorkflowJobName = "test-milestone-1"
         };
 
-        Assert.Equal(projectId, milestone.ProjectId);
         Assert.Equal(moduleId, milestone.ModuleId);
         Assert.Equal("Milestone 1: Domain Model", milestone.Title);
         Assert.Equal("Step-by-step guidance", milestone.Instructions);

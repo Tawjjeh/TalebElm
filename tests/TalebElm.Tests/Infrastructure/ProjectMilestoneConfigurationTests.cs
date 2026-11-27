@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TalebElm.Domain.Entities;
 using TalebElm.Tests.Infrastructure;
@@ -30,9 +31,8 @@ public class ProjectMilestoneConfigurationTests : SqliteTestBase
         ClearTracker();
     }
 
-    private ProjectMilestone NewMilestone(int order, string workflowJobName) => new()
+    private ProjectMilestone NewMilestone(int order, string workflowJobName) => new(_project)
     {
-        ProjectId = _project.Id,
         Title = $"Milestone {order}",
         Instructions = "Build it.",
         Order = order,
@@ -63,6 +63,39 @@ public class ProjectMilestoneConfigurationTests : SqliteTestBase
         await Assert.ThrowsAsync<DbUpdateException>(() => DbContext.SaveChangesAsync());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OptionalModuleMustBelongToSameTrack(bool sameTrack)
+    {
+        var otherTrack = new Track { Name = "Frontend", Description = "Frontend track" };
+        DbContext.Tracks.Add(otherTrack);
+        var module = new Module { Title = "Module", TrackId = sameTrack ? _project.TrackId : otherTrack.Id, Order = 1 };
+        var milestone = NewMilestone(1, "build");
+        milestone.ModuleId = module.Id;
+        DbContext.AddRange(module, milestone);
+
+        if (!sameTrack)
+        {
+            var failure = await Assert.ThrowsAsync<DbUpdateException>(SaveChangesAsync);
+            Assert.Equal(787, Assert.IsType<SqliteException>(failure.InnerException).SqliteExtendedErrorCode);
+            return;
+        }
+
+        await SaveChangesAsync();
+        await using var saved = CreateContext();
+        Assert.Equal(module.Id, (await saved.ProjectMilestones.SingleAsync()).ModuleId);
+        foreach (var deletion in new[]
+        {
+            (FormattableString)$"DELETE FROM Modules WHERE Id = {module.Id}",
+            (FormattableString)$"DELETE FROM CapstoneProjects WHERE Id = {_project.Id}"
+        })
+        {
+            var failure = await Assert.ThrowsAsync<SqliteException>(() => saved.Database.ExecuteSqlInterpolatedAsync(deletion));
+            Assert.Equal(19, failure.SqliteErrorCode);
+        }
+    }
+
     [Fact]
     public async Task SameWorkflowJobNameInAnotherProject_IsAllowed()
     {
@@ -74,6 +107,7 @@ public class ProjectMilestoneConfigurationTests : SqliteTestBase
         var otherProject = new CapstoneProject
         {
             Track = otherTrack,
+            TrackId = otherTrack.Id,
             Title = "Frontend capstone",
             Description = "One cumulative project across the track",
             Task = new GitHubTask { TemplateRepository = "tawjjeh/frontend-template" }
@@ -81,9 +115,8 @@ public class ProjectMilestoneConfigurationTests : SqliteTestBase
 
         DbContext.Tracks.Add(otherTrack);
         DbContext.CapstoneProjects.Add(otherProject);
-        DbContext.ProjectMilestones.Add(new ProjectMilestone
+        DbContext.ProjectMilestones.Add(new ProjectMilestone(otherProject)
         {
-            ProjectId = otherProject.Id,
             Title = "Milestone 1",
             Instructions = "Build it.",
             Order = 1,

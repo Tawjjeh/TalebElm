@@ -33,6 +33,15 @@ public class CapstoneConfigurationTests
         Assert.Equal(100, milestone.FindProperty(nameof(ProjectMilestone.WorkflowJobName))!.GetMaxLength());
         Assert.False(milestone.FindProperty(nameof(ProjectMilestone.WorkflowJobName))!.IsNullable);
         AssertRestrictForeignKeys(milestone);
+        var projectKey = Assert.Single(milestone.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(CapstoneProject));
+        var moduleKey = Assert.Single(milestone.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(Module));
+        Assert.Equal([nameof(ProjectMilestone.ProjectId), nameof(ProjectMilestone.TrackId)], projectKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(CapstoneProject.Id), nameof(CapstoneProject.TrackId)], projectKey.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(ProjectMilestone.ModuleId), nameof(ProjectMilestone.TrackId)], moduleKey.Properties.Select(p => p.Name));
+        Assert.Equal([nameof(Module.Id), nameof(Module.TrackId)], moduleKey.PrincipalKey.Properties.Select(p => p.Name));
+        Assert.True(projectKey.IsRequired);
+        Assert.False(moduleKey.IsRequired);
+        Assert.All(milestone.GetForeignKeys().SelectMany(fk => fk.Properties), p => Assert.False(p.IsShadowProperty()));
         AssertUnique(milestone, nameof(ProjectMilestone.ProjectId), nameof(ProjectMilestone.Order));
         AssertUnique(milestone, nameof(ProjectMilestone.ProjectId), nameof(ProjectMilestone.WorkflowJobName));
     }
