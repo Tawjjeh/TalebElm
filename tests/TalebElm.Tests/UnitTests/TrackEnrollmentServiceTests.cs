@@ -2,6 +2,7 @@ using Moq;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
@@ -9,7 +10,7 @@ namespace TalebElm.Tests.UnitTests;
 
 public class TrackEnrollmentServiceTests
 {
-    private static Track Track(Guid trackId) => new() { Id = trackId, Name = "T", Description = "d" };
+    private static Track Track(Guid trackId, TrackStatus status = TrackStatus.Published) => new() { Id = trackId, Name = "T", Description = "d", Status = status };
 
     [Fact]
     public async Task EnrollAsync_FirstModuleOnly()
@@ -69,7 +70,37 @@ public class TrackEnrollmentServiceTests
         await Assert.ThrowsAsync<ConflictException>(() => service.EnrollAsync(userId, trackId));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(TrackStatus.Draft)]
+    [InlineData(TrackStatus.Archived)]
+    public async Task EnrollAsync_UnpublishedTrack_ThrowsValidation(TrackStatus status)
+    {
+        var userId = Guid.NewGuid();
+        var trackId = Guid.NewGuid();
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var users = new Mock<IUserRepository>();
+        var tracks = new Mock<ITrackRepository>();
+        var enrollments = new Mock<ITrackEnrollmentRepository>();
+        var userProgress = new Mock<IUserProgressRepository>();
+
+        users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
+        tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId, status));
+
+        unitOfWork.Setup(u => u.Users).Returns(users.Object);
+        unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        unitOfWork.Setup(u => u.TrackEnrollments).Returns(enrollments.Object);
+        unitOfWork.Setup(u => u.UserProgresses).Returns(userProgress.Object);
+
+        var service = new TrackEnrollmentService(unitOfWork.Object);
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.EnrollAsync(userId, trackId));
+
+        enrollments.Verify(r => r.AddAsync(It.IsAny<TrackEnrollment>(), It.IsAny<CancellationToken>()), Times.Never);
+        userProgress.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+}
+
+[Fact]
     public async Task EnrollAsync_EmptyTrack_ThrowsValidation()
     {
         var userId = Guid.NewGuid();
