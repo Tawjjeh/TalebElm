@@ -58,11 +58,14 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
+//. Implementing the policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("StudentOnly", policy =>
     {
-        policy.RequireRole(UserRole.Student.ToString());
+        policy.RequireRole(
+            UserRole.Student.ToString(),
+            UserRole.Admin.ToString());
     });
 });
 
@@ -83,6 +86,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

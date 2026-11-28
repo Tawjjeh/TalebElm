@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ public class TracksController(
     ITrackService trackService,
     ITrackEnrollmentService trackEnrollmentService) : ControllerBase
 {
+
     /// <summary>
     /// Retrieves a page of available tracks.
     /// </summary>
@@ -95,4 +97,5 @@ public class TracksController(
     public IActionResult Post([FromBody] CreateTrackRequest request)
         => throw new NotImplementedException(
             "Creating a track via this endpoint is not implemented yet.");
+
 }

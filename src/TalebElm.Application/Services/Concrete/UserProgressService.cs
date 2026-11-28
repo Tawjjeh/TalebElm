@@ -1,5 +1,6 @@
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
+using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
 namespace TalebElm.Application.Services.Concrete;
@@ -25,6 +26,10 @@ public class UserProgressService : IUserProgressService
 
     public async Task<IReadOnlyList<ProgressResponse>> GetByTrackAsync(Guid userId, Guid trackId, CancellationToken ct = default)
     {
+        var isTrackExist = await _unitOfWork.Tracks.GetByIdAsync(trackId, ct);
+        if (isTrackExist is null)
+            throw new NotFoundException("Track not found. "); 
+
         var progress = await _unitOfWork.UserProgresses.GetByUserAndTrackAsync(userId, trackId, ct);
         return progress
             .Select(p => new ProgressResponse(p.ModuleId, p.IsUnlocked, p.PassedExam, p.Score))
