@@ -36,6 +36,26 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WhenUnauthorizedExceptionThrown_MapsTo401Problem()
+    {
+        var (statusCode, contentType, body) = await InvokeAsync(new UnauthorizedException("Login required."));
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, statusCode);
+        Assert.Equal("application/problem+json", contentType);
+        Assert.Contains("\"status\":401", body);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenForbiddenExceptionThrown_MapsTo403Problem()
+    {
+        var (statusCode, contentType, body) = await InvokeAsync(new ForbiddenExcpetion("Module is locked."));
+
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCode);
+        Assert.Equal("application/problem+json", contentType);
+        Assert.Contains("\"status\":403", body);
+    }
+
+    [Fact]
     public async Task InvokeAsync_WhenConflictExceptionThrown_MapsTo409Problem()
     {
         var (statusCode, contentType, body) = await InvokeAsync(new ConflictException("Duplicate record."));

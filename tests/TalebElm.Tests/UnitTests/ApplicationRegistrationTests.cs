@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using TalebElm.Api.Services;
 using TalebElm.Application;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Interfaces;
@@ -30,6 +31,7 @@ public class ApplicationRegistrationTests
         var services = new ServiceCollection();
         services.AddApplication();
         services.AddScoped<IUnitOfWork>(_ => new Mock<IUnitOfWork>().Object);
+        services.AddScoped<ICurrentUserService>(_ => new Mock<ICurrentUserService>().Object);
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();

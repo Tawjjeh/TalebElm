@@ -129,6 +129,8 @@ public class ExceptionHandlingMiddleware
         => exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
+            UnauthorizedException => (HttpStatusCode.Unauthorized, "Authentication is required."),
+            ForbiddenExcpetion => (HttpStatusCode.Forbidden, "You are not allowed to access this resource."),
             TalebElm.Domain.Exceptions.ValidationException => (HttpStatusCode.BadRequest, "A business rule was violated."),
             ConflictException => (HttpStatusCode.Conflict, "A conflicting state or duplicate resource was detected."),
             ExternalServiceUnavailableException => (HttpStatusCode.ServiceUnavailable, "An external service is temporarily unavailable."),

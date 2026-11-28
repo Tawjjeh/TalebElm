@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TalebElm.Api.Services;
 using TalebElm.Application;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
@@ -24,6 +25,7 @@ public class DependencyResolutionTests
         services.AddLogging();
         services.AddInfrastructure(configuration);
         services.AddApplication();
+        services.AddScoped<ICurrentUserService>(_ => new Moq.Mock<ICurrentUserService>().Object);
 
         return services.BuildServiceProvider();
     }

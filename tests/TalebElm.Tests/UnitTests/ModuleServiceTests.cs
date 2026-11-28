@@ -1,6 +1,7 @@
 using Moq;
 using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
@@ -40,7 +41,8 @@ public class ModuleServiceTests
             .ReturnsAsync(new Track
             {
                 Id = trackId,
-                Name = "Backend"
+                Name = "Backend",
+                Status = TrackStatus.Published
             });
 
         var moduleRepository = new Mock<IModuleRepository>();
@@ -158,7 +160,8 @@ public class ModuleServiceTests
             .ReturnsAsync(new Track
             {
                 Id = trackId,
-                Name = "Backend"
+                Name = "Backend",
+                Status = TrackStatus.Published
             });
 
         var moduleRepository = new Mock<IModuleRepository>();
