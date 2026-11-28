@@ -1,6 +1,7 @@
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
@@ -17,6 +18,9 @@ public class TrackEnrollmentService(IUnitOfWork unitOfWork) : ITrackEnrollmentSe
         var track = await unitOfWork.Tracks.GetByIdAsync(trackId, ct);
         if (track is null)
             throw new NotFoundException($"Track with id '{trackId}' was not found.");
+
+        if (track.Status != TrackStatus.Published)
+            throw new ValidationException("Only published tracks can be enrolled in.");
 
         if (await unitOfWork.TrackEnrollments.ExistsAsync(userId, trackId, ct))
             throw new ConflictException("The user has already enrolled in this track.");
