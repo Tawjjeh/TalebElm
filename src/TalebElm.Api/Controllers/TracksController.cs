@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
-﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
