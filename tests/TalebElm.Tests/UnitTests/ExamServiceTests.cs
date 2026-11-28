@@ -4,6 +4,7 @@ using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
+using TalebElm.Infrastructure.Repositories;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -86,6 +87,23 @@ public class ExamServiceTests
         var ex = await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(id));
 
         Assert.Contains(id.ToString(), ex.Message);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var examId = Guid.NewGuid();
+        var exam = new Exam { Id = examId, Title = "Midterm", PassThreshold = 70, ModuleId = Guid.NewGuid() };
+
+        _exams
+            .Setup(r => r.GetByIdAsync(examId, cts.Token))
+            .ReturnsAsync(exam);
+
+        var result = await _sut.GetByIdAsync(examId, cts.Token);
+
+        Assert.Equal(examId, result.Id);
+        _exams.Verify(r => r.GetByIdAsync(examId, cts.Token), Times.Once);
     }
 
     #region SubmtiAsync_Method_Tests
@@ -362,6 +380,90 @@ public class ExamServiceTests
         _exams.Verify(r => r.GetWithQuestionsAsync(_exam.Id, cts.Token), Times.Once);
         _modules.Verify(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, cts.Token), Times.Once);
         _unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task Submit_FailWithRequiredProblemsDone_CreatesNoNextProgressRow()
+    {
+        ArrangeRequiredProblemsDone();
+        ArrangeNextModule(existingRow: null);
+
+        var result = await Submit(Answers(false, false, false));
+
+        Assert.False(result.Passed);
+        _progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once); // score still saved
+    }
+
+    [Fact]
+    public async Task Submit_FailThenPassRetry_UnlocksNextModule()
+    {
+        ArrangeRequiredProblemsDone();
+        var rows = new List<UserProgress>(); // fake table: starts empty, AddAsync fills it
+        _modules.Setup(r => r.GetNextModuleAsync(_module.TrackId, _module.Order, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_nextModule);
+        _progresses.Setup(r => r.GetByUserAndModuleAsync(_learnerId, _nextModule.Id, It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(() => rows.FirstOrDefault());
+        _progresses.Setup(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()))
+                   .Callback<UserProgress, CancellationToken>((p, _) => rows.Add(p));
+
+        var failed = await Submit(Answers(false, false, false));
+
+        Assert.False(failed.Passed);
+        Assert.Empty(rows);                 // nothing created or unlocked by the failure
+
+        var passed = await Submit(Answers(true, true, true));
+
+        Assert.True(passed.Passed);
+        var row = Assert.Single(rows);      // the retry creates exactly one unlocked row
+        Assert.True(row.IsUnlocked);
+        Assert.True(_progress.PassedExam);
+    }
+
+    [Fact]
+    public async Task Submit_FailByOneLearner_DoesNotTouchOtherLearners()
+    {
+        ArrangeRequiredProblemsDone();
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+        var other = NewLockedRow(Guid.NewGuid());
+
+        await Submit(Answers(false, false, false));
+
+        Assert.False(next.IsUnlocked);
+        Assert.False(other.IsUnlocked);
+        _progresses.Verify(r => r.GetByUserAndModuleAsync(
+            It.Is<Guid>(id => id != _learnerId), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // The reviewer's retake gap. Learner already passed, then fails a retake.
+    [Fact]
+    public async Task Submit_FailRetryAfterPass_KeepsPassAndCreatesNoNextRow()
+    {
+        _progress.PassedExam = true;
+        ArrangeRequiredProblemsDone();
+        ArrangeNextModule(existingRow: null);
+
+        var result = await Submit(Answers(false, false, false));
+
+        Assert.False(result.Passed);
+        Assert.Equal(0, _progress.Score);
+        Assert.True(_progress.PassedExam);   // sticky pass, Decision 4
+        _progresses.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Submit_FailRetryAfterPass_KeepsLockedNextModuleLocked()
+    {
+        _progress.PassedExam = true;
+        ArrangeRequiredProblemsDone();
+        var next = NewLockedRow(_learnerId);
+        ArrangeNextModule(next);
+
+        await Submit(Answers(false, false, false));
+
+        Assert.False(next.IsUnlocked);
     }
     #endregion
 

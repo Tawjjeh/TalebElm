@@ -1,65 +1,139 @@
 # Contributing to TalebElm
 
-We are glad you want to contribute to طالب علم (TalebElm). Every accepted change helps build a clear, open path for anyone learning software engineering.
+Welcome to TalebElm (طالب علم). We build an open learning platform for software engineers with clear architecture, server-graded exams, and automated verification. Every accepted pull request helps keep that path reliable and accessible for everyone.
 
-## Your first contribution
+This guide walks you through finding work, setting up your environment, making your change, and getting it merged. We want contributing to feel clear, friendly, and respectful of your time.
 
-Follow these five steps to find an issue, set up your branch, and submit your change:
+## Finding work
 
-1. **Fork the repository:** Fork TalebElm to your personal GitHub account:
-   ```bash
-   gh repo fork Tawjjeh/TalebElm --clone=false
-   ```
-2. **Clone your fork:** Clone your fork locally and configure the upstream remote:
+We organize work into six milestones (M0 through M5). On the project board, ready work is in
+the **Todo** status: accepted, with a milestone, and without an open pull request. If the
+board is not available in your browser, the same issues have a milestone, no assignee, and
+no open pull request:
+
+```text
+is:issue is:open no:assignee -linked:pr -no:milestone NOT "[Tracking]" in:title
+```
+
+Browse ready issues with that query on GitHub:
+https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+-linked%3Apr+-no%3Amilestone+NOT+%22%5BTracking%5D%22+in%3Atitle
+
+If you are new to the project, start with `good first issue`:
+https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee+-linked%3Apr
+
+These are small, isolated tasks such as adding missing unit tests or fixing documentation discrepancies. [`docs/development/workflow.md`](docs/development/workflow.md) explains the statuses and the full path from claim to merge.
+
+## Claiming an issue
+
+We use a claim-by-comment workflow:
+
+1. Leave a short comment on the issue describing what you plan to change and which files you will touch.
+2. Start working right away. You do not need to wait for anyone to assign the issue to you.
+3. Open a pull request within 7 days. If you need more time or run into questions, leave an update on the issue thread.
+4. If an assigned issue stays idle for more than 14 days without an open pull request or branch, we clear the assignment so someone else can pick it up.
+
+To keep things fair and manageable, claim at most two issues at a time. The first pull request that meets the architectural rules and passes all checks wins; if two arrive for the same issue, the earlier one is reviewed first.
+
+## Local setup
+
+You will need Git, Python 3, and the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+
+1. Fork the repository and clone your fork:
    ```bash
    git clone https://github.com/<your-username>/TalebElm.git
    cd TalebElm
    git remote add upstream https://github.com/Tawjjeh/TalebElm.git
    ```
-3. **Build and test:** Confirm the solution builds and all existing tests pass:
+
+2. Verify that everything builds and tests pass cleanly on main before making any edits:
    ```bash
    dotnet build TalebElm.slnx
-   dotnet test TalebElm.slnx
+   DOTNET_ROLL_FORWARD=Major dotnet test TalebElm.slnx
    python3 scripts/check-docs.py
    ```
-4. **Pick an issue:** Pick an issue with the `help wanted` label that nobody has taken (or start with [`good first issue`](https://github.com/Tawjjeh/TalebElm/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+no%3Aassignee)), comment that you want it, and start once it is assigned to you.
-5. **Create a branch:** Fetch latest changes and create a branch from `upstream/main`:
+
+   These commands work identically on Linux, macOS, and Windows.
+
+## Branching and vertical slices
+
+Always branch from fresh `upstream/main`:
+
+```bash
+git fetch upstream
+git switch -c feat/my-topic upstream/main
+```
+
+Use descriptive branch prefixes based on what you are changing:
+- `feat/<topic>` for new capabilities or endpoints
+- `fix/<topic>` for bug fixes
+- `docs/<topic>` for documentation changes
+- `test/<topic>` for test additions or test harness improvements
+- `refactor/<topic>` for refactoring approved by an open decision
+
+Keep each pull request to one vertical slice. Aim for roughly 200 lines of changes including tests. Touch only the files needed for that slice; avoid unrelated formatting or drive-by cleanups.
+
+## Architecture and code boundaries
+
+TalebElm follows Clean Architecture with strict inward dependency rules:
+- **Domain (`src/TalebElm.Domain`)**: Entities, enums, exceptions, repository interfaces, `IUnitOfWork`. Depends on nothing.
+- **Application (`src/TalebElm.Application`)**: Service abstractions and concrete services, DTOs, FluentValidation validators, client interfaces. Never takes a direct `DbContext`; it uses `IUnitOfWork`.
+- **Infrastructure (`src/TalebElm.Infrastructure`)**: EF Core `AppDbContext`, entity configurations, migrations, repository implementations, typed HTTP clients. Holds persistence only, no business logic.
+- **Api (`src/TalebElm.Api`)**: Controllers, middleware, dependency injection composition roots in `Program.cs`.
+- **Tests (`tests/TalebElm.Tests`)**: Unit tests and SQLite integration tests.
+
+Every new asynchronous method across services and repositories must accept `CancellationToken ct = default` as its last parameter and forward it throughout.
+
+## Tests and documentation
+
+Every behavioral change requires tests that prove it. The test should fail before your change and pass after it. Unit tests live alongside existing suites; integration tests use SQLite in-memory or throwaway instances.
+
+When you change an API contract, add a route, or alter business behavior, update the corresponding documentation under `docs/` in the same pull request. Keep existing progress markers (`Implemented`, `Target`, `Proposed`) accurate.
+
+Run `python3 scripts/check-docs.py` before pushing. It checks that all markdown links, anchors, and references resolve cleanly.
+
+## Commit style
+
+We use Conventional Commits in the imperative mood:
+- `feat: add Track publish endpoint`
+- `fix: prevent duplicate enrollment on published track`
+- `docs: document unlock dual gate rules`
+- `test: verify exam retake score preservation`
+- `refactor: consolidate service registrations in Application`
+
+Keep commit messages plain and descriptive. Do not include generated-by footers, co-author lines, or filler.
+
+## Opening a pull request
+
+When your branch is ready:
+1. Push your branch to your GitHub fork:
    ```bash
-   git fetch upstream
-   git switch -c feat/my-topic upstream/main
+   git push -u origin feat/my-topic
    ```
+2. Open a pull request against `Tawjjeh/TalebElm` branch `main`.
+3. In the PR body, link the issue using `Closes #123`.
+4. Summarize what changed, why, and how you verified it.
+5. Ensure all CI checks pass. If a check fails, inspect the log and push fixes to your branch.
 
-## Contribution rule
+## Review and merge process
 
-Pick an issue with the help wanted label that nobody has taken, comment that you want it, and start once it is assigned to you.
-Please link the issue with `Closes #N` in your pull request description to keep work organized and avoid duplicate effort.
+Here is what to expect after opening your pull request:
+- **Timely reviews**: reviews aim to arrive within 48 hours, though this is a volunteer project and the time can stretch.
+- **Constructive feedback**: Reviews focus on architectural boundaries, test coverage, and correctness. Feedback is specific and actionable.
+- **Iterative updates**: If changes are requested, push additional commits to your branch. There is no need to close the PR or force-push.
+- **Squash merge**: Once approved and checks pass, a reviewer squash-merges your change into `main` as a single clean commit with your name as author. You do not merge it yourself.
 
-## A good pull request
+## Questions and community
 
-- **One focused change:** Touch only the files needed for that single task, keeping diffs under about 200 lines.
-- **Automated tests:** Include unit or integration tests proving the new behavior that would fail without your change.
-- **Docs updated:** Update relevant guides or index tables if behavior, arguments, or contracts changed.
-- **Linked issue:** Include `Closes #N` in the description so the issue closes on merge.
-- **Conventional title:** Prefix the title with a conventional type such as `feat:`, `fix:`, `docs:`, or `test:`.
+- Questions about the architecture, roadmap, or ideas: [GitHub Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
+- Questions about a specific task: Comment directly on the issue thread.
+- Security vulnerabilities: Follow [`SECURITY.md`](SECURITY.md) and report privately. Do not open public issues for security concerns.
 
-## What happens next
+## Guidelines and boundaries
 
-- Automated CI builds the code, runs the test suite, and checks doc formatting on every push.
-- An assigned reviewer reads your change, checks architecture rules, and leaves actionable comments.
-- Once all checks pass and the review is approved, an owner merges your pull request.
-- We squash-merge each branch into `main` as a single clean commit.
+- Never trust client-supplied scores, handles, or problem completion flags.
+- Never return `IsCorrect` in any learner-facing response or DTO.
+- Never commit database files (`*.db`), secrets, connection strings, or personal access tokens.
+- Do not modify `.github/workflows/` without prior coordination on an issue.
+- Respect the Clean Architecture boundaries at all times.
 
-## Ask for help
-
-If you run into an unexpected build failure or have a question about architecture, ask on your assigned issue thread or open a topic in [Discussions](https://github.com/Tawjjeh/TalebElm/discussions).
-
-## Please don't
-
-- Do not open unsolicited refactoring, code reformatting, or cosmetic changes.
-- Do not edit files under `.github/workflows` without prior agreement on an issue.
-- Do not open promotional PRs or submit changes without tests proving their correctness.
-
-## Standards and labels
-
-Read [`docs/development/coding-standards.md`](docs/development/coding-standards.md) for architectural boundaries and [`docs/development/definition-of-done.md`](docs/development/definition-of-done.md) for completion criteria.
-Available issue and pull request labels are documented in [`docs/GITHUB_LABELS.md`](docs/GITHUB_LABELS.md).
+Thank you for contributing to TalebElm!

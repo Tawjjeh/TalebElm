@@ -1,0 +1,112 @@
+name: Stale questions
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Log the actions without commenting or closing
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remind, then close, questions with no activity
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const inputs = context.payload.inputs || {};
+            const dryRun = context.eventName === 'workflow_dispatch'
+              ? String(inputs.dry_run ?? 'true').trim().toLowerCase() !== 'false'
+              : false;
+            const { owner, repo } = context.repo;
+            const now = Date.now();
+            const DAY = 24 * 60 * 60 * 1000;
+            const MARKER = '<!-- stale-question -->';
+            const REMIND = 30;
+            const CLOSE = 60;
+            const maxComments = 10;
+            const maxCloses = 5;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              labels: 'question',
+              per_page: 100,
+            });
+
+            let comments = 0;
+            let closes = 0;
+
+            for (const issue of issues) {
+              if (issue.pull_request) continue;
+              if ((issue.assignees || []).length > 0) continue;
+              if (/\[Tracking\]/i.test(issue.title || '')) continue;
+              if ((issue.labels || []).some((item) => {
+                const name = typeof item === 'string' ? item : item.name;
+                return name === 'security';
+              })) continue;
+
+              const idleDays = (now - new Date(issue.updated_at).getTime()) / DAY;
+              if (idleDays < REMIND) continue;
+
+              const history = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: issue.number,
+                per_page: 100,
+              });
+              const reminded = history.some((comment) =>
+                (comment.body || '').includes(MARKER));
+
+              if (idleDays >= CLOSE && closes < maxCloses) {
+                const body = `${MARKER}\nThis question has had no activity for ${CLOSE} days, so I am closing it to keep the list useful. If it still matters, reopen it or open a new issue with what you have learned since.`;
+                if (dryRun) {
+                  core.info(`Dry run: would close #${issue.number}.`);
+                } else {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body,
+                  });
+                  await github.rest.issues.update({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    state: 'closed',
+                    state_reason: 'not_planned',
+                  });
+                  core.info(`Closed #${issue.number}.`);
+                }
+                closes += 1;
+                continue;
+              }
+
+              if (!reminded && comments < maxComments) {
+                const body = `${MARKER}\nThis question has had no activity for ${REMIND} days. If you still need an answer, reply with what you have tried and where you are stuck. If it stays quiet, I will close it after another ${CLOSE - REMIND} days.`;
+                if (dryRun) {
+                  core.info(`Dry run: would remind on #${issue.number}.`);
+                } else {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body,
+                  });
+                  core.info(`Reminded on #${issue.number}.`);
+                }
+                comments += 1;
+              }
+            }
+
+            core.info(`Done. Comments: ${comments}, closes: ${closes}, dry run: ${dryRun}.`);

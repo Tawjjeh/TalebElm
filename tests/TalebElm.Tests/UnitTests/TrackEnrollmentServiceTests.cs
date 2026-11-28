@@ -2,6 +2,7 @@ using Moq;
 using TalebElm.Application.DTOs;
 using TalebElm.Application.Services.Concrete;
 using TalebElm.Domain.Entities;
+using TalebElm.Domain.Enums;
 using TalebElm.Domain.Exceptions;
 using TalebElm.Domain.Interfaces;
 
@@ -9,7 +10,7 @@ namespace TalebElm.Tests.UnitTests;
 
 public class TrackEnrollmentServiceTests
 {
-    private static Track Track(Guid trackId) => new() { Id = trackId, Name = "T", Description = "d" };
+    private static Track Track(Guid trackId, TrackStatus status = TrackStatus.Published) => new() { Id = trackId, Name = "T", Description = "d", Status = status };
 
     [Fact]
     public async Task EnrollAsync_FirstModuleOnly()
@@ -27,7 +28,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId)).ReturnsAsync(new[] { module });
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
@@ -58,7 +59,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(new[] { new TrackEnrollment { UserId = userId, TrackId = trackId } });
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(true);
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
         unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
@@ -67,6 +68,36 @@ public class TrackEnrollmentServiceTests
         var service = new TrackEnrollmentService(unitOfWork.Object);
 
         await Assert.ThrowsAsync<ConflictException>(() => service.EnrollAsync(userId, trackId));
+    }
+
+    [Theory]
+    [InlineData(TrackStatus.Draft)]
+    [InlineData(TrackStatus.Archived)]
+    public async Task EnrollAsync_UnpublishedTrack_ThrowsValidation(TrackStatus status)
+    {
+        var userId = Guid.NewGuid();
+        var trackId = Guid.NewGuid();
+        var unitOfWork = new Mock<IUnitOfWork>();
+        var users = new Mock<IUserRepository>();
+        var tracks = new Mock<ITrackRepository>();
+        var enrollments = new Mock<ITrackEnrollmentRepository>();
+        var userProgress = new Mock<IUserProgressRepository>();
+
+        users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
+        tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId, status));
+
+        unitOfWork.Setup(u => u.Users).Returns(users.Object);
+        unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
+        unitOfWork.Setup(u => u.TrackEnrollments).Returns(enrollments.Object);
+        unitOfWork.Setup(u => u.UserProgresses).Returns(userProgress.Object);
+
+        var service = new TrackEnrollmentService(unitOfWork.Object);
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.EnrollAsync(userId, trackId));
+
+        enrollments.Verify(r => r.AddAsync(It.IsAny<TrackEnrollment>(), It.IsAny<CancellationToken>()), Times.Never);
+        userProgress.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -82,7 +113,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync()).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId)).ReturnsAsync(Array.Empty<Module>());
 
         unitOfWork.Setup(u => u.Users).Returns(users.Object);
@@ -165,7 +196,7 @@ public class TrackEnrollmentServiceTests
 
         users.Setup(r => r.GetByIdAsync(userId, ct)).ReturnsAsync(new User { Id = userId, Name = "u", Email = "u@t.com", PasswordHash = "hash" });
         tracks.Setup(r => r.GetByIdAsync(trackId, ct)).ReturnsAsync(Track(trackId));
-        enrollments.Setup(r => r.GetAllAsync(ct)).ReturnsAsync(Array.Empty<TrackEnrollment>());
+        enrollments.Setup(r => r.ExistsAsync(userId, trackId, ct)).ReturnsAsync(false);
         modules.Setup(r => r.GetByTrackIdAsync(trackId, ct)).ReturnsAsync(new[] { module });
         unitOfWork.Setup(u => u.SaveChangesAsync(ct)).ReturnsAsync(1);
 
@@ -181,7 +212,8 @@ public class TrackEnrollmentServiceTests
 
         users.Verify(r => r.GetByIdAsync(userId, ct), Times.Once);
         tracks.Verify(r => r.GetByIdAsync(trackId, ct), Times.Once);
-        enrollments.Verify(r => r.GetAllAsync(ct), Times.Once);
+        enrollments.Verify(r => r.ExistsAsync(userId, trackId, ct), Times.Once);
+        enrollments.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Never);
         modules.Verify(r => r.GetByTrackIdAsync(trackId, ct), Times.Once);
         enrollments.Verify(r => r.AddAsync(It.IsAny<TrackEnrollment>(), ct), Times.Once);
         userProgress.Verify(r => r.AddAsync(It.IsAny<UserProgress>(), ct), Times.Once);

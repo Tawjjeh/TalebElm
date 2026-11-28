@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TalebElm.Application.Services.Abstraction;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Infrastructure.Persistence;
 using TalebElm.Infrastructure.Persistence.Repositories;
 using TalebElm.Infrastructure.Repositories;
+using TalebElm.Infrastructure.Services;
 
 namespace TalebElm.Infrastructure;
 
@@ -31,6 +33,23 @@ public static class DependencyInjection
         services.AddScoped<ITechnologyRepository, TechnologyRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IUserExternalAccountRepository, UserExternalAccountRepository>();
+        services.AddScoped<IModuleProblemRepository, ModuleProblemRepository>();
+        services.AddScoped<IUserProblemCompletionRepository, UserProblemCompletionRepository>();
+
+        services.AddHttpClient<IGitHubClient, GitHubClient>();
+        services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+        services.AddSingleton<PerHostRequestSpacer>();
+        services.AddHttpClient<ILinkHealthChecker, LinkHealthChecker>()
+            .ConfigurePrimaryHttpMessageHandler(sp =>
+            {
+                var dnsResolver = sp.GetRequiredService<IDnsResolver>();
+                return new SocketsHttpHandler
+                {
+                    AllowAutoRedirect = false,
+                    ConnectCallback = (context, ct) =>
+                        LinkHealthChecker.ConnectWithSsrfGuardAsync(context, dnsResolver, ct)
+                };
+            });
 
         return services;
     }

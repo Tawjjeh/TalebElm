@@ -67,6 +67,8 @@ DomainException (base)
 | `NotImplementedException` (Domain) | `501`       | `The requested capability is not implemented yet.`                   |
 | Unhandled `Exception`              | `500`       | `An unexpected error occurred.` (database failures other than unique/foreign-key violations still fall here) |
 
+When a downstream cancellation exception coincides with a canceled `RequestAborted` token, the middleware classifies an unstarted response as `499` for server-side reporting and skips the error log and ProblemDetails body. A response that has already started is left intact.
+
 ### Validation error payload (implemented)
 
 The middleware returns an RFC 7807 problem-details envelope with field-specific errors so clients can attach each message to its input field:
@@ -88,10 +90,21 @@ The middleware returns an RFC 7807 problem-details envelope with field-specific 
 - FluentValidation's `ValidationException` (thrown by application services) is mapped to this structured shape.
 - `TalebElm.Domain.Exceptions.ValidationException` carries a single message and maps to `detail` only without the `errors` map.
 
+### Request Correlation ID Middleware
+
+`CorrelationIdMiddleware` runs first in the request pipeline:
+- Inspects the optional incoming `X-Correlation-ID` request header.
+- Validates that the correlation ID is non-empty, bounded to a maximum length of 64 characters, and contains only safe characters (ASCII alphanumeric, `-`, `_`, `.`, `:`).
+- If absent, empty, oversized, or invalid, falls back to `HttpContext.TraceIdentifier`.
+- Sets `HttpContext.TraceIdentifier` to the resolved correlation ID so downstream components and `ExceptionHandlingMiddleware` (`traceId` field in ProblemDetails) stay consistent.
+- Echoes the resolved correlation ID in the `X-Correlation-ID` response header.
+- Pushes the resolved correlation ID into the logging scope under `CorrelationId` (`ILogger.BeginScope`).
+
 ### Registration (implemented)
 
 ```csharp
 // In Program.cs, before app.MapControllers():
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 ```
 

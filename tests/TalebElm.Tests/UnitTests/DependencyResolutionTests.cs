@@ -42,6 +42,7 @@ public class DependencyResolutionTests
         Assert.NotNull(sp.GetRequiredService<IUserService>());
         Assert.NotNull(sp.GetRequiredService<IUserProgressService>());
         Assert.NotNull(sp.GetRequiredService<ITrackEnrollmentService>());
+        Assert.NotNull(sp.GetRequiredService<IResourceHubReadService>());
         Assert.NotNull(sp.GetRequiredService<IPasswordHasher>());
     }
 
@@ -61,6 +62,8 @@ public class DependencyResolutionTests
         Assert.NotNull(sp.GetRequiredService<IUserRepository>());
         Assert.NotNull(sp.GetRequiredService<IUserProgressRepository>());
         Assert.NotNull(sp.GetRequiredService<ITrackEnrollmentRepository>());
+        Assert.NotNull(sp.GetRequiredService<IModuleProblemRepository>());
+        Assert.NotNull(sp.GetRequiredService<IUserProblemCompletionRepository>());
     }
 
     [Fact]

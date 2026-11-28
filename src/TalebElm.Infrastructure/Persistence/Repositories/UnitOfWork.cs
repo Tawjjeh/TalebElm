@@ -32,6 +32,9 @@ public class UnitOfWork : IUnitOfWork
     public ITechnologyRepository Technologies { get; }
     public IResourceRepository Resources { get; }
 
+    public IModuleProblemRepository ModuleProblems { get; }
+    public IUserProblemCompletionRepository UserProblemCompletions { get; }
+
     public UnitOfWork(AppDbContext context, ILogger<UnitOfWork>? logger = null)
     {
         _context = context;
@@ -47,6 +50,8 @@ public class UnitOfWork : IUnitOfWork
         Technologies = new TechnologyRepository(_context);
         Resources = new ResourceRepository(_context);
         UserExternalAccounts = new UserExternalAccountRepository(_context);
+        ModuleProblems = new ModuleProblemRepository(_context);
+        UserProblemCompletions = new UserProblemCompletionRepository(_context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)

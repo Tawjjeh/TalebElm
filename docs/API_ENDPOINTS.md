@@ -11,6 +11,8 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/users` | Declared, action has no parameters and throws domain `NotImplementedException`. |
 | POST | `/api/users` | Declared, action has no request parameter and throws domain `NotImplementedException`. |
 | GET | `/api/tracks` | Returns paged published tracks (`PagedTracksResponse`) with `page` and `pageSize` query params; validates pagination rules. |
+| GET | `/api/tracks/{trackId}` | Returns a published track with ordered modules (`TrackDetailResponse`); missing or unpublished tracks return `404`. Requires the `StudentOnly` policy. |
+| POST | `/api/tracks/{trackId}/enrollment` | Enrolls the authenticated student (`StudentOnly` policy); returns `201` with `EnrollmentResponse` (`404` for a missing track, `409` for a duplicate enrollment). |
 | POST | `/api/tracks` | `TrackService` create exists, but the action binds `CreateTrackRequest` and still throws domain `NotImplementedException`; it is not wired. |
 | GET | `/api/modules` | `ModuleService` read exists; controller is still a parameterless placeholder. |
 | GET | `/api/lessons` | `LessonService` reads exist; controller is still a parameterless placeholder. |
@@ -20,7 +22,7 @@ This page separates routes currently declared in `TalebElm.Api` from the routes 
 | GET | `/api/progress/me` | Returns `501 Not Implemented`. |
 | GET | `/api/progress/me/tracks/{trackId}` | Returns `501 Not Implemented`. |
 
-There is no registration endpoint, enrollment endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication and authorization are not configured in `Program.cs`.
+There is no registration endpoint, nested lesson route, or student-facing exam grading in the current API project. Authentication is not configured in `Program.cs`; only the `StudentOnly` authorization policy is registered, and controllers read the student id from the authenticated claims.
 
 ### OpenAPI in development
 
@@ -80,6 +82,7 @@ When the API runs with `ASPNETCORE_ENVIRONMENT=Development`, Swagger UI is serve
 |---|---|---|---|---|
 | GET | `/api/hub/technologies` | None | Top-level languages & categories | 200 |
 | GET | `/api/hub/technologies/{slug}` | Query filters (language, level, cost) | Technology detail with children & resources | 200, 404 |
+| GET | `/api/hub/topics/{id}/resources` | Query filters (language, level, cost) | Topic detail with paginated resources | 200, 404 |
 | GET | `/api/hub/resources` | Query filters (search, language, level, cost, kind, page, size) | Paginated curated resources | 200 |
 | POST | `/api/admin/hub/resources` | Resource creation DTO | Created resource DTO | 201, 400, 401, 403 |
 | PUT | `/api/admin/hub/resources/{id}` | Resource update DTO | Updated resource DTO | 200, 400, 401, 403, 404 |
@@ -101,7 +104,7 @@ The role model uses `UserRole` (`Student = 1`, `Instructor = 2`, `Admin = 3`). `
 
 | Access | Routes |
 |---|---|
-| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/resources` |
+| Anonymous | `GET /api/health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/hub/technologies*`, `GET /api/hub/topics/{id}/resources`, `GET /api/hub/resources` |
 | Student (authenticated) | `GET /api/tracks`, `GET /api/tracks/{trackId}`, `POST /api/tracks/{trackId}/enrollment`, lesson reads, `GET /api/exams/{examId}`, `POST /api/exams/{examId}/submit`, `/api/progress/me*`, `GET /api/modules/{moduleId}/problems`, `/api/users/me/external-accounts*`, `POST /api/modules/{moduleId}/problems/verify`, `POST /api/module-problems/{moduleProblemId}/verify`, `/api/tracks/{trackId}/project*` |
 | Admin | `POST/PUT/DELETE` on Tracks, Modules, Lessons, Exams, Hub resources, module problems, tasks, capstone projects/milestones, and `GET /api/users` |
 

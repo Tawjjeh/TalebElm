@@ -1,5 +1,5 @@
 name: Bug report
-description: Report unexpected behavior, test failures, or defects in TalebElm.
+description: Report behavior that is wrong, a failing test, or a crash.
 title: "[Bug]: "
 labels:
   - "bug"
@@ -7,36 +7,51 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting a bug in TalebElm!
-        **Important:** Do not include passwords, JWT secrets, database connection strings, or personal data.
-        For sensitive security vulnerabilities, please report privately via GitHub Security Advisories.
+        Thank you for the report. One bug per issue, please.
+        Do not include passwords, tokens, connection strings, or personal data.
+        For a security problem, close this page and use the Security link instead.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched open and closed issues and found no duplicate.
+          required: true
   - type: dropdown
     id: layer
     attributes:
       label: Affected layer
+      description: Pick the layer where the problem starts, not where it shows up.
       options:
-        - Domain (Entities, Enums, Rules)
-        - Application (Services, DTOs, Validators)
-        - Infrastructure (EF Core, Repositories, Migrations)
-        - Api (Controllers, Middleware, Endpoints)
-        - Testing (Unit / Integration Tests)
-        - Documentation / Scripts
-        - Unsure / Multiple
+        - Domain (entities, enums, exceptions, repository interfaces)
+        - Application (services, DTOs, validators)
+        - Infrastructure (EF Core, repositories, migrations)
+        - Api (controllers, middleware, Program.cs)
+        - Tests (unit, integration, migration tests)
+        - Documentation or scripts
+        - Not sure
     validations:
       required: true
   - type: input
-    id: environment
+    id: commit
     attributes:
-      label: Environment
-      description: .NET SDK version, OS, or test runner.
-      placeholder: ".NET 10.0.x / Linux / SQLite"
+      label: Commit and environment
+      description: The commit you tested and your .NET SDK version.
+      placeholder: "b860556, .NET 10.0.x, Linux, SQLite"
     validations:
       required: true
   - type: textarea
     id: what-happened
     attributes:
-      label: What happened?
-      description: Describe the observed behavior vs what you expected according to the business rules.
+      label: What happened
+      description: The observed behavior. Include the request, the response, or the failing test name.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What the rule, decision, or documented behavior says should happen instead.
     validations:
       required: true
   - type: textarea
@@ -44,28 +59,30 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. Run `dotnet test ...` or send request `POST /api/...`
-        2. Provide payload: ...
-        3. Observe error: ...
+        1. Run `dotnet test --filter ...` or call `POST /api/...`
+        2. Provide the payload
+        3. Observe the result
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Logs / Stack trace
-      description: Paste relevant terminal logs or exceptions (redact any sensitive info).
+      label: Logs or stack trace
+      description: Paste text, not a screenshot. Redact anything private.
       render: text
+    validations:
+      required: false
   - type: input
-    id: business-rule
+    id: rule
     attributes:
-      label: Related Business Rule or Decision ID
-      description: "Optional. For example: BR-TRACK-01, P-2 (Decision 32), etc."
+      label: Related rule or decision
+      description: Optional. For example `P-2`, `U-2`, or Decision 32.
+    validations:
+      required: false
   - type: checkboxes
-    id: checks
+    id: safe
     attributes:
-      label: Checklist
+      label: Sensitive data
       options:
-        - label: I searched existing issues to ensure this is not a duplicate.
-          required: true
-        - label: I verified that no secrets, credentials, or sensitive data are included.
+        - label: This report contains no secrets, tokens, connection strings, or personal data.
           required: true

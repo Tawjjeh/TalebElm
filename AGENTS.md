@@ -1,72 +1,40 @@
 # AGENTS.md — TalebElm
 
-TalebElm is a .NET 10 Clean Architecture learning-platform backend.
-Track, Module, Lesson, Exam, Progress, Enrollment, external practice problems,
-the public Resource Hub, and Capstone projects are built in layers: Domain →
-Application → Infrastructure → Api, with tests in `TalebElm.Tests`.
+TalebElm is a .NET 10 Clean Architecture learning-platform backend: Track, Module,
+Lesson, Exam, Progress, Enrollment, practice problems, the public Resource Hub, and
+Capstone projects in Domain → Application → Infrastructure → Api, with tests in
+`TalebElm.Tests`. Read the docs, not memory: `docs/README.md` maps them.
 
-This repository is documentation-heavy and issue-driven. Read the docs (not
-memory) before editing.
+## Rules
 
-## Operating rules
-
-- Read `docs/README.md`, `docs/FEATURE_INDEX.md`, `docs/OPEN_DECISIONS.md`, and
+- Read `docs/FEATURE_INDEX.md`, `docs/OPEN_DECISIONS.md`, and
   `docs/business/BUSINESS_RULES.md` before changing behavior.
-- Prefer the smallest, reversible change. Open a topic branch; do not commit to
-  `main` directly.
-- No secrets, tokens, real connection strings, hostnames, or customer data in
-  code, tests, logs, docs, or issues.
-- Product behavior is governed by `docs/business/BUSINESS_RULES.md` and
-  `docs/OPEN_DECISIONS.md`. Do not silently alter an approved rule; record a
-  change in the open-decisions table.
-- Auto-generated knowledge is never assumed to be live: feature docs are specs,
-  not proof of implementation. Check the code and tests.
-- Never trust a client-supplied score, return `IsCorrect`, use a `DbContext` in Application,
-  hit real external APIs in tests, commit secrets or `*.db` files, or push to main.
+- Smallest reversible change. Topic branch; never commit to `main`.
+- Do not silently change an approved rule; record it in the open-decisions table.
+- No secrets, tokens, connection strings, hostnames, or customer data anywhere.
+- Never trust a client score, return `IsCorrect`, use `DbContext` in Application,
+  call real external APIs in tests, commit `*.db` files or secrets, or push to main.
+- Feature docs are specs, not proof; check the code and the tests.
 
-## Code boundaries
+## Layers
 
-- `TalebElm.Domain`: entities, enums, exceptions, repository interfaces and
-  `IUnitOfWork`. Depends on nothing.
-- `TalebElm.Application`: DTOs, services, validators, external client interfaces.
-- `TalebElm.Infrastructure`: EF Core, `AppDbContext`, configurations, migrations,
-  repositories.
-- `TalebElm.Api`: controllers, middleware, `Program.cs`.
-- `TalebElm.Tests`: unit and integration tests.
-- `Application` never takes a direct `DbContext`; it uses `IUnitOfWork`.
+- Domain: entities, enums, exceptions, repositories, `IUnitOfWork`; no dependencies.
+- Application: DTOs, services, validators, client interfaces; uses `IUnitOfWork`.
+- Infrastructure: EF Core, configurations, migrations, repositories.
+- Api: controllers, middleware, `Program.cs`.
+- Tests: unit and integration tests on SQLite.
 
-## Build, test, and docs checks
+## Checks
 
-- Build: `dotnet build TalebElm.slnx`
-- Test: `dotnet test TalebElm.slnx`
-- Docs: `python3 scripts/check-docs.py`
-- Coding standards: `docs/development/coding-standards.md`
-- Definition of done: `docs/development/definition-of-done.md`
-- EF Core uses SQLite for development and integration tests.
+`dotnet build TalebElm.slnx`, `dotnet test TalebElm.slnx`, and
+`python3 scripts/check-docs.py`. Standards live in `docs/development/`.
 
 ## Conventions
 
-- Conventional commits with a type (`feat`, `fix`, `chore`, `docs`, `test`,
-  `refactor`, `ci`).
-- One vertical slice per PR where possible; about 200 lines changed including
-  tests is a good upper bound.
-- Zero manual gating: learner progression is verified by the server, not by
-  humans.
-- Existing progress markers (`Implemented` / `Target` / `Proposed`) stay accurate.
-
-## Labels and issues
-
-- Every issue and pull request carries at most one type, one layer, and the
-  milestone that owns it. The scheme is in `docs/GITHUB_LABELS.md`.
-- Work is grouped by the six MVP milestones (M0–M5); there are no feature
-  labels.
-
-## Unlock and external services
-
-Unlock follows Decision 32 (`docs/business/BUSINESS_RULES.md` P-2): a Module unlocks its successor only when `examGate` and `problemGate` hold and the next Module exists. External clients are Application interfaces with fakes in tests; new async methods accept `CancellationToken`.
-
-- Report in the form:
-  `Changed: ...`
-  `Verified: ...`
-  `Risks: ...`
-  `Next: ...`
+- Conventional commits: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `ci`.
+- One vertical slice per PR; about 200 lines including tests.
+- Server verifies progression; keep `Implemented` / `Target` / `Proposed` accurate.
+- One type, one layer, and the owning milestone per item (`docs/GITHUB_LABELS.md`).
+- Unlock follows Decision 32: `examGate`, `problemGate`, and a next Module. External
+  clients are Application interfaces with fakes; async methods take `CancellationToken`.
+- Report as `Changed:` / `Verified:` / `Risks:` / `Next:`.

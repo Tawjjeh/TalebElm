@@ -66,6 +66,39 @@ public class LessonServiceTests
     }
 
     [Fact]
+    public async Task GetByModuleAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var ct = cts.Token;
+        var moduleId = Guid.NewGuid();
+
+        var modules = new Mock<IModuleRepository>();
+
+        modules.Setup(r => r.GetByIdAsync(moduleId, ct))
+            .ReturnsAsync(new Module { Id = moduleId, Title = "Module", Order = 1, TrackId = Guid.NewGuid() });
+
+        var lessonRepository = new Mock<ILessonRepository>();
+
+        lessonRepository.Setup(r => r.GetByModuleIdAsync(moduleId, ct))
+            .ReturnsAsync(new List<Lesson>());
+
+        var service = new LessonService(CreateUnitOfWork(modules, lessonRepository).Object);
+
+        var result = await service.GetByModuleAsync(moduleId, ct);
+
+        Assert.Empty(result);
+
+        modules.Verify(
+            r => r.GetByIdAsync(moduleId, ct),
+            Times.Once);
+
+        lessonRepository.Verify(
+            r => r.GetByModuleIdAsync(moduleId, ct),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task GetByIdAsync_WhenLessonExists_ReturnsDetailWithOrderedResources()
     {
         var lessonId = Guid.NewGuid();
@@ -125,6 +158,50 @@ public class LessonServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(lessonId));
         lessonResources.Verify(r => r.GetByLessonIdAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var ct = cts.Token;
+        var lessonId = Guid.NewGuid();
+        var moduleId = Guid.NewGuid();
+
+        var lessons = new Mock<ILessonRepository>();
+
+        lessons.Setup(r => r.GetByIdAsync(lessonId, ct))
+            .ReturnsAsync(new Lesson
+            {
+                Id = lessonId,
+                Title = "C# Basics",
+                Content = "Introduction to C#",
+                Order = 3,
+                ModuleId = moduleId
+            });
+
+        var lessonResources = new Mock<ILessonResourceRepository>();
+
+        lessonResources.Setup(r => r.GetByLessonIdAsync(lessonId, ct))
+            .ReturnsAsync(new List<LessonResource>());
+
+        var service = new LessonService(CreateUnitOfWork(
+            new Mock<IModuleRepository>(),
+            lessons,
+            lessonResources).Object);
+
+        var result = await service.GetByIdAsync(lessonId, ct);
+
+        Assert.Equal(lessonId, result.Id);
+
+        lessons.Verify(
+            r => r.GetByIdAsync(lessonId, ct),
+            Times.Once);
+
+        lessonResources.Verify(
+            r => r.GetByLessonIdAsync(lessonId, ct),
+            Times.Once);
     }
 
     private static Mock<IUnitOfWork> CreateUnitOfWork(

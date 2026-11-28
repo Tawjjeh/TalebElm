@@ -43,8 +43,11 @@ public class ResourceRepository(AppDbContext context) : IResourceRepository
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(r => r.Title.Contains(searchQuery));
 
-        if (language is not null)
-            query = query.Where(r => r.Language == language);
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            var trimmedLanguage = language.Trim();
+            query = query.Where(r => r.Language == trimmedLanguage);
+        }
 
         if (level is not null)
             query = query.Where(r => r.Level == level);
@@ -80,5 +83,26 @@ public class ResourceRepository(AppDbContext context) : IResourceRepository
             .AsNoTracking()
             .Where(r => r.Status == ResourceStatus.Approved)
             .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, int>> GetApprovedResourceCountsAsync(
+        IReadOnlyCollection<Guid> technologyIds,
+        CancellationToken ct = default)
+    {
+        if (technologyIds.Count == 0)
+            return new Dictionary<Guid, int>();
+
+        var counts = await context.Resources
+            .AsNoTracking()
+            .Where(r => r.Status == ResourceStatus.Approved
+                && r.TechnologyId != null
+                && technologyIds.Contains(r.TechnologyId.Value))
+            .GroupBy(r => r.TechnologyId)
+            .Select(g => new { TechnologyId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        return counts
+            .Where(x => x.TechnologyId is not null)
+            .ToDictionary(x => x.TechnologyId!.Value, x => x.Count);
     }
 }

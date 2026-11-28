@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TalebElm.Api.Middlewares;
@@ -26,14 +27,49 @@ public class ExceptionHandlingMiddlewareLoggingTests
         }
     }
 
-    [Fact]
-    public async Task UnhandledException_Returns500_AndLogsErrorWithRequestPath()
+    private sealed class StartedResponseFeature : HttpResponseFeature
+    {
+        public override bool HasStarted => true;
+    }
+
+    [Theory]
+    [InlineData(false, StatusCodes.Status499ClientClosedRequest)]
+    [InlineData(true, StatusCodes.Status202Accepted)]
+    public async Task AbortedRequest_KeepsExistingResponseOrClassifiesItAs499(bool responseStarted, int expectedStatus)
+    {
+        var logger = new CapturingLogger<ExceptionHandlingMiddleware>();
+        using var services = new ServiceCollection().AddSingleton<ILogger<ExceptionHandlingMiddleware>>(logger).BuildServiceProvider();
+        using var cancellation = new CancellationTokenSource();
+        using var body = new MemoryStream();
+        cancellation.Cancel();
+        var context = new DefaultHttpContext { RequestAborted = cancellation.Token, RequestServices = services };
+        if (responseStarted)
+        {
+            context.Features.Set<IHttpResponseFeature>(new StartedResponseFeature { StatusCode = StatusCodes.Status202Accepted });
+            body.WriteByte(42);
+        }
+        context.Response.Body = body;
+        var middleware = new ExceptionHandlingMiddleware(_ => Task.FromCanceled(cancellation.Token));
+
+        await middleware.InvokeAsync(context);
+
+        Assert.Equal(expectedStatus, context.Response.StatusCode);
+        Assert.Equal(responseStarted ? 1L : 0L, body.Length);
+        Assert.Null(context.Response.ContentType);
+        Assert.DoesNotContain(logger.Entries, e => e.Level == LogLevel.Error);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnhandledException_Returns500_AndLogsErrorWithRequestPath(bool operationCanceled)
     {
         var logger = new CapturingLogger<ExceptionHandlingMiddleware>();
         var services = new ServiceCollection();
         services.AddSingleton<ILogger<ExceptionHandlingMiddleware>>(logger);
 
-        var middleware = new ExceptionHandlingMiddleware(_ => throw new InvalidOperationException("boom"));
+        Exception exception = operationCanceled ? new OperationCanceledException() : new InvalidOperationException("boom");
+        var middleware = new ExceptionHandlingMiddleware(_ => throw exception);
         var context = new DefaultHttpContext
         {
             RequestServices = services.BuildServiceProvider()

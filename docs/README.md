@@ -17,6 +17,7 @@ This is the documentation index for `Tawjjeh/TalebElm`.
 | Understand the data model | [`docs/DATABASE_ERD.md`](DATABASE_ERD.md) |
 | Set up the local database | [`docs/development/getting-started.md`](development/getting-started.md) |
 | Look up labels | [`docs/GITHUB_LABELS.md`](GITHUB_LABELS.md) |
+| Follow an issue from claim to merge | [`docs/development/workflow.md`](development/workflow.md) |
 | See how tasks are verified | [`docs/TASK_TEMPLATE_SPEC.md`](TASK_TEMPLATE_SPEC.md) |
 
 ## Conventions
@@ -61,6 +62,7 @@ This is the documentation index for `Tawjjeh/TalebElm`.
 - [`development/definition-of-done.md`](development/definition-of-done.md)
 - [`development/getting-started.md`](development/getting-started.md)
 - [`development/testing.md`](development/testing.md)
+- [`development/workflow.md`](development/workflow.md)
 - [`features/01-auth-identity.md`](features/01-auth-identity.md)
 - [`features/02-tracks-content.md`](features/02-tracks-content.md)
 - [`features/03-lessons-and-learning-resources.md`](features/03-lessons-and-learning-resources.md)

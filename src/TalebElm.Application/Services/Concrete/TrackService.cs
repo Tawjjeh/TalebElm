@@ -11,9 +11,9 @@ public class TrackService(
     IUnitOfWork unitOfWork,
     IValidator<CreateTrackRequest> validator) : ITrackService
 {
-    public async Task<IReadOnlyList<TrackResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<TrackResponse>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var tracks = await unitOfWork.Tracks.GetAllAsync();
+        var tracks = await unitOfWork.Tracks.GetAllAsync(cancellationToken);
 
         if (tracks.Count == 0)
             return [];
@@ -27,9 +27,9 @@ public class TrackService(
             .ToList();
     }
 
-    public async Task<TrackResponse> CreateAsync(CreateTrackRequest request)
+    public async Task<TrackResponse> CreateAsync(CreateTrackRequest request, CancellationToken cancellationToken = default)
     {
-        var validationResult = await validator.ValidateAsync(request);
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
@@ -41,9 +41,9 @@ public class TrackService(
             Status = TrackStatus.Draft
         };
 
-        await unitOfWork.Tracks.AddAsync(track);
+        await unitOfWork.Tracks.AddAsync(track, cancellationToken);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new TrackResponse(
             track.Id,
@@ -70,5 +70,30 @@ public class TrackService(
             .ToList();
 
         return new PagedTracksResponse(items, page, pageSize, totalCount);
+    }
+
+    public async Task<TrackDetailResponse> GetByIdAsync(Guid trackId, CancellationToken cancellationToken = default)
+    {
+        var track = await unitOfWork.Tracks.GetByIdAsync(trackId, cancellationToken);
+
+        if (track is null || track.Status != TrackStatus.Published)
+            throw new TalebElm.Domain.Exceptions.NotFoundException($"Track with id '{trackId}' was not found.");
+
+        var modules = await unitOfWork.Modules.GetByTrackIdAsync(trackId, cancellationToken);
+
+        return new TrackDetailResponse(
+            track.Id,
+            track.Name,
+            track.Description,
+            (int)track.Status,
+            modules
+                .OrderBy(module => module.Order)
+                .Select(module => new ModuleResponse(
+                    module.Id,
+                    module.Title,
+                    module.Summary,
+                    module.Order,
+                    module.TrackId))
+                .ToList());
     }
 }

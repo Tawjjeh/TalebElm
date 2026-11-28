@@ -9,14 +9,14 @@ namespace TalebElm.Application.Services.Concrete;
 
 public class ExamService(IUnitOfWork unitOfWork) : IExamService
 {
-    public Task<ExamResponse> CreateAsync(CreateExamRequest request)
+    public Task<ExamResponse> CreateAsync(CreateExamRequest request, CancellationToken ct = default)
     {
         throw new NotImplementedException("Creating an exam is not implemented yet.");
     }
 
-    public async Task<ExamResponse> GetByIdAsync(Guid id)
+    public async Task<ExamResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var exam = await unitOfWork.Exams.GetByIdAsync(id);
+        var exam = await unitOfWork.Exams.GetByIdAsync(id, ct);
         if (exam is null)
             throw new NotFoundException($"Exam with id '{id}' was not found.");
 
@@ -79,8 +79,15 @@ public class ExamService(IUnitOfWork unitOfWork) : IExamService
         progress.Score = score;
         progress.PassedExam |= passed;
 
+        // Failed attempt: persist the score only. Never create or unlock the next Module's progress.
+        if (!passed)
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+            return new ExamResultResponse(exam.Id, passed, score);
+        }
+
         // Make checks for unlocking the next module
-        if (progress.PassedExam && progress.CompletedRequiredProblems)
+        if (progress.CompletedRequiredProblems)
         {
             // The progress row is loaded without its Module navigation, so read the
             // Module explicitly instead of dereferencing progress.Module.

@@ -117,4 +117,13 @@ public class ExamRepositoryTests : SqliteTestBase
 
         Assert.Null(result);
     }
+    [Fact]
+    public async Task GetByModuleIdAsync_WhenTokenIsCancelled_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _repository.GetByModuleIdAsync(Guid.NewGuid(), cts.Token));
+    }
 }

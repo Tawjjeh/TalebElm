@@ -6,6 +6,7 @@ using TalebElm.Domain.Entities;
 using TalebElm.Domain.Enums;
 using TalebElm.Domain.Interfaces;
 using TalebElm.Application.Services.Concrete;
+using NotFoundException = TalebElm.Domain.Exceptions.NotFoundException;
 
 namespace TalebElm.Tests.UnitTests;
 
@@ -204,5 +205,140 @@ public class TrackServiceTests
             () => _sut.GetPagedAsync(page: 1, pageSize: invalidPageSize));
 
         Assert.Equal("PageSize must be between 1 and 100.", ex.Message);
+    }
+
+
+    [Fact]
+    public async Task GetAllAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        _unitOfWork
+            .Setup(u => u.Tracks.GetAllAsync(cts.Token))
+            .ReturnsAsync([]);
+
+        await _sut.GetAllAsync(cts.Token);
+
+        _unitOfWork.Verify(u => u.Tracks.GetAllAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ForwardsCancellationTokenToValidatorAndUnitOfWork()
+    {
+        using var cts = new CancellationTokenSource();
+        var request = new CreateTrackRequest("Backend .NET", "Learn ASP.NET Core");
+
+        _validator
+            .Setup(v => v.ValidateAsync(request, cts.Token))
+            .ReturnsAsync(new ValidationResult());
+
+        _unitOfWork
+            .Setup(u => u.Tracks.AddAsync(It.IsAny<Track>(), cts.Token))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork
+            .Setup(u => u.SaveChangesAsync(cts.Token))
+            .ReturnsAsync(1);
+
+        await _sut.CreateAsync(request, cts.Token);
+
+        _validator.Verify(v => v.ValidateAsync(request, cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.Tracks.AddAsync(It.IsAny<Track>(), cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenTrackIsPublished_ReturnsDetailWithModulesInOrder()
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track
+        {
+            Id = trackId,
+            Name = "Backend .NET",
+            Description = "Learn ASP.NET Core",
+            Status = TrackStatus.Published
+        };
+        var modules = new List<Module>
+        {
+            new() { Id = Guid.NewGuid(), TrackId = trackId, Title = "M2", Summary = "Second", Order = 2 },
+            new() { Id = Guid.NewGuid(), TrackId = trackId, Title = "M1", Summary = "First", Order = 1 },
+            new() { Id = Guid.NewGuid(), TrackId = trackId, Title = "M3", Summary = "Third", Order = 3 }
+        };
+
+        _unitOfWork
+            .Setup(u => u.Tracks.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+        _unitOfWork
+            .Setup(u => u.Modules.GetByTrackIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(modules);
+
+        var result = await _sut.GetByIdAsync(trackId);
+
+        Assert.Equal(trackId, result.Id);
+        Assert.Equal("Backend .NET", result.Name);
+        Assert.Equal((int)TrackStatus.Published, result.Status);
+        Assert.Equal(["M1", "M2", "M3"], result.Modules.Select(m => m.Title));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenTrackIsMissing_ThrowsNotFoundException()
+    {
+        var trackId = Guid.NewGuid();
+
+        _unitOfWork
+            .Setup(u => u.Tracks.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Track?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(trackId));
+
+        _unitOfWork.Verify(
+            u => u.Modules.GetByTrackIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(TrackStatus.Draft)]
+    [InlineData(TrackStatus.Archived)]
+    public async Task GetByIdAsync_WhenTrackIsNotPublished_ThrowsNotFoundException(TrackStatus status)
+    {
+        var trackId = Guid.NewGuid();
+        var track = new Track
+        {
+            Id = trackId,
+            Name = "Backend .NET",
+            Description = "Learn ASP.NET Core",
+            Status = status
+        };
+
+        _unitOfWork
+            .Setup(u => u.Tracks.GetByIdAsync(trackId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(track);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.GetByIdAsync(trackId));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ForwardsCancellationTokenToRepositories()
+    {
+        using var cts = new CancellationTokenSource();
+        var trackId = Guid.NewGuid();
+        var track = new Track
+        {
+            Id = trackId,
+            Name = "Backend .NET",
+            Description = "Learn ASP.NET Core",
+            Status = TrackStatus.Published
+        };
+
+        _unitOfWork
+            .Setup(u => u.Tracks.GetByIdAsync(trackId, cts.Token))
+            .ReturnsAsync(track);
+        _unitOfWork
+            .Setup(u => u.Modules.GetByTrackIdAsync(trackId, cts.Token))
+            .ReturnsAsync([]);
+
+        await _sut.GetByIdAsync(trackId, cts.Token);
+
+        _unitOfWork.Verify(u => u.Tracks.GetByIdAsync(trackId, cts.Token), Times.Once);
+        _unitOfWork.Verify(u => u.Modules.GetByTrackIdAsync(trackId, cts.Token), Times.Once);
     }
 }

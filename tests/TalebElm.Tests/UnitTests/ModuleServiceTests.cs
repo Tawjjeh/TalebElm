@@ -12,39 +12,81 @@ public class ModuleServiceTests
     public async Task GetByTrackAsync_ReturnsModulesOrderedByOrder()
     {
         var trackId = Guid.NewGuid();
+
         var modules = new List<Module>
         {
-            new() { Id = Guid.NewGuid(), Title = "Module 2", Summary = "Second", Order = 2, TrackId = trackId },
-            new() { Id = Guid.NewGuid(), Title = "Module 1", Summary = "First", Order = 1, TrackId = trackId }
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Module 2",
+                Summary = "Second",
+                Order = 2,
+                TrackId = trackId
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Module 1",
+                Summary = "First",
+                Order = 1,
+                TrackId = trackId
+            }
         };
 
         var tracks = new Mock<ITrackRepository>();
-        tracks.Setup(r => r.GetByIdAsync(trackId))
-            .ReturnsAsync(new Track { Id = trackId, Name = "Backend" });
+
+        tracks.Setup(r => r.GetByIdAsync(
+                trackId, CancellationToken.None))
+            .ReturnsAsync(new Track
+            {
+                Id = trackId,
+                Name = "Backend"
+            });
 
         var moduleRepository = new Mock<IModuleRepository>();
-        moduleRepository.Setup(r => r.GetByTrackIdAsync(trackId))
+
+        moduleRepository.Setup(r => r.GetByTrackIdAsync(
+                trackId, CancellationToken.None))
             .ReturnsAsync(modules);
 
-        var service = new ModuleService(CreateUnitOfWork(tracks, moduleRepository).Object);
+        var service = new ModuleService(
+            CreateUnitOfWork(tracks, moduleRepository).Object);
+
         var result = await service.GetByTrackAsync(trackId);
 
-        Assert.Equal(new[] { "Module 1", "Module 2" }, result.Select(module => module.Title));
-        Assert.Equal(new[] { 1, 2 }, result.Select(module => module.Order));
+        Assert.Equal(
+            new[] { "Module 1", "Module 2" },
+            result.Select(module => module.Title));
+
+        Assert.Equal(
+            new[] { 1, 2 },
+            result.Select(module => module.Order));
     }
 
     [Fact]
     public async Task GetByTrackAsync_WhenTrackDoesNotExist_ThrowsNotFoundException()
     {
         var trackId = Guid.NewGuid();
+
         var tracks = new Mock<ITrackRepository>();
-        tracks.Setup(r => r.GetByIdAsync(trackId)).ReturnsAsync((Track?)null);
+
+        tracks.Setup(r => r.GetByIdAsync(
+                trackId, CancellationToken.None))
+            .ReturnsAsync((Track?)null);
 
         var moduleRepository = new Mock<IModuleRepository>();
-        var service = new ModuleService(CreateUnitOfWork(tracks, moduleRepository).Object);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByTrackAsync(trackId));
-        moduleRepository.Verify(r => r.GetByTrackIdAsync(It.IsAny<Guid>()), Times.Never);
+        var service = new ModuleService(
+            CreateUnitOfWork(tracks, moduleRepository).Object);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.GetByTrackAsync(trackId));
+
+        moduleRepository.Verify(
+            r => r.GetByTrackIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -52,6 +94,7 @@ public class ModuleServiceTests
     {
         var moduleId = Guid.NewGuid();
         var trackId = Guid.NewGuid();
+
         var module = new Module
         {
             Id = moduleId,
@@ -62,9 +105,16 @@ public class ModuleServiceTests
         };
 
         var moduleRepository = new Mock<IModuleRepository>();
-        moduleRepository.Setup(r => r.GetByIdAsync(moduleId)).ReturnsAsync(module);
 
-        var service = new ModuleService(CreateUnitOfWork(new Mock<ITrackRepository>(), moduleRepository).Object);
+        moduleRepository.Setup(r => r.GetByIdAsync(
+                moduleId, CancellationToken.None))
+            .ReturnsAsync(module);
+
+        var service = new ModuleService(
+            CreateUnitOfWork(
+                new Mock<ITrackRepository>(),
+                moduleRepository).Object);
+
         var result = await service.GetByIdAsync(moduleId);
 
         Assert.Equal(moduleId, result.Id);
@@ -78,12 +128,93 @@ public class ModuleServiceTests
     public async Task GetByIdAsync_WhenModuleDoesNotExist_ThrowsNotFoundException()
     {
         var moduleId = Guid.NewGuid();
+
         var moduleRepository = new Mock<IModuleRepository>();
-        moduleRepository.Setup(r => r.GetByIdAsync(moduleId)).ReturnsAsync((Module?)null);
 
-        var service = new ModuleService(CreateUnitOfWork(new Mock<ITrackRepository>(), moduleRepository).Object);
+        moduleRepository.Setup(r => r.GetByIdAsync(
+                moduleId, CancellationToken.None))
+            .ReturnsAsync((Module?)null);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(moduleId));
+        var service = new ModuleService(
+            CreateUnitOfWork(
+                new Mock<ITrackRepository>(),
+                moduleRepository).Object);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => service.GetByIdAsync(moduleId));
+    }
+
+    [Fact]
+    public async Task GetByTrackAsync_ForwardsCancellationTokenToRepositories()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var ct = cts.Token;
+        var trackId = Guid.NewGuid();
+
+        var tracks = new Mock<ITrackRepository>();
+
+        tracks.Setup(r => r.GetByIdAsync(trackId, ct))
+            .ReturnsAsync(new Track
+            {
+                Id = trackId,
+                Name = "Backend"
+            });
+
+        var moduleRepository = new Mock<IModuleRepository>();
+
+        moduleRepository.Setup(r => r.GetByTrackIdAsync(trackId, ct))
+            .ReturnsAsync(new List<Module>());
+
+        var service = new ModuleService(
+            CreateUnitOfWork(tracks, moduleRepository).Object);
+
+        var result = await service.GetByTrackAsync(trackId, ct);
+
+        Assert.Empty(result);
+
+        tracks.Verify(
+            r => r.GetByIdAsync(trackId, ct),
+            Times.Once);
+
+        moduleRepository.Verify(
+            r => r.GetByTrackIdAsync(trackId, ct),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ForwardsCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var ct = cts.Token;
+        var moduleId = Guid.NewGuid();
+        var trackId = Guid.NewGuid();
+
+        var moduleRepository = new Mock<IModuleRepository>();
+
+        moduleRepository.Setup(r => r.GetByIdAsync(moduleId, ct))
+            .ReturnsAsync(new Module
+            {
+                Id = moduleId,
+                Title = "C# Fundamentals",
+                Summary = "Introduction",
+                Order = 1,
+                TrackId = trackId
+            });
+
+        var service = new ModuleService(
+            CreateUnitOfWork(
+                new Mock<ITrackRepository>(),
+                moduleRepository).Object);
+
+        var result = await service.GetByIdAsync(moduleId, ct);
+
+        Assert.Equal(moduleId, result.Id);
+
+        moduleRepository.Verify(
+            r => r.GetByIdAsync(moduleId, ct),
+            Times.Once);
     }
 
     private static Mock<IUnitOfWork> CreateUnitOfWork(
@@ -91,8 +222,13 @@ public class ModuleServiceTests
         Mock<IModuleRepository> modules)
     {
         var unitOfWork = new Mock<IUnitOfWork>();
-        unitOfWork.Setup(u => u.Tracks).Returns(tracks.Object);
-        unitOfWork.Setup(u => u.Modules).Returns(modules.Object);
+
+        unitOfWork.Setup(u => u.Tracks)
+            .Returns(tracks.Object);
+
+        unitOfWork.Setup(u => u.Modules)
+            .Returns(modules.Object);
+
         return unitOfWork;
     }
 }
